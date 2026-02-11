@@ -61,6 +61,7 @@ import kotlin.random.Random
 
 @Singleton
 class CoreChatSocketClient @Inject constructor(
+
     private val localStorage: LocalStorage,
     private var retrofitInstance: RetrofitInstance,
     private val context: Context
@@ -96,15 +97,11 @@ class CoreChatSocketClient @Inject constructor(
 
     private var opened = false
 
-    init {
-//        initialize()
-    }
+
 
     private val socketConnectedObserver = Observer<Boolean> { connected ->
         if (connected) {
-//            // The socket is connected, you can register listeners and use it here
-//            socket.on(Socket.EVENT_CONNECT, onConnect)
-//            socket.on("messageReceived", onMessageReceived)
+
         }
     }
 
@@ -211,7 +208,7 @@ class CoreChatSocketClient @Inject constructor(
                     socket.on("walkingBillboardLocationAdvertisement", onWalkingBillboardLocationAdvertisement)
                 }
         } catch (e: Exception) {
-            Log.e(TAG, "❌ Failed to setup event listeners", e)
+            Log.e(TAG, "Failed to setup event listeners", e)
         }
     }
 
@@ -286,8 +283,7 @@ class CoreChatSocketClient @Inject constructor(
             val avatarUrl = notificationData.getJSONObject("sender").getJSONObject("avatar").getString("url")
             val avatarId = notificationData.getJSONObject("sender").getJSONObject("avatar").getString("_id")
             val avatarLocalPath = ""
-          //  val postId = notificationData.getJSONObject("data").getString("postId")
-//            val commentId = notificationData.getJSONObject("data").getString("commentId")
+
             val note = Notification(
                 _id = _id,
                 avatar = avatarUrl,
@@ -312,16 +308,11 @@ class CoreChatSocketClient @Inject constructor(
             chatListener?.onNotification(note)
             val socialNotificationService = Intent(context, SocialNotificationService::class.java)
 
-//            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-//                startForegroundService(context,notificationIntent)
-//            } else {
-//                context.startService(notificationIntent)
-//            }
             CoroutineScope(Dispatchers.Main).launch {
-//                context.startService(notificationIntent)
+
                 socialNotificationService.putExtra("notification", note)
                 socialNotificationService.action = ChatNotificationServiceActions.ON_ONE_ON_ONE_MESSAGE.name
-//                  ContextCompat.startForegroundService(context, notificationIntent)
+
                 ContextCompat.startForegroundService(context, socialNotificationService)
             }
             EventBus.getDefault().post(FlashNotificationsEvents(
@@ -360,7 +351,7 @@ class CoreChatSocketClient @Inject constructor(
             val avatarUrl = notificationData.getJSONObject("sender").getJSONObject("avatar").getString("url")
             val avatarId = notificationData.getJSONObject("sender").getJSONObject("avatar").getString("_id")
             val avatarLocalPath = ""
-          //  val postId = notificationData.getJSONObject("data").getString("postId")
+
             val note = Notification(
                 _id = _id,
                 avatar = avatarUrl,
@@ -386,17 +377,13 @@ class CoreChatSocketClient @Inject constructor(
 
             Log.d(TAG, "Starting Social Notification service")
             val socialNotificationService = Intent(context, SocialNotificationService::class.java)
-//            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-//                startForegroundService(context,notificationIntent)
-//            } else {
-//                context.startService(notificationIntent)
-//            }
+
             CoroutineScope(Dispatchers.Main).launch {
-//                context.startService(notificationIntent)
+
                 socialNotificationService.putExtra("notification", note)
                 socialNotificationService.action =
                     ChatNotificationServiceActions.ON_ONE_ON_ONE_MESSAGE.name
-//                  ContextCompat.startForegroundService(context, notificationIntent)
+
                 ContextCompat.startForegroundService(context, socialNotificationService)
             }
             EventBus.getDefault().post(FlashNotificationsEvents(
@@ -461,17 +448,13 @@ class CoreChatSocketClient @Inject constructor(
             Log.d(TAG, "Starting Social Notification service")
 
             val socialNotificationService = Intent(context, SocialNotificationService::class.java)
-//            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-//                startForegroundService(context,notificationIntent)
-//            } else {
-//                context.startService(notificationIntent)
-//            }
+
             CoroutineScope(Dispatchers.Main).launch {
-//                context.startService(notificationIntent)
+
                 socialNotificationService.putExtra("notification", note)
                 socialNotificationService.action =
                     ChatNotificationServiceActions.ON_ONE_ON_ONE_MESSAGE.name
-//                  ContextCompat.startForegroundService(context, notificationIntent)
+
                 ContextCompat.startForegroundService(context, socialNotificationService)
             }
 
@@ -506,7 +489,6 @@ class CoreChatSocketClient @Inject constructor(
             val updatedAt = notificationData.getString("updatedAt")
             val owner = notificationData.getString("owner")
             val read = notificationData.getBoolean("read")
-            val type = notificationData.getString("type")
 
             // Extracting sender details
             val senderJson = notificationData.getJSONObject("sender")
@@ -520,14 +502,9 @@ class CoreChatSocketClient @Inject constructor(
 
             // Extracting suggested user details
             val dataJson = notificationData.getJSONObject("data")
-            val suggestedUserId = dataJson.getString("suggestedUserId")
             val suggestedUserJson = dataJson.getJSONObject("suggestedUser")
-            val suggestedUsername = suggestedUserJson.getString("username")
-            val suggestedEmail = suggestedUserJson.getString("email")
             val suggestedAvatarJson = suggestedUserJson.getJSONObject("avatar")
             val suggestedAvatarUrl = suggestedAvatarJson.getString("url")
-            val suggestedAvatarLocalPath = suggestedAvatarJson.getString("localPath")
-            val suggestedAvatarId = suggestedAvatarJson.getString("_id")
 
             // Constructing Notification object
             val note = Notification(
@@ -630,17 +607,13 @@ class CoreChatSocketClient @Inject constructor(
 
             val socialNotificationService = Intent(context, SocialNotificationService::class.java)
 
-//            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-//                startForegroundService(context,notificationIntent)
-//            } else {
-//                context.startService(notificationIntent)
-//            }
+
             CoroutineScope(Dispatchers.Main).launch {
-//                context.startService(notificationIntent)
+
                 socialNotificationService.putExtra("notification", note)
                 socialNotificationService.action =
                     ChatNotificationServiceActions.ON_ONE_ON_ONE_MESSAGE.name
-//                  ContextCompat.startForegroundService(context, notificationIntent)
+
                 ContextCompat.startForegroundService(context, socialNotificationService)
             }
 
@@ -681,8 +654,7 @@ class CoreChatSocketClient @Inject constructor(
             val avatarUrl = notificationData.getJSONObject("sender").getJSONObject("avatar").getString("url")
             val avatarId = notificationData.getJSONObject("sender").getJSONObject("avatar").getString("_id")
             val avatarLocalPath = ""
-//            val postId = notificationData.getJSONObject("data").getString("postId")
-//            val commentId = notificationData.getJSONObject("data").getString("commentId")
+
             val note = Notification(
                 _id = _id,
                 avatar = avatarUrl,
@@ -710,17 +682,13 @@ class CoreChatSocketClient @Inject constructor(
 
             val socialNotificationService = Intent(context, SocialNotificationService::class.java)
 
-//            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-//                startForegroundService(context,notificationIntent)
-//            } else {
-//                context.startService(notificationIntent)
-//            }
+
             CoroutineScope(Dispatchers.Main).launch {
-//                context.startService(notificationIntent)
+
                 socialNotificationService.putExtra("notification", note)
                 socialNotificationService.action =
                     ChatNotificationServiceActions.ON_ONE_ON_ONE_MESSAGE.name
-//                  ContextCompat.startForegroundService(context, notificationIntent)
+
                 ContextCompat.startForegroundService(context, socialNotificationService)
             }
 
@@ -753,7 +721,7 @@ class CoreChatSocketClient @Inject constructor(
             val createdAt = notificationData.getString("createdAt")
             val updatedAt = notificationData.getString("updatedAt")
             val owner = notificationData.getString("owner")
-//            val post = notificationData.getString("postId")
+
 
             val senderUsername = notificationData.getJSONObject("sender").getString("username")
             val senderEmail = notificationData.getJSONObject("sender").getString("email")
@@ -762,8 +730,7 @@ class CoreChatSocketClient @Inject constructor(
             val avatarUrl = notificationData.getJSONObject("sender").getJSONObject("avatar").getString("url")
             val avatarId = notificationData.getJSONObject("sender").getJSONObject("avatar").getString("_id")
             val avatarLocalPath = ""
-//            val postId = notificationData.getJSONObject("data").getString("postId")
-//            val commentId = notificationData.getJSONObject("data").getString("commentId")
+
 
             val note = Notification(
                 _id = _id,
@@ -792,17 +759,13 @@ class CoreChatSocketClient @Inject constructor(
 
             val socialNotificationService = Intent(context, SocialNotificationService::class.java)
 
-//            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-//                startForegroundService(context,notificationIntent)
-//            } else {
-//                context.startService(notificationIntent)
-//            }
+
             CoroutineScope(Dispatchers.Main).launch {
-//                context.startService(notificationIntent)
+
                 socialNotificationService.putExtra("notification", note)
                 socialNotificationService.action =
                     ChatNotificationServiceActions.ON_ONE_ON_ONE_MESSAGE.name
-//                  ContextCompat.startForegroundService(context, notificationIntent)
+
                 ContextCompat.startForegroundService(context, socialNotificationService)
             }
 
@@ -818,7 +781,7 @@ class CoreChatSocketClient @Inject constructor(
                 note.postId,
                 note.commentId))
 
-//            val event = FlashNotificationsEvents(note.sender.username,note.message,"onComment","onCommentPost",note.createdAt,note.avatar,note._id,note.sender._id,note.read,note.postId,note.commentId)
+
         } catch (e: JSONException) {
             // Handle JSON parsing errors here
             e.printStackTrace()
@@ -981,25 +944,13 @@ class CoreChatSocketClient @Inject constructor(
 
             Log.d(TAG, "Starting Chat Notification service")
 
-
-            // Start the NotificationService to show the notification
-//          val notificationIntent = Intent(context, PushNotificationService::class.java)
-//            notificationIntent.putExtra("message", message)
-//            notificationIntent.putExtra("isGroup", chatId)
-
             val chatNotificationService = Intent(context, ChatNotificationService::class.java)
 
-//            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-//                startForegroundService(context,notificationIntent)
-//            } else {
-//                context.startService(notificationIntent)
-//            }
-
             CoroutineScope(Dispatchers.Main).launch {
-//                context.startService(notificationIntent)
+
                 chatNotificationService.putExtra("message", message)
                 chatNotificationService.action = ChatNotificationServiceActions.ON_ONE_ON_ONE_MESSAGE.name
-//                ContextCompat.startForegroundService(context, notificationIntent)
+
                 ContextCompat.startForegroundService(context, chatNotificationService)
             }
 

@@ -80,10 +80,6 @@ class ChatReceiver : BroadcastReceiver() {
                             return@launch
                         }
                         is  com.uyscuti.social.notifications.reply.Result.Error -> {
-//                            Log.d("MyReceiver", "onReceive: there was an error sending the message : ${result.exception.message}")
-//                            withContext(Dispatchers.Main) {
-////                                NoteUtils.showToast(context, "Reply failed", false)
-//                            }
                             localStorage.clearChatId()
                         }
 
@@ -94,7 +90,7 @@ class ChatReceiver : BroadcastReceiver() {
             val message = NotificationCompat.MessagingStyle.Message(
                 input, System.currentTimeMillis(), person
             )
-            val notificationStyle = NotificationCompat.MessagingStyle(person).addMessage(message)
+            NotificationCompat.MessagingStyle(person).addMessage(message)
 
             if (context?.let {
                     ActivityCompat.checkSelfPermission(
@@ -103,19 +99,13 @@ class ChatReceiver : BroadcastReceiver() {
                     )
                 } != PackageManager.PERMISSION_GRANTED
             ) {
-                // TODO: Consider calling
-                //    ActivityCompat#requestPermissions
-                // here to request the missing permissions, and then overriding
-                //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-                //                                          int[] grantResults)
-                // to handle the case where the user grants the permission. See the documentation
-                // for ActivityCompat#requestPermissions for more details.
+
                 return
             }
             notificationManager.notify(
                 5858,
                 notificationBuilder
-//                    .setStyle(notificationStyle)
+
                     .setContentTitle("Sent!")
                     .setAutoCancel(true)
                     .setStyle(null)
@@ -124,12 +114,8 @@ class ChatReceiver : BroadcastReceiver() {
 
             // Cancel the original notification
             notificationManager.cancel(5858)
-//            stop
+
         }
-    }
-
-    private fun insertMessage(){
-
     }
 
 }

@@ -10,10 +10,9 @@ import java.net.URISyntaxException
 
 
 object ChatSocketManager {
+
     private const val SERVER_URL = "http://192.168.1.103:8080/"
     private var socket: Socket? = null
-
-//    val socketConnectedLiveData = MutableLiveData<Boolean>()
 
 
     val TAG = "ChatSocketManager"
@@ -77,11 +76,6 @@ object ChatSocketManager {
     fun disconnectSocket() {
         socket?.disconnect()
         _socketConnectedLiveData.postValue(false)
-    }
-
-    interface SocketEventListener {
-        fun onSocketConnect()
-        // Add more socket event listener methods here
     }
 
 }
