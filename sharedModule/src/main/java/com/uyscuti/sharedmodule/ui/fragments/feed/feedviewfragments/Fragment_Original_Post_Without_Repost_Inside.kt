@@ -493,7 +493,6 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
             // Setup other components
             setupRecyclerViews()
 
-
             // Hide UI elements
             EventBus.getDefault().post(HideAppBar(true))
             EventBus.getDefault().post(HideBottomNav(true))
@@ -505,7 +504,6 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
                 Log.d(TAG, "Bundle key: '$key' = ${value?.toString()?.take(100)}")
             }
             Log.d(TAG, "=== END DEBUG ===")
-
 
             post = try {
                 // Try ARG_ORIGINAL_POST first
@@ -559,17 +557,18 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
 
                 currentPost = postData
 
-                // Get the actual comment count
-                totalMixedComments = if (postData.originalPost.isNotEmpty() == true) {
+                // FIX: Handle null originalPost safely
+                totalMixedComments = if (!postData.originalPost.isNullOrEmpty()) {
                     val originalPost = postData.originalPost[0]
                     Log.d(TAG, "Original post comment count: ${originalPost.commentCount}")
                     originalPost.commentCount ?: postData.comments
                 } else {
-                    postData.comments ?: postData.comments
+                    // This is already an original post (not a repost), use its own comment count
+                    Log.d(TAG, "No nested original post, using direct comment count")
+                    postData.comments ?: 0
                 }
 
                 Log.d(TAG, "Final totalMixedComments: $totalMixedComments")
-
 
                 // CRITICAL: Force immediate UI updates with actual values
                 Handler(Looper.getMainLooper()).post {
@@ -653,8 +652,6 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
                 setupShareButton(postData)
                 setupRepostButton(postData)
                 setupClickListeners(postData)
-
-
 
                 // Force another refresh after everything is set up
                 Handler(Looper.getMainLooper()).postDelayed({
@@ -1449,7 +1446,8 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
         val feedOwnerUsername: String
 
         when {
-            data.originalPost.isNotEmpty() -> {
+            // FIX: Use safe null check
+            !data.originalPost.isNullOrEmpty() -> {
                 val originalAuthor = data.originalPost[0].author
                 feedOwnerId = originalAuthor.owner
                 feedOwnerUsername = originalAuthor.account.username
@@ -1481,7 +1479,7 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
             Log.d(TAG, "Initial setup: Follow button shown for $feedOwnerId (@$feedOwnerUsername) - Text: '${followButton.text}'")
         }
     }
-
+    
     private fun updateFollowButtonUI() {
         if (isFollowing) {
             followButton.visibility = View.GONE
