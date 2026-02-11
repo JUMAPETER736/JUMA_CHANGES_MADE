@@ -121,6 +121,61 @@ class GetFeedViewModel @Inject constructor(private val retrofitInstance: Retrofi
     }
 
 
+     //Synchronize share state across all feeds
+
+    fun toggleShareInAllFeeds(postId: String, isShared: Boolean, shareCount: Int) {
+        Log.d(TAG, "toggleShareInAllFeeds: postId=$postId, isShared=$isShared, count=$shareCount")
+
+        // Update in allFeedData
+        allFeedData.find { it._id == postId }?.let { post ->
+            post.isShared = isShared
+            post.shareCount = shareCount
+            Log.d(TAG, "Updated share in allFeedData for post: $postId")
+        }
+
+        // Update in myFeedData
+        myFeedData.find { it._id == postId }?.let { post ->
+            post.isShared = isShared
+            post.shareCount = shareCount
+            Log.d(TAG, "Updated share in myFeedData for post: $postId")
+        }
+
+        // Update in allFavoriteFeedData
+        allFavoriteFeedData.find { it._id == postId }?.let { post ->
+            post.isShared = isShared
+            post.shareCount = shareCount
+            Log.d(TAG, "Updated share in allFavoriteFeedData for post: $postId")
+        }
+    }
+
+
+     // Synchronize repost state across all feeds Called when user reposts/un-reposts a post
+
+    fun toggleRepostInAllFeeds(postId: String, isReposted: Boolean, repostCount: Int) {
+        Log.d(TAG, "toggleRepostInAllFeeds: postId=$postId, isReposted=$isReposted, count=$repostCount")
+
+        // Update in allFeedData
+        allFeedData.find { it._id == postId }?.let { post ->
+            post.isReposted = isReposted
+            post.repostCount = repostCount
+            Log.d(TAG, "Updated repost in allFeedData for post: $postId")
+        }
+
+        // Update in myFeedData
+        myFeedData.find { it._id == postId }?.let { post ->
+            post.isReposted = isReposted
+            post.repostCount = repostCount
+            Log.d(TAG, "Updated repost in myFeedData for post: $postId")
+        }
+
+        // Update in allFavoriteFeedData
+        allFavoriteFeedData.find { it._id == postId }?.let { post ->
+            post.isReposted = isReposted
+            post.repostCount = repostCount
+            Log.d(TAG, "Updated repost in allFavoriteFeedData for post: $postId")
+        }
+    }
+
     // Synchronized bookmark toggle across all feeds
     fun toggleBookmarkInAllFeeds(postId: String, isBookmarked: Boolean, bookmarkCount: Int) {
         Log.d(TAG, "toggleBookmarkInAllFeeds: postId=$postId, isBookmarked=$isBookmarked, count=$bookmarkCount")
@@ -168,90 +223,6 @@ class GetFeedViewModel @Inject constructor(private val retrofitInstance: Retrofi
             if (position != -1) {
                 allFavoriteFeedData.removeAt(position)
                 Log.d(TAG, "Removed post from favorites at position $position: $postId")
-            }
-        }
-    }
-
-    // Replace your existing toggleRepostInAllFeeds method with this:
-    fun toggleRepostInAllFeeds(postId: String, isReposted: Boolean, repostCount: Int) {
-        Log.d(TAG, "toggleRepostInAllFeeds: postId=$postId, isReposted=$isReposted, count=$repostCount")
-
-        // Update in allFeedData
-        allFeedData.find { it._id == postId }?.let { post ->
-            post.isReposted = isReposted
-
-            // Only update count if this is NOT a repost wrapper
-            if (post.originalPost.isNullOrEmpty()) {
-                post.repostCount = repostCount
-                Log.d(TAG, "Updated repost count in allFeedData for regular post: $postId")
-            } else {
-                Log.d(TAG, "Skipped repost count update for repost wrapper: $postId (preserving original post's count)")
-            }
-        }
-
-        // Update in myFeedData
-        myFeedData.find { it._id == postId }?.let { post ->
-            post.isReposted = isReposted
-
-            if (post.originalPost.isNullOrEmpty()) {
-                post.repostCount = repostCount
-                Log.d(TAG, "Updated repost count in myFeedData for regular post: $postId")
-            } else {
-                Log.d(TAG, "Skipped repost count update for repost wrapper: $postId")
-            }
-        }
-
-        // Update in allFavoriteFeedData
-        allFavoriteFeedData.find { it._id == postId }?.let { post ->
-            post.isReposted = isReposted
-
-            if (post.originalPost.isNullOrEmpty()) {
-                post.repostCount = repostCount
-                Log.d(TAG, "Updated repost count in allFavoriteFeedData for regular post: $postId")
-            } else {
-                Log.d(TAG, "Skipped repost count update for repost wrapper: $postId")
-            }
-        }
-    }
-
-    // Replace your existing toggleShareInAllFeeds method with this:
-    fun toggleShareInAllFeeds(postId: String, isShared: Boolean, shareCount: Int) {
-        Log.d(TAG, "toggleShareInAllFeeds: postId=$postId, isShared=$isShared, count=$shareCount")
-
-        // Update in allFeedData
-        allFeedData.find { it._id == postId }?.let { post ->
-            post.isShared = isShared
-
-            // Only update count if this is NOT a repost wrapper
-            if (post.originalPost.isNullOrEmpty()) {
-                post.shareCount = shareCount
-                Log.d(TAG, "Updated share count in allFeedData for regular post: $postId")
-            } else {
-                Log.d(TAG, "Skipped share count update for repost wrapper: $postId (preserving original post's count)")
-            }
-        }
-
-        // Update in myFeedData
-        myFeedData.find { it._id == postId }?.let { post ->
-            post.isShared = isShared
-
-            if (post.originalPost.isNullOrEmpty()) {
-                post.shareCount = shareCount
-                Log.d(TAG, "Updated share count in myFeedData for regular post: $postId")
-            } else {
-                Log.d(TAG, "Skipped share count update for repost wrapper: $postId")
-            }
-        }
-
-        // Update in allFavoriteFeedData
-        allFavoriteFeedData.find { it._id == postId }?.let { post ->
-            post.isShared = isShared
-
-            if (post.originalPost.isNullOrEmpty()) {
-                post.shareCount = shareCount
-                Log.d(TAG, "Updated share count in allFavoriteFeedData for regular post: $postId")
-            } else {
-                Log.d(TAG, "Skipped share count update for repost wrapper: $postId")
             }
         }
     }
@@ -393,29 +364,6 @@ class GetFeedViewModel @Inject constructor(private val retrofitInstance: Retrofi
 
     fun clearAllFeedData() {
         allFeedData.clear()
-    }
-
-    // Add this method to GetFeedViewModel (add it after toggleShareInAllFeeds)
-    fun updateRepostStatusOnly(postId: String, isReposted: Boolean) {
-        Log.d(TAG, "updateRepostStatusOnly: postId=$postId, isReposted=$isReposted")
-
-        // Update in allFeedData
-        allFeedData.find { it._id == postId }?.let { post ->
-            post.isReposted = isReposted
-            Log.d(TAG, "Updated repost status only in allFeedData for post: $postId")
-        }
-
-        // Update in myFeedData
-        myFeedData.find { it._id == postId }?.let { post ->
-            post.isReposted = isReposted
-            Log.d(TAG, "Updated repost status only in myFeedData for post: $postId")
-        }
-
-        // Update in allFavoriteFeedData
-        allFavoriteFeedData.find { it._id == postId }?.let { post ->
-            post.isReposted = isReposted
-            Log.d(TAG, "Updated repost status only in allFavoriteFeedData for post: $postId")
-        }
     }
 
 }
