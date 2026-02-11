@@ -2,11 +2,9 @@ package com.uyscuti.social.core.pushnotifications.socket.chatsocket
 
 import android.content.Context
 import android.content.Intent
-import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
-import androidx.annotation.RequiresApi
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Observer
 import com.google.gson.Gson
@@ -47,12 +45,8 @@ import org.greenrobot.eventbus.EventBus
 import org.json.JSONException
 import org.json.JSONObject
 import java.text.SimpleDateFormat
-import java.time.LocalDateTime
-import java.time.ZonedDateTime
-import java.time.format.DateTimeFormatter
 import java.util.Date
 import java.util.Locale
-import java.util.TimeZone
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.random.Random
@@ -962,37 +956,10 @@ class CoreChatSocketClient @Inject constructor(
             // Handle JSON parsing errors here
             e.printStackTrace()
         }
-//        val message = messageData.getString("message")
-//        chatListener?.onNewMessage("There is a New Message")
-    }
-
-    private suspend fun updateLastMessage(chatId: String, imageMessage: MessageEntity) {
-//        if (group){
-//            val dialog = groupDialogRepository.getDialog(chatId)
-//            groupDialogRepository.updateLastMessage(dialog,imageMessage)
-//        } else {
-//            val dialog = dialogRepository.getDialog(chatId)
-//            dialogRepository.updateLastMessage(dialog,imageMessage)
-//        }
-
-        try {
-            val dialog = groupDialogRepository.getDialog(chatId)
-            groupDialogRepository.updateLastMessage(dialog, imageMessage)
-        } catch (e: Exception) {
-            // Handle the exception, and try getting the dialog from dialogRepository
-            e.printStackTrace()
-            try {
-                val dialog = dialogRepository.getDialog(chatId)
-                dialogRepository.updateLastMessage(dialog, imageMessage)
-            } catch (e: Exception) {
-                // Handle the exception from dialogRepository, if needed
-                e.printStackTrace() // or log the exception
-            }
-        }
 
     }
 
-    private suspend fun updateLastMessageForGroup(chatId: String, imageMessage: MessageEntity) {
+    private fun updateLastMessageForGroup(chatId: String, imageMessage: MessageEntity) {
         try {
             val dialog = groupDialogRepository.getDialog(chatId)
             groupDialogRepository.updateLastMessage(dialog, imageMessage)
@@ -1011,23 +978,6 @@ class CoreChatSocketClient @Inject constructor(
             e.printStackTrace() // or log the exception
         }
     }
-
-//    private fun insertNewChat(chatId: String, isGroup: Boolean){
-//        try {
-//            if (isGroup){
-//                groupDialogRepository.insertNewChat(chatId)
-//            } else {
-//                dialogRepository.insertDialog()
-//            }
-//        } catch (e:Exception){
-//            e.printStackTrace()
-//        }
-//    }
-
-//    private suspend fun chatExists(chatId: String): Boolean {
-//        val dialog = groupDialogRepository.checkGroup(chatId) ?: dialogRepository.checkDialog(chatId)
-//        return dialog != null
-//    }
 
 
     private suspend fun chatExists(chatId: String): Pair<Boolean, Boolean> {
@@ -1061,25 +1011,7 @@ class CoreChatSocketClient @Inject constructor(
             var docUrl: String? = null
 
             var text = ""
-            var senderName = ""
-
-//            try {
-//                val dialog = groupDialogRepository.getDialog(dialogToUpdate)
-//
-////            Log.d(TAG, "dialog to update: $dialog")
-//
-//                senderName = message.sender.username
-//
-//                if (dialog.users.size > 1) {
-//                    text = if (senderName.isNotEmpty()) {
-//                        "$senderName: " // Highlighted sender's name
-//                    } else {
-//                        "Anonymous:"
-//                    }
-//                }
-//            } catch (e: Exception) {
-//                e.printStackTrace()
-//            }
+            ""
 
 
             // Handle attachments and assign URLs
@@ -1097,7 +1029,7 @@ class CoreChatSocketClient @Inject constructor(
                             FileType.AUDIO -> {
                                 audioUrl = attachment.url
                                 Log.d(TAG, "Audio, Path Of Image Received: $audioUrl")
-//                                audioList.add(audioUrl)
+
                                 text += "🎵 Audio"
                             }
 
@@ -1160,13 +1092,10 @@ class CoreChatSocketClient @Inject constructor(
             }
 
 
-//            updateLastMessage(dialogToUpdate, messageEntity)
-//            dialogRepository.incrementUnreadCount(dialogToUpdate)
-//            dialogRepository.updateLastMessage(dialog, messageEntity)
         }
     }
 
-    private suspend fun fetchAndInsertNewDialog(chatId: String, lastMessageEntity: MessageEntity) {
+    private fun fetchAndInsertNewDialog(chatId: String, lastMessageEntity: MessageEntity) {
         var filteredUsers: List<UserEntity> = emptyList()
         CoroutineScope(Dispatchers.IO).launch {
             try {
@@ -1183,11 +1112,11 @@ class CoreChatSocketClient @Inject constructor(
                         var chatName = ""
                         var chatAvatar = ""
 
-                        var text = ""
-                        var senderName = ""
+                        ""
+                        ""
 
                         if (!chat.isGroupChat) {
-//                                    firstUser = users.firstOrNull { it.id != userId }
+
                             chatName = firstUser.name
                                 ?: "" // Set dialogName to the name of the first user or an empty string if there are no users.
                             Log.d(TAG, "CHAT USERS $users")
@@ -1296,7 +1225,7 @@ class CoreChatSocketClient @Inject constructor(
         }
     }
 
-    private fun com.uyscuti.social.network.api.models.Message.toMessageEntity(): MessageEntity {
+    private fun Message.toMessageEntity(): MessageEntity {
 
         val createdAt = convertIso8601ToUnixTimestamp(createdAt)
 
@@ -1316,7 +1245,7 @@ class CoreChatSocketClient @Inject constructor(
                     when (getFileType(attachment.url)) {
                         FileType.IMAGE -> {
                             imageUrl = attachment.url
-//                            size = getFileSize(attachment.url)
+
 
                             Log.d(
                                 "Received Attachment ",
@@ -1377,20 +1306,6 @@ class CoreChatSocketClient @Inject constructor(
             docUrl = docUrl,
             fileSize = size
         )
-    }
-
-    @RequiresApi(Build.VERSION_CODES.O)
-    private fun convertTime(iso8601Date: String): Long {
-        val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
-        val localDateTime = LocalDateTime.parse(iso8601Date, formatter)
-
-        // Explicitly set the input date's time zone to UTC
-        val utcDateTime = ZonedDateTime.of(localDateTime, java.time.ZoneOffset.UTC)
-
-        // Convert UTC to the local time zone
-        val localZonedDateTime = utcDateTime.withZoneSameInstant(TimeZone.getDefault().toZoneId())
-
-        return localZonedDateTime.toInstant().toEpochMilli()
     }
 
     private fun convertIso8601ToUnixTimestamp(iso8601Date: String): Long {
@@ -1456,7 +1371,6 @@ class CoreChatSocketClient @Inject constructor(
                 // Add your logic to process the String payload
                 chatListener?.onDeliveryReport()
 
-//                handleChange(arg,"Delivered")
 
             }
         }
@@ -1495,11 +1409,6 @@ class CoreChatSocketClient @Inject constructor(
         CoroutineScope(Dispatchers.IO).launch {
             messageRepository.processPendingMessages(chatId)
 
-//            Log.d("Socket", "Loaded Messages Size : ${messages.size}")
-//
-//            if (messages.isNotEmpty()){
-//                updateMessageStatus(status,messages)
-//            }
         }
     }
 
@@ -1522,27 +1431,6 @@ class CoreChatSocketClient @Inject constructor(
         Log.d("Socket", "on Last Seen Info: $data")
     }
 
-
-    // Example function to send a typing event
-    fun sendTypingEvent(chatId: String) {
-        // Example payload for the typing event
-        val typingData = JSONObject().apply {
-            put("chatId", chatId)
-        }
-
-        // Emit the TYPING_EVENT
-        socket.emit("typing", typingData)
-    }
-
-    // Example function to send a stop typing event
-    fun sendStopTypingEvent(chatId: String) {
-        // Example payload for the stop typing event
-        val stopTypingData = JSONObject().apply {
-            put("chatId", chatId)
-        }
-        // Emit the STOP_TYPING_EVENT
-        socket.emit("stopTyping", stopTypingData)
-    }
 
     fun sendDeliveryReport(chatId: String, senderId: String) {
         val delivery = JSONObject().apply {
@@ -1582,11 +1470,7 @@ class CoreChatSocketClient @Inject constructor(
         }
     }
 
-    // Other functions...
 
-    fun observeSocketAvailability(listener: OnSocketAvailableListener) {
-        onSocketAvailableListeners.add(listener)
-    }
 
     interface OnSocketAvailableListener {
         fun onSocketAvailable(socket: Socket?)
