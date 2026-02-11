@@ -343,7 +343,7 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
 
         Log.d(TAG, "updateCommentCount: Successfully updated UI to $totalMixedComments")
     }
-    
+
 
     override fun onResume() {
         super.onResume()
