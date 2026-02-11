@@ -343,31 +343,7 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
 
         Log.d(TAG, "updateCommentCount: Successfully updated UI to $totalMixedComments")
     }
-
-    private fun handleFeedCommentClicked(position: Int, post: Post?) {
-        Log.d(TAG, "handleFeedCommentClicked: Posting comment event for post ${post?._id}")
-        try {
-            EventBus.getDefault().post(FeedCommentClicked(position,
-                post as Post
-            ))
-
-            // Immediately try to refresh comment count from server
-            val postIdToFetch = if (post?.originalPost?.isNotEmpty() == true) {
-                post?.originalPost[0]?._id ?: 0
-            } else {
-                post?._id ?: 0
-            }
-
-            // Delay the fetch slightly to allow UI to settle
-            Handler(Looper.getMainLooper()).postDelayed({
-                fetchAndUpdateCommentCount(postIdToFetch.toString())
-            }, 500)
-
-        } catch (e: Exception) {
-            Log.e(TAG, "Error posting comment event: ${e.message}")
-            e.printStackTrace()
-        }
-    }
+    
 
     override fun onResume() {
         super.onResume()
