@@ -56,11 +56,8 @@ class ChatNotificationService : Service() {
 
     private val handler = Handler(Looper.getMainLooper())
 
-// Later in your code:
 
-//    private val serviceScope = CoroutineScope(
-//        Dispatchers.IO + SupervisorJob()
-//    )
+
 
     private var isForegroundStarted = false
 

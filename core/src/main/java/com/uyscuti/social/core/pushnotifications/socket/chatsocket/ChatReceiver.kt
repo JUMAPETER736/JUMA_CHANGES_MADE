@@ -15,11 +15,9 @@ import androidx.core.app.Person
 import com.uyscuti.social.network.eventmodels.DirectReplyEvent
 
 
-import com.uyscuti.social.network.interfaces.DirectReplyListener
 import com.uyscuti.social.network.utils.LocalStorage
 import com.uyscuti.social.notifications.di.RESULT_KEY
 import com.uyscuti.social.notifications.reply.ReplyMessageRepository
-import com.uyscuti.social.notifications.reply.Result
 import com.uyscuti.social.notifications.utils.NoteUtils
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
@@ -44,10 +42,7 @@ class ChatReceiver : BroadcastReceiver() {
     @Inject
     lateinit var localStorage: LocalStorage
 
-    private var directReplyListener: DirectReplyListener? = null
 
-//    @Inject
-//    lateinit var messageRepository: MessageRepository
 
     @Inject
     lateinit var replyMessageRepository: ReplyMessageRepository
@@ -59,23 +54,20 @@ class ChatReceiver : BroadcastReceiver() {
             val input = remoteInput.getCharSequence(RESULT_KEY).toString()
 
             val chatI = intent?.getStringExtra("chatId")
-//            val results = RemoteInput.getResultsFromIntent(intent, RESULT_KEY)
-//            val text = results.getString(RESULT_KEY)
+
 
             Log.d("MyReceiver", "onReceive ChatId: $chatI")
 
             val chatId = localStorage.getChatId()
 
-//            Log.d("MyReceiver", "onReceive: chatId $chatId")
-//            directReplyListener?.onDirectReply(input, chatId)
-            // Post the event to EventBus
+
             EventBus.getDefault().post(DirectReplyEvent(input, chatId))
 
             CoroutineScope(Dispatchers.IO).launch {
                 if (chatId.length >= 10 ) {
-                    when(val result = replyMessageRepository.sendReply(chatId, input)){
+                    when(replyMessageRepository.sendReply(chatId, input)){
                         is  com.uyscuti.social.notifications.reply.Result.Success -> {
-//                            Log.d("MyReceiver", "onReceive: message sent successfully")
+
 
                             withContext(Dispatchers.Main) {
                                 NoteUtils.showToast(context, "Reply sent", false)
