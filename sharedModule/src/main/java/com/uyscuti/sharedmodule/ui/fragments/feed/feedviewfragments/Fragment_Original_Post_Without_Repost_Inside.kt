@@ -246,14 +246,12 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
     private val Post.safeShareCount: Int
         get() = shareCount ?: 0
 
-
-
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun onCommentsLoaded(event: CommentsLoadedEvent) {
         Log.d(TAG, "onCommentsLoaded: Received comments loaded event with ${event.commentCount} comments for post ${event.postId}")
 
-        // Check if this event is for the current post
-        val currentPostId = if (currentPost?.originalPost?.isNotEmpty() == true) {
+        // FIX: Safe null check
+        val currentPostId = if (!currentPost?.originalPost.isNullOrEmpty()) {
             currentPost?.originalPost?.get(0)?._id
         } else {
             currentPost?._id
@@ -271,8 +269,8 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
     fun onCommentCountUpdated(event: CommentCountUpdatedEvent) {
         Log.d(TAG, "onCommentCountUpdated: Received count ${event.commentCount} for post ${event.postId}")
 
-        // Check if this event is for the current post
-        val currentPostId = if (currentPost?.originalPost?.isNotEmpty() == true) {
+        // FIX: Safe null check
+        val currentPostId = if (!currentPost?.originalPost.isNullOrEmpty()) {
             currentPost?.originalPost?.get(0)?._id
         } else {
             currentPost?._id
@@ -281,6 +279,31 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
         if (currentPostId == event.postId) {
             Log.d(TAG, "onCommentCountUpdated: Updating UI for matching post")
             updateCommentCount(event.commentCount)
+        }
+    }
+
+    private fun handleFeedCommentClicked(position: Int, post: Post?) {
+        Log.d(TAG, "handleFeedCommentClicked: Posting comment event for post ${post?._id}")
+        try {
+            EventBus.getDefault().post(FeedCommentClicked(position,
+                post as Post
+            ))
+
+            // FIX: Safe null check
+            val postIdToFetch = if (!post?.originalPost.isNullOrEmpty()) {
+                post?.originalPost?.get(0)?._id ?: 0
+            } else {
+                post?._id ?: 0
+            }
+
+            // Delay the fetch slightly to allow UI to settle
+            Handler(Looper.getMainLooper()).postDelayed({
+                fetchAndUpdateCommentCount(postIdToFetch.toString())
+            }, 500)
+
+        } catch (e: Exception) {
+            Log.e(TAG, "Error posting comment event: ${e.message}")
+            e.printStackTrace()
         }
     }
 
@@ -350,7 +373,8 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
         super.onResume()
 
         post?.let { safePost ->
-            val postIdToFetch = if (safePost.originalPost.isNotEmpty() == true) {
+            // FIX: Safe null check
+            val postIdToFetch = if (!safePost.originalPost.isNullOrEmpty()) {
                 safePost.originalPost[0]._id
             } else {
                 safePost._id
@@ -360,7 +384,6 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
             }
         }
     }
-
     private val feedClickListener: OnFeedClickListener by lazy {
         (activity as? OnFeedClickListener) ?:
         object : OnFeedClickListener {

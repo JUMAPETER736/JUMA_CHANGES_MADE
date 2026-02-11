@@ -1969,40 +1969,6 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
             })
     }
 
-    // For Post type
-    private fun navigateToFragment_Original_Post_Without_Repost_Inside(data: Post) {
-        try {
-            Log.d(TAG, "Navigating to original Post for Post ID: ${data._id}")
-
-            val fragment = Fragment_Original_Post_Without_Repost_Inside().apply {
-                arguments = Bundle().apply {
-                    putString(Fragment_Original_Post_Without_Repost_Inside.ARG_ORIGINAL_POST, Gson().toJson(data))
-                    putString("post_id", data._id)
-                    putString("post_data", Gson().toJson(data))
-                    putInt("adapter_position", 0)
-                    putString("navigation_source", "repost_card")
-                    putLong("navigation_timestamp", System.currentTimeMillis())
-                }
-            }
-
-            val fragmentManager = parentFragmentManager
-            fragmentManager.beginTransaction()
-                .setCustomAnimations(
-                    R.anim.slide_in_right,
-                    R.anim.slide_out_left,
-                    R.anim.slide_in_left,
-                    R.anim.slide_out_right
-                )
-                .replace(R.id.frame_layout, fragment)
-                .addToBackStack("fragment_original_post_without_repost_inside")
-                .commit()
-            Log.d(TAG, "Successfully navigated to fragment for post ID: ${data._id}")
-        } catch (e: Exception) {
-            Log.e(TAG, "Error navigating to original post fragment: ${e.message}", e)
-            Toast.makeText(requireContext(), "Unable to load post", Toast.LENGTH_SHORT).show()
-        }
-    }
-
     // For OriginalPost type (overload)
     private fun navigateToFragment_Original_Post_Without_Repost_Inside(data: OriginalPost) {
         try {
