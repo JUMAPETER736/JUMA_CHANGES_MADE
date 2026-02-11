@@ -75,7 +75,6 @@ class CoreChatSocketClient @Inject constructor(
     private val onSocketAvailableListeners = mutableListOf<OnSocketAvailableListener>()
 
     private var messageRepository: MessageRepository = MessageRepository(
-        context,
         ChatDatabase.getInstance(context).messageDao(),
         retrofitInstance
     )
@@ -86,8 +85,7 @@ class CoreChatSocketClient @Inject constructor(
     )
     private var groupDialogRepository: GroupDialogRepository = GroupDialogRepository(
         ChatDatabase.getInstance(context).groupDialogDao(),
-        retrofitInstance,
-        localStorage
+        retrofitInstance
     )
 
     val TAG = "CoreChatSocketClient"

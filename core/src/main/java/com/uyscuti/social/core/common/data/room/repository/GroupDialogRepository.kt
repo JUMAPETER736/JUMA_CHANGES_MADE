@@ -10,7 +10,6 @@ import com.uyscuti.social.core.local.utils.FileType
 import com.uyscuti.social.network.api.models.Message
 import com.uyscuti.social.network.api.models.User
 import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
-import com.uyscuti.social.network.utils.LocalStorage
 
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -18,8 +17,7 @@ import java.util.concurrent.CancellationException
 
 class GroupDialogRepository(
     private val groupDialogDao: GroupDialogDao,
-    retrofitInstance: RetrofitInstance,
-    private val localStorage: LocalStorage
+    retrofitInstance: RetrofitInstance
 ) {
 
     private val apiService = retrofitInstance.apiService

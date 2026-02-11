@@ -1,8 +1,5 @@
 package com.uyscuti.social.core.common.data.room.repository
 
-import android.content.Context
-import android.content.SharedPreferences
-import android.media.MediaMetadataRetriever
 import android.util.Log
 import androidx.lifecycle.LiveData
 import com.uyscuti.social.core.common.data.room.dao.MessageDao
@@ -15,25 +12,17 @@ import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
 
 
 class MessageRepository(
-    private val context: Context,
     private val messageDao: MessageDao,
     retrofitInstance: RetrofitInstance
 ) {
 
     private val apiService = retrofitInstance.apiService
-
-    private val audioList = ArrayList<String>()
-
-    fun getMessagesByChatId(chatId: String): LiveData<List<MessageEntity>> {
-        return messageDao.getMessagesByChatId(chatId)
-    }
 
     suspend fun getMessagesListByChatId(chatId: String): List<MessageEntity> {
         return messageDao.getMessagesListByChatId(chatId)
@@ -58,7 +47,7 @@ class MessageRepository(
         }
     }
 
-    suspend fun markMessagesDeleted(ids: List<String>){
+    fun markMessagesDeleted(ids: List<String>){
         try {
             ids.map { messageId ->
                 val message = messageDao.getMessageById(messageId)
@@ -84,20 +73,6 @@ class MessageRepository(
         try {
             val pendingMessages = messageDao.getMessagesListByChatId(chatId)
 
-//            Log.d("Socket", "Loaded Messages To update Size : ${pendingMessages.size}")
-
-//            pendingMessages.map {
-//                Log.d("Socket", "Message Status : ${it.status}")
-//            }
-
-//            val deliveredMessages = pendingMessages.filter { it.status == "Seen"  }
-
-//            Log.d("Socket", "Already Seen Messages Size : ${deliveredMessages.size}")
-
-
-//            val messagesToUpdate = pendingMessages.filter { it.status != "Seen" }
-
-//            Log.d("Socket", " unSeen Messages Size : ${messagesToUpdate.size}")
 
             if (pendingMessages.isNotEmpty()) {
                 // Update status to "Delivered"
@@ -117,14 +92,6 @@ class MessageRepository(
         } catch (e: Exception) {
             e.printStackTrace()
         }
-    }
-
-    suspend fun getMessagesCount(): Int {
-        return messageDao.getMessageCountSuspend()
-    }
-
-    suspend fun getChatMessagesCount(chatId: String): Int {
-        return messageDao.getMessageCountByChatIdSuspend(chatId)
     }
 
 
@@ -149,8 +116,6 @@ class MessageRepository(
 
         var text = ""
 
-//        text += content
-
 
         // Handle attachments and assign URLs
         if (attachments != null && attachments?.isNotEmpty() == true) {
@@ -161,27 +126,26 @@ class MessageRepository(
                     when (fileType) {
                         FileType.IMAGE -> {
                             imageUrl = attachment.url
-//                            Log.d(TAG, "Image, Path Of Image Received: $imageUrl")
+
                             text += "📷 Image"
                         }
 
                         FileType.AUDIO -> {
                             audioUrl = attachment.url
-//                            Log.d(TAG, "Audio, Path Of Image Received: $audioUrl")
-//                            audioList.add(audioUrl)
+
                             text += "🎵 Audio"
                         }
 
                         FileType.VIDEO -> {
                             videoUrl = attachment.url
-//                            Log.d(TAG, "Video, Path Of Image Received: $videoUrl")
+
                             text += "🎬 Video"
 
                         }
 
                         FileType.DOCUMENT -> {
                             docUrl = attachment.url
-//                            Log.d(TAG, "Document, Path Of Image Received: $docUrl")
+
                             text += "📄 Document"
 
                         }
@@ -233,19 +197,19 @@ class MessageRepository(
         }
     }
 
-    suspend fun getSendingMessages(chatId: String): LiveData<List<MessageEntity>> {
+    fun getSendingMessages(chatId: String): LiveData<List<MessageEntity>> {
         return messageDao.getSendingMessagesByChatId(chatId)
     }
 
-    suspend fun getTempMessages(name: String): LiveData<List<MessageEntity>> {
+    fun getTempMessages(name: String): LiveData<List<MessageEntity>> {
         return messageDao.getTempMessagesByChatId(name)
     }
 
-    suspend fun getPendingMessages(chatId: String): List<MessageEntity> {
+    fun getPendingMessages(chatId: String): List<MessageEntity> {
         return messageDao.getPendingMessagesByChatId(chatId)
     }
 
-    suspend fun updateMessageStatus(message: MessageEntity) {
+    fun updateMessageStatus(message: MessageEntity) {
         message.status = "Sent"
         messageDao.updateMessageStatus(message)
     }
@@ -258,22 +222,10 @@ class MessageRepository(
         try {
             val pendingMessages = messageDao.getPendingMessages(chatId)
 
-//            Log.d("Socket", "Loaded Messages To update Size : ${pendingMessages.size}")
-
-//            pendingMessages.map {
-//                Log.d("Socket", "Message Status : ${it.status}")
-//            }
-
-//            val deliveredMessages = pendingMessages.filter { it.status == "Seen"  }
-
-//            Log.d("Socket", "Already Seen Messages Size : ${deliveredMessages.size}")
-
 
             val messagesToUpdate = pendingMessages.filter { it.status != "Seen" }
 
-//            Log.d("Socket", " unSeen Messages Size : ${messagesToUpdate.size}")
-
-            if (messagesToUpdate.isNotEmpty()) {
+           if (messagesToUpdate.isNotEmpty()) {
                 // Update status to "Delivered"
 
                 val updatedMessages = messagesToUpdate.map { it.copy(status = "Seen") }
@@ -287,16 +239,12 @@ class MessageRepository(
     }
 
 
-    suspend fun updateMessage(message: MessageEntity) {
+    fun updateMessage(message: MessageEntity) {
         messageDao.updateMessageStatus(message)
     }
 
-    suspend fun getMessageByMessageId(chatId: String): MessageEntity? {
+    fun getMessageByMessageId(chatId: String): MessageEntity? {
         return messageDao.getMessageById(chatId)
-    }
-
-    fun getLastMessageByChatId(chatId: String): LiveData<MessageEntity?> {
-        return messageDao.getLastMessageByChatId(chatId)
     }
 
     suspend fun getLastMessage(chatId: String): MessageEntity? {
@@ -307,11 +255,7 @@ class MessageRepository(
         return messageDao.getLastMessage(chatId, myId)
     }
 
-    suspend fun getMessageById(chatId: String, messageId: String): Flow<MessageEntity?> {
-        return messageDao.getMessageByChatIdAndId(chatId, messageId)
-    }
-
-    suspend fun clearAll() {
+    fun clearAll() {
         messageDao.deleteAll()
     }
 
@@ -337,23 +281,6 @@ class MessageRepository(
                         insertMessages(messages.map { it.toMessageEntity() })
                     }
 
-//                    withContext(NonCancellable) {
-//                        messages?.filter { message ->
-//                            message.attachments?.any { getFileType(it.url) == FileType.AUDIO } == true
-//                        }?.forEach { mes ->
-//                            mes.attachments?.filter { getFileType(it.url) == FileType.AUDIO }
-//                                ?.forEach {
-//                                    // This assumes the audio URL is available in the `url` property of the attachment
-//                                    val audioUrl = it.url
-//                                    // Add the audio URL to the list
-//                                    audioList.add(audioUrl)
-//                                }
-//                        }
-//                        audioList.forEach {
-////                            val duration = getCachedOrCalculateAudioDuration(context, it)
-////                            Log.d("TAG", "Audio Duration : $duration")
-//                        }
-//                    }
                 }
             } catch (e: Exception) {
                 // Handle network or API call exception
@@ -362,57 +289,5 @@ class MessageRepository(
             }
         }
     }
-
-    private suspend fun getCachedOrCalculateAudioDuration(
-        context: Context,
-        audioFilePath: String
-    ): Long {
-        // Create or obtain a reference to the SharedPreferences
-        val preferences: SharedPreferences =
-            context.getSharedPreferences("audio_duration_cache", Context.MODE_PRIVATE)
-
-        // Check if the cache contains the duration for the given audioFilePath
-        if (preferences.contains(audioFilePath)) {
-            return preferences.getLong(audioFilePath, 0)
-        }
-
-        val startTime = System.currentTimeMillis()
-        try {
-            val retriever = MediaMetadataRetriever()
-            retriever.setDataSource(audioFilePath)
-
-            val durationStr =
-                retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
-            if (durationStr != null) {
-                val endTime = System.currentTimeMillis()
-                val executionTime = endTime - startTime
-
-                Log.d("Audio Duration", "Execution Time: $executionTime")
-
-                val duration = durationStr.toLong()
-
-                // Cache the duration for future use
-                preferences.edit().putLong(audioFilePath, duration).apply()
-
-                return duration
-            }
-        } catch (e: Exception) {
-            Log.d(
-                "TAG",
-                "Audio Duration: Error retrieving duration for file: $audioFilePath : ${e.message}"
-            )
-            e.printStackTrace()
-        }
-
-        val endTime = System.currentTimeMillis()
-        val executionTime = endTime - startTime
-        Log.d("Audio Duration", "Execution Time: $executionTime")
-
-        return 0 // Return 0 if there was an error or if the duration couldn't be retrieved.
-    }
-
-
-    // Add a function to send a message to the network
-
 
 }

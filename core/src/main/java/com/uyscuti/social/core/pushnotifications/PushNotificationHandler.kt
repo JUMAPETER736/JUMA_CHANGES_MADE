@@ -57,7 +57,7 @@ class PushNotificationHandler @Inject constructor(
 
 
     private var messageRepository: MessageRepository =
-        MessageRepository(context, ChatDatabase.getInstance(context).messageDao(), retrofitInstance)
+        MessageRepository(ChatDatabase.getInstance(context).messageDao(), retrofitInstance)
 
 
     init {

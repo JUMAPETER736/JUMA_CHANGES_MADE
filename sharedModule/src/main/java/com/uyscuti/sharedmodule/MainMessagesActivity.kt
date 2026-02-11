@@ -1,7 +1,6 @@
 package com.uyscuti.sharedmodule
 
 import android.content.Context
-import android.content.Intent
 import android.content.SharedPreferences
 import android.media.MediaMetadataRetriever
 import android.os.Bundle
@@ -13,7 +12,6 @@ import android.widget.ImageView
 import androidx.activity.viewModels
 import androidx.annotation.OptIn
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.app.NavUtils
 import androidx.media3.common.util.UnstableApi
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
@@ -22,7 +20,6 @@ import com.uyscuti.sharedmodule.data.fixtures.MessagesFixtures
 import com.uyscuti.sharedmodule.data.model.Dialog
 import com.uyscuti.sharedmodule.data.model.Message
 import com.uyscuti.sharedmodule.data.model.User
-import com.uyscuti.sharedmodule.model.NavigateToMainEvent
 import com.uyscuti.sharedmodule.presentation.DialogViewModel
 import com.uyscuti.sharedmodule.presentation.MessageViewModel
 import com.uyscuti.sharedmodule.utils.AppUtils
@@ -41,7 +38,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import org.greenrobot.eventbus.EventBus
 import java.io.File
 import java.net.URI
 import java.text.SimpleDateFormat
@@ -105,8 +101,7 @@ abstract class MainMessagesActivity : AppCompatActivity(), MessagesListAdapter.S
 
         groupDialogRepository = GroupDialogRepository(
             ChatDatabase.Companion.getInstance(this).groupDialogDao(),
-            retrofitInterface,
-            localStorage
+            retrofitInterface
         )
         imageLoader = ImageLoader { imageView: ImageView?, url: String?, _: Any? ->
             try {

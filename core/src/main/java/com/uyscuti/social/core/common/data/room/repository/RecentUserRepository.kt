@@ -12,5 +12,4 @@ class RecentUserRepository(private val recentUserDao: RecentUserDao) {
 
     fun insertRecentUser(recentUser: RecentUser) = recentUserDao.insertRecentUser(recentUser)
 
-    fun deleteAllRecentUsers() = recentUserDao.deleteAll()
 }

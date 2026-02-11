@@ -94,14 +94,12 @@ class SplashScreen : AppCompatActivity() {
         )
         messageRepository =
             MessageRepository(
-                this,
                 ChatDatabase.Companion.getInstance(this).messageDao(),
                 retrofitInstance
             )
         groupDialogRepository = GroupDialogRepository(
             ChatDatabase.Companion.getInstance(this).groupDialogDao(),
-            retrofitInstance,
-            localStorage
+            retrofitInstance
         )
 
 

@@ -10,7 +10,7 @@ class UsersRepository(private val usersDao: UserDao) {
         return usersDao.getUserList()
     }
 
-    suspend fun addAllUsers(users: UserEntity) {
+    fun addAllUsers(users: UserEntity) {
         usersDao.insertUser(users)
     }
 
