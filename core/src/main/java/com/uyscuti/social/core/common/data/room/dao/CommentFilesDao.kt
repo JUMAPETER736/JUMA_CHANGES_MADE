@@ -15,9 +15,6 @@ interface CommentFilesDao {
 
     @Query("SELECT * FROM comment_files_table WHERE isReply = 1")
     fun getAllCommentReplyFiles(): LiveData<List<CommentsFilesEntity>>
-//
-//    @Query("SELECT * FROM follow_table WHERE userId = :userId")
-//    fun getFollowUnFollowById(userId: String): LiveData<FollowUnFollowEntity?>
 
     @Query("SELECT * FROM comment_files_table WHERE id = :postId")
     fun getCommentFilesStatus(postId: String): LiveData<CommentsFilesEntity?>

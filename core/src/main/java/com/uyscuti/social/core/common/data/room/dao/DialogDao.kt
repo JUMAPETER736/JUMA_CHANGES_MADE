@@ -27,16 +27,12 @@ interface DialogDao {
     suspend fun updateDialogEntityId(oldDialogId: String, newChatId: String) {
         // Retrieve the old dialog
         val oldDialog = getDialog(oldDialogId)
-//        Log.d("DialogDao", "oldChatId: $oldDialogId")
-//        Log.d("DialogDao", "oldChat Name: ${oldDialog.dialogName}")
-//        Log.d("DialogDao", "oldChat: $oldDialog")
+
 
         // Create a new dialog with the new ID
         val newDialog = oldDialog.copy(id = newChatId)
 
-//        Log.d("DialogDao", "newChatId: $newChatId")
-//        Log.d("DialogDao", "newChat Name: ${newDialog.dialogName}")
-//        Log.d("DialogDao", "newChat: $newDialog")
+
 
         // Insert the new dialog
         insertDialog(newDialog)
@@ -44,17 +40,14 @@ interface DialogDao {
         // Delete the old dialog
         deleteDialog(oldDialog)
 
-        val deleted = getDialog(oldDialogId)
-//        Log.d("DialogDao", "oldChatId: $oldDialogId")
-//        Log.d("DialogDao", "deleted Dialog: $deleted")
+        getDialog(oldDialogId)
+
     }
 
     @Query("SELECT * FROM dialogs WHERE id = dialogName")
     fun getTempDialogs(): LiveData<List<DialogEntity>>
 
 
-//    @Query("SELECT * FROM dialogs WHERE (SELECT COUNT(*) FROM dialogs.users. WHERE users. = dialogs.id) = 1")
-//    fun getDialogsWithSingleUser(): List<DialogEntity>
 
     @Query("SELECT * FROM dialogs")
     fun getGroupDialogs(): LiveData<List<DialogEntity>>
@@ -93,10 +86,6 @@ interface DialogDao {
     @Query("SELECT * FROM dialogs WHERE id = :dialogId")
     fun getDialogByIdFlow(dialogId: String): Flow<DialogEntity?>
 
-
-//    @Query("UPDATE dialogs SET lastMessage = :newLastMessage WHERE id = :dialogId")
-//    fun updateLastMessage(dialogId: String, newLastMessage: MessageEntity)
-
     @Query("UPDATE dialogs SET unreadCount = + 1 WHERE id = :dialogId")
     fun updateUnreadCount(dialogId: String)
 
@@ -129,7 +118,6 @@ interface DialogDao {
     @Query("DELETE FROM dialogs WHERE id IN (:dialogIds)")
     suspend fun deleteDialogsByIds(dialogIds: List<String>)
 
-//    @Query("SELECT * FROM dialogs ORDER BY (SELECT MAX(createdAt) FROM messages WHERE messages.id = dialogs.lastMessageId) DESC LIMIT 1")
-//    fun getRecentlyUpdatedDialog(): LiveData<DialogEntity?>
+
 
 }

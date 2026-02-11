@@ -14,8 +14,6 @@ interface NotificationDao{
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertNotifications(notifications: List<NotificationEntity>)
 
-//    @Query("UPDATE notifications SET isRead = 1 ")
-//    suspend fun markAsRead(id: String, isRead: Boolean = true)
 
     @Query("DELETE FROM notifications")
     suspend fun clearNotifications()
