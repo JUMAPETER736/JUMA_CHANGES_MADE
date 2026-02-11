@@ -3125,7 +3125,8 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
                     fileIds = post.fileIds as List<String>
                 }
                 is Post -> {
-                    val originalPost = post.originalPost.firstOrNull()
+                    // FIX: Safe null check before calling firstOrNull()
+                    val originalPost = post.originalPost?.firstOrNull()
                     if (originalPost != null) {
                         files = originalPost.files
                         thumbnails = originalPost.thumbnail
@@ -3151,7 +3152,6 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
 
             logMediaDetails()
         }
-
 
 
         private fun logMediaDetails() {
