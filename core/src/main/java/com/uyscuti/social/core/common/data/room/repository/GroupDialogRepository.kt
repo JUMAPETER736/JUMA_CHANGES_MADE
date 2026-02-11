@@ -1,8 +1,6 @@
 package com.uyscuti.social.core.common.data.room.repository
 
-import android.os.Build
 import android.util.Log
-import androidx.annotation.RequiresApi
 import androidx.lifecycle.LiveData
 import com.uyscuti.social.core.common.data.room.dao.GroupDialogDao
 import com.uyscuti.social.core.common.data.room.entity.GroupDialogEntity
@@ -15,9 +13,6 @@ import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
 import com.uyscuti.social.network.utils.LocalStorage
 
 import java.text.SimpleDateFormat
-import java.time.LocalDateTime
-import java.time.ZonedDateTime
-import java.time.format.DateTimeFormatter
 import java.util.Date
 import java.util.concurrent.CancellationException
 
@@ -28,8 +23,6 @@ class GroupDialogRepository(
 ) {
 
     private val apiService = retrofitInstance.apiService
-
-    private var userId = localStorage.getUserId()
 
 
     private val chatIdList = ArrayList<String>()
@@ -42,7 +35,7 @@ class GroupDialogRepository(
     val allUnreadGroupDialogsCount: LiveData<Int> = groupDialogDao.getLiveUnreadGroupDialogsCount()
 
 
-    suspend fun insertGroupDialog(dialog: GroupDialogEntity) {
+    fun insertGroupDialog(dialog: GroupDialogEntity) {
         try {
             groupDialogDao.insertGroupDialog(dialog)
         } catch (e: Exception) {
@@ -61,7 +54,7 @@ class GroupDialogRepository(
         }
     }
 
-    suspend fun updateDialog(dialog: GroupDialogEntity) {
+    fun updateDialog(dialog: GroupDialogEntity) {
         try {
             groupDialogDao.updateDialog(dialog)
         } catch (e: Exception) {
@@ -70,34 +63,30 @@ class GroupDialogRepository(
         }
     }
 
-    suspend fun incrementUnreadCount(dialogId: String) {
-        groupDialogDao.updateUnreadCount(dialogId)
-    }
-
     fun getGroupDialog(dialogId: String): GroupDialogEntity {
         return groupDialogDao.getGroupDialog(dialogId)
     }
 
 
-    suspend fun updateLastMessage(dialog: GroupDialogEntity, newLastMessage: MessageEntity) {
+    fun updateLastMessage(dialog: GroupDialogEntity, newLastMessage: MessageEntity) {
         dialog.lastMessage = newLastMessage
         dialog.unreadCount += 1
         groupDialogDao.updateLastMessage(dialog)
     }
 
-    suspend fun updateLastMessageForThisChat(dialogId: String, newLastMessage: MessageEntity) {
+    fun updateLastMessageForThisChat(dialogId: String, newLastMessage: MessageEntity) {
         val dialog = groupDialogDao.getGroupDialog(dialogId)
         dialog.lastMessage = newLastMessage
         groupDialogDao.updateLastMessage(dialog)
     }
 
 
-    suspend fun resetUnreadCount(dialogId: String): LiveData<GroupDialogEntity?> {
+    fun resetUnreadCount(dialogId: String): LiveData<GroupDialogEntity?> {
         // Get the dialog by its ID from the database
         return groupDialogDao.getGroupDialogById(dialogId)
     }
 
-    suspend fun clearAll() {
+    fun clearAll() {
         groupDialogDao.deleteAll()
     }
 
@@ -143,17 +132,6 @@ class GroupDialogRepository(
 
         senderName = sender.username
 
-//        val dialog = dialogRepository.getDialog(chat)
-//
-//        if (dialog.users.size > 1) {
-//            text = if (senderName.isNotEmpty()) {
-//                "$senderName: " // Highlighted sender's name
-//            } else {
-//                "Anonymous:"
-//            }
-//        }
-
-//        text += content
 
 
         // Handle attachments and assign URLs
@@ -165,27 +143,26 @@ class GroupDialogRepository(
                     when (fileType) {
                         FileType.IMAGE -> {
                             imageUrl = attachment.url
-//                            Log.d(TAG, "Image, Path Of Image Received: $imageUrl")
+
                             text += "📷 Image"
                         }
 
                         FileType.AUDIO -> {
                             audioUrl = attachment.url
-//                            Log.d(TAG, "Audio, Path Of Image Received: $audioUrl")
-//                            audioList.add(audioUrl)
+
                             text += "🎵 Audio"
                         }
 
                         FileType.VIDEO -> {
                             videoUrl = attachment.url
-//                            Log.d(TAG, "Video, Path Of Image Received: $videoUrl")
+
                             text += "🎬 Video"
 
                         }
 
                         FileType.DOCUMENT -> {
                             docUrl = attachment.url
-//                            Log.d(TAG, "Document, Path Of Image Received: $docUrl")
+
                             text += "📄 Document"
 
                         }
@@ -262,18 +239,6 @@ class GroupDialogRepository(
     }
 
 
-    @RequiresApi(Build.VERSION_CODES.O)
-    private fun convertTimestamp(iso8601Date: String): Long {
-        val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
-        val localDateTime = LocalDateTime.parse(iso8601Date, formatter)
-
-        // Assuming the input time is in UTC, you can convert it to the device's time zone
-        val zonedDateTime = ZonedDateTime.of(localDateTime, java.time.ZoneId.systemDefault())
-
-        return zonedDateTime.toInstant().toEpochMilli()
-    }
-
-
     suspend fun fetchAndInsertGroupDialogs() {
         try {
             var offset = 0
@@ -286,9 +251,6 @@ class GroupDialogRepository(
 
                 if (response.isSuccessful) {
                     val chatsResponse = response.body()
-
-//                    Log.d("FetchedDialogs", chatsResponse.toString())
-//                    Log.d("FetchedDialogs", chatsResponse?.data?.size.toString())
 
                     chatsResponse?.let {
                         val chatList = chatsResponse.data
@@ -313,15 +275,13 @@ class GroupDialogRepository(
                                 var chatName = ""
                                 var chatAvatar = ""
 
-                                var text = ""
-                                var senderName = ""
+                                ""
+                                ""
 
                                 // Group chat
                                 chatName = chat.name
                                 filteredUsers = users
 
-//                                    val random = Random()
-//                                    chatAvatar = filteredUsers.getOrNull(random.nextInt(filteredUsers.size))?.avatar ?: ""
 
                                 chatAvatar = filteredUsers.firstOrNull()?.avatar ?: ""
 
@@ -330,9 +290,6 @@ class GroupDialogRepository(
 
                                 val lastMessage = chat.lastMessage?.toMessageEntity() ?: createDefaultMessageEntity(chat.createdAt)
 
-
-//                                    val avatars = filteredUsers.take(4).map { it.avatar }
-//                                    chatAvatar = groupChatImages().toString()
 
                                 // Perform the conversion for each Chat to DialogEntity
 
@@ -354,7 +311,7 @@ class GroupDialogRepository(
                                 null // Dialog already fetched, skip it
                             }
                         }
-                        // dialogDao.insertAllDialogs(dialogs)
+
                         insertDialogs(dialogs)
 
                         offset += batchSize
