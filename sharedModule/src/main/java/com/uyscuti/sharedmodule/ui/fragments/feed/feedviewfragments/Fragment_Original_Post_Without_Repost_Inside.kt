@@ -498,19 +498,54 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
             EventBus.getDefault().post(HideAppBar(true))
             EventBus.getDefault().post(HideBottomNav(true))
 
+            // DEBUG: Log all bundle keys
+            Log.d(TAG, "=== DEBUG: Checking Bundle Contents ===")
+            arguments?.keySet()?.forEach { key ->
+                val value = arguments?.get(key)
+                Log.d(TAG, "Bundle key: '$key' = ${value?.toString()?.take(100)}")
+            }
+            Log.d(TAG, "=== END DEBUG ===")
+
+// Get post data - try multiple methods
             post = try {
-                val postJson = arguments?.getString(ARG_ORIGINAL_POST)
+                // Try ARG_ORIGINAL_POST first
+                var postJson = arguments?.getString(ARG_ORIGINAL_POST)
+                Log.d(TAG, "ARG_ORIGINAL_POST JSON length: ${postJson?.length ?: 0}")
+
+                // If null, try post_data
+                if (postJson == null) {
+                    postJson = arguments?.getString("post_data")
+                    Log.d(TAG, "post_data JSON length: ${postJson?.length ?: 0}")
+                }
+
                 if (postJson != null) {
-                    Gson().fromJson(postJson, Post::class.java)
+                    Log.d(TAG, "Found JSON, attempting to parse...")
+                    Gson().fromJson(postJson, Post::class.java).also {
+                        Log.d(TAG, "✅ Successfully parsed post from JSON: ${it._id}")
+                    }
                 } else {
+                    Log.e(TAG, "❌ No JSON string found in arguments")
                     // Fallback to old method for backward compatibility
-                    arguments?.getSerializable(ARG_ORIGINAL_POST) as? Post
-                        ?: arguments?.getSerializable(ARG_POST) as? Post
+                    (arguments?.getSerializable(ARG_ORIGINAL_POST) as? Post
+                        ?: arguments?.getSerializable(ARG_POST) as? Post).also {
+                        if (it != null) {
+                            Log.d(TAG, "✅ Found post via Serializable: ${it._id}")
+                        } else {
+                            Log.e(TAG, "❌ Serializable also returned null")
+                        }
+                    }
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "Error parsing post data", e)
+                Log.e(TAG, "❌ Error parsing post data: ${e.message}", e)
+                e.printStackTrace()
                 arguments?.getSerializable(ARG_ORIGINAL_POST) as? Post
                     ?: arguments?.getSerializable(ARG_POST) as? Post
+            }
+
+            if (post == null) {
+                Log.e(TAG, "🔴 CRITICAL: Post is null after all attempts!")
+                Toast.makeText(requireContext(), "Error loading post", Toast.LENGTH_SHORT).show()
+                return
             }
 
             post?.let { postData ->
