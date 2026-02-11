@@ -1479,7 +1479,7 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
             Log.d(TAG, "Initial setup: Follow button shown for $feedOwnerId (@$feedOwnerUsername) - Text: '${followButton.text}'")
         }
     }
-    
+
     private fun updateFollowButtonUI() {
         if (isFollowing) {
             followButton.visibility = View.GONE
@@ -1557,7 +1557,8 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
         Log.d(TAG, "populatePostData: Post shareCount = ${post.shareCount}")
         Log.d(TAG, "populatePostData: Post repostCount = ${post.repostCount}")
 
-        if (post.originalPost?.isNotEmpty() == true) {
+        // FIX: Safe null check
+        if (!post.originalPost.isNullOrEmpty()) {
             val originalPost = post.originalPost[0]
             Log.d(TAG, "populatePostData: OriginalPost commentCount = ${originalPost.commentCount}")
         }
@@ -1580,7 +1581,8 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
             }
 
             // Initialize and setup media handler based on post type
-            postMediaHandler = if (post.originalPost.isNotEmpty()) {
+            // FIX: Safe null check
+            postMediaHandler = if (!post.originalPost.isNullOrEmpty()) {
                 val repostedPostData = post.originalPost[0]
                 Log.d("MediaDebug", "Handling media from original post with ${repostedPostData.files.size} files")
                 showRepostHeader(post)
