@@ -819,46 +819,6 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
 
 
     @Subscribe(threadMode = ThreadMode.MAIN)
-    fun onRepostSuccess(event: RepostSuccessEvent) {
-
-        Log.d(TAG, "REPOST SUCCESS EVENT RECEIVED")
-        Log.d(TAG, "PostId: ${event.post._id}")
-        Log.d(TAG, "IsReposted: ${event.post.isReposted}")
-        Log.d(TAG, "RepostCount: ${event.post.repostCount}")
-
-
-        //  Sync data in ViewModel
-        getFeedViewModel.toggleRepostInAllFeeds(
-            postId = event.post._id,
-            isReposted = event.post.isReposted,
-            repostCount = event.post.repostCount
-        )
-
-        // Find the post in adapter
-        val feedPosition = allFeedAdapter.getPositionById(event.post._id)
-
-        if (feedPosition != -1) {
-            // Get the updated post from ViewModel
-            val updatedPost = getFeedViewModel.getPostById(event.post._id)
-
-            if (updatedPost != null) {
-                //  Update the item AND notify the adapter
-                allFeedAdapter.updateItem(feedPosition, updatedPost)
-                allFeedAdapter.notifyItemChanged(feedPosition)  // ← ADD THIS LINE!
-
-                Log.d(TAG, "Updated UI in AllFeed at position: $feedPosition")
-                Log.d(TAG, "  isReposted: ${updatedPost.isReposted}")
-                Log.d(TAG, "  repostCount: ${updatedPost.repostCount}")
-            } else {
-                Log.e(TAG, "Updated post is null from ViewModel")
-            }
-        } else {
-            Log.w(TAG, "Post not found in adapter (position: $feedPosition)")
-        }
-
-    }
-
-    @Subscribe(threadMode = ThreadMode.MAIN)
     fun feedUploadResponseEvent(event: FeedUploadResponseEvent) {
         Log.d("feedUploadResponseEvent", "feedUploadResponseEvent: ")
         val feedPost = getFeedViewModel.getSingleAllFeedData()
@@ -2064,5 +2024,51 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
 
     }
 
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    fun onRepostSuccess(event: RepostSuccessEvent) {
+
+        Log.d(TAG, "REPOST SUCCESS EVENT RECEIVED")
+        Log.d(TAG, "PostId: ${event.post._id}")
+        Log.d(TAG, "IsReposted: ${event.post.isReposted}")
+        Log.d(TAG, "RepostCount: ${event.post.repostCount}")
+
+        // Sync data in ViewModel
+        getFeedViewModel.toggleRepostInAllFeeds(
+            postId = event.post._id,
+            isReposted = event.post.isReposted,
+            repostCount = event.post.repostCount
+        )
+
+        // Find the post in adapter - search by both direct ID and originalPost ID
+        var feedPosition = allFeedAdapter.getPositionById(event.post._id)
+
+        // If not found by direct ID, try searching by originalPost
+        if (feedPosition == -1) {
+            val allFeedData = getFeedViewModel.getAllFeedData()
+            feedPosition = allFeedData.indexOfFirst { post ->
+                post.originalPost.any { orig -> orig._id == event.post._id }
+            }
+        }
+
+        if (feedPosition != -1) {
+            // Get the updated post from ViewModel
+            val updatedPost = getFeedViewModel.getAllFeedDataByPosition(feedPosition)
+
+            // Update the post's repost state
+            updatedPost.isReposted = event.post.isReposted
+            updatedPost.repostCount = event.post.repostCount
+
+            // Update the item AND notify the adapter
+            allFeedAdapter.updateItem(feedPosition, updatedPost)
+            allFeedAdapter.notifyItemChanged(feedPosition)
+
+            Log.d(TAG, "Updated UI in AllFeed at position: $feedPosition")
+            Log.d(TAG, "  isReposted: ${updatedPost.isReposted}")
+            Log.d(TAG, "  repostCount: ${updatedPost.repostCount}")
+        } else {
+            Log.w(TAG, "Post not found in adapter - neither by direct ID nor originalPost ID")
+            Log.w(TAG, "Searched for postId: ${event.post._id}")
+        }
+    }
 
 }

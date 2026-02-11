@@ -5,6 +5,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.uyscuti.sharedmodule.model.feed.RefreshFeedData
+import com.uyscuti.social.network.api.response.posts.Post
 import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineScope
@@ -148,33 +149,31 @@ class GetFeedViewModel @Inject constructor(private val retrofitInstance: Retrofi
         }
     }
 
-
-     // Synchronize repost state across all feeds Called when user reposts/un-reposts a post
-
     fun toggleRepostInAllFeeds(postId: String, isReposted: Boolean, repostCount: Int) {
         Log.d(TAG, "toggleRepostInAllFeeds: postId=$postId, isReposted=$isReposted, count=$repostCount")
 
         // Update in allFeedData
-        allFeedData.find { it._id == postId }?.let { post ->
+        allFeedData.find { it._id == postId || it.originalPost.any { orig -> orig._id == postId } }?.let { post ->
             post.isReposted = isReposted
             post.repostCount = repostCount
-            Log.d(TAG, "Updated repost in allFeedData for post: $postId")
+            Log.d(TAG, "Updated repost in allFeedData for post: ${post._id}")
         }
 
         // Update in myFeedData
-        myFeedData.find { it._id == postId }?.let { post ->
+        myFeedData.find { it._id == postId || it.originalPost.any { orig -> orig._id == postId } }?.let { post ->
             post.isReposted = isReposted
             post.repostCount = repostCount
-            Log.d(TAG, "Updated repost in myFeedData for post: $postId")
+            Log.d(TAG, "Updated repost in myFeedData for post: ${post._id}")
         }
 
         // Update in allFavoriteFeedData
-        allFavoriteFeedData.find { it._id == postId }?.let { post ->
+        allFavoriteFeedData.find { it._id == postId || it.originalPost.any { orig -> orig._id == postId } }?.let { post ->
             post.isReposted = isReposted
             post.repostCount = repostCount
-            Log.d(TAG, "Updated repost in allFavoriteFeedData for post: $postId")
+            Log.d(TAG, "Updated repost in allFavoriteFeedData for post: ${post._id}")
         }
     }
+
 
     // Synchronized bookmark toggle across all feeds
     fun toggleBookmarkInAllFeeds(postId: String, isBookmarked: Boolean, bookmarkCount: Int) {
