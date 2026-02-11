@@ -506,7 +506,7 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
             }
             Log.d(TAG, "=== END DEBUG ===")
 
-// Get post data - try multiple methods
+
             post = try {
                 // Try ARG_ORIGINAL_POST first
                 var postJson = arguments?.getString(ARG_ORIGINAL_POST)
@@ -521,29 +521,29 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
                 if (postJson != null) {
                     Log.d(TAG, "Found JSON, attempting to parse...")
                     Gson().fromJson(postJson, Post::class.java).also {
-                        Log.d(TAG, "✅ Successfully parsed post from JSON: ${it._id}")
+                        Log.d(TAG, "Successfully parsed post from JSON: ${it._id}")
                     }
                 } else {
-                    Log.e(TAG, "❌ No JSON string found in arguments")
+                    Log.e(TAG, "No JSON string found in arguments")
                     // Fallback to old method for backward compatibility
                     (arguments?.getSerializable(ARG_ORIGINAL_POST) as? Post
                         ?: arguments?.getSerializable(ARG_POST) as? Post).also {
                         if (it != null) {
-                            Log.d(TAG, "✅ Found post via Serializable: ${it._id}")
+                            Log.d(TAG, "Found post via Serializable: ${it._id}")
                         } else {
-                            Log.e(TAG, "❌ Serializable also returned null")
+                            Log.e(TAG, "Serializable also returned null")
                         }
                     }
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "❌ Error parsing post data: ${e.message}", e)
+                Log.e(TAG, "Error parsing post data: ${e.message}", e)
                 e.printStackTrace()
                 arguments?.getSerializable(ARG_ORIGINAL_POST) as? Post
                     ?: arguments?.getSerializable(ARG_POST) as? Post
             }
 
             if (post == null) {
-                Log.e(TAG, "🔴 CRITICAL: Post is null after all attempts!")
+                Log.e(TAG, "CRITICAL: Post is null after all attempts!")
                 Toast.makeText(requireContext(), "Error loading post", Toast.LENGTH_SHORT).show()
                 return
             }

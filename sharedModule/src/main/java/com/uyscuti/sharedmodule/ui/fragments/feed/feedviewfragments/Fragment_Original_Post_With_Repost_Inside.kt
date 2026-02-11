@@ -1980,12 +1980,11 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
         try {
             Log.d(TAG, "Navigating to original Post for Post ID: ${data._id}")
 
-            val fragment = Fragment_Original_Post_Without_Repost_Inside().apply {
+            val fragment = Fragment_Original_Post_Without_Repost_Inside().apply {  // ← Check this line!
                 arguments = Bundle().apply {
-                    // ✅ Use the correct constant key
                     putString(Fragment_Original_Post_Without_Repost_Inside.ARG_ORIGINAL_POST, Gson().toJson(data))
                     putString("post_id", data._id)
-                    putString("post_data", Gson().toJson(data))  // Backup key
+                    putString("post_data", Gson().toJson(data))
                     putInt("adapter_position", 0)
                     putString("navigation_source", "repost_card")
                     putLong("navigation_timestamp", System.currentTimeMillis())
