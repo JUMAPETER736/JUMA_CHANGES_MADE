@@ -943,12 +943,12 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
     @RequiresPermission(Manifest.permission.ACCESS_NETWORK_STATE)
     @SuppressLint("SetTextI18n")
     private fun performRepost(comment: String, newFiles: List<java.io.File>? = null) {
-        Log.d(TAG, "═══════════════════════════════════════")
+
         Log.d(TAG, "PERFORM REPOST STARTED")
         Log.d(TAG, "PostId: ${currentPost?._id}")
         Log.d(TAG, "Comment: $comment")
         Log.d(TAG, "Files: ${newFiles?.size}")
-        Log.d(TAG, "═══════════════════════════════════════")
+
 
         if (!isNetworkAvailable()) {
             Log.e(TAG, "No network connectivity detected")
@@ -969,7 +969,6 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
                 try {
                     Log.d(TAG, "Initiating repost API call for postId: ${post._id}")
 
-                    // Create repost request - comment is the only important field
                     val repostRequest = RepostRequest(
                         comment = comment,
                         files = null,
@@ -978,12 +977,11 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
 
                     Log.d(TAG, "Request body: $repostRequest")
 
-                    // Make API call using the toggle endpoint
                     val response = withContext(Dispatchers.IO) {
                         retrofitInterface.apiService.toggleFeedRepost(post._id, repostRequest)
                     }
 
-                    Log.d(TAG, "───────────────────────────────────────")
+
                     Log.d(TAG, "API RESPONSE")
                     Log.d(TAG, "Code: ${response.code()}")
                     Log.d(TAG, "Success: ${response.isSuccessful}")
@@ -994,13 +992,13 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
                         Log.d(TAG, "Body: $responseBody")
 
                         if (responseBody != null && responseBody.success) {
-                            Log.d(TAG, "✓ Repost toggle successful")
+                            Log.d(TAG, "Repost toggle successful")
 
-                            // Update post state from API response
+                            // ONLY update isReposted status, NOT the count
                             post.isReposted = responseBody.data.isReposted
-                            post.repostCount = responseBody.data.repostCount
+                            // post.repostCount = responseBody.data.repostCount
 
-                            Log.d(TAG, "Updated state - isReposted: ${post.isReposted}, count: ${post.repostCount}")
+                            Log.d(TAG, "Updated state - isReposted: ${post.isReposted}")
 
                             withContext(Dispatchers.Main) {
                                 val message = if (post.isReposted) "Reposted successfully!" else "Repost removed"
@@ -1010,19 +1008,16 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
                                 Log.d(TAG, "Posting RepostSuccessEvent to EventBus")
                                 EventBus.getDefault().post(RepostSuccessEvent(post))
 
-                                // Navigate back only if we created a repost
                                 if (post.isReposted && isAdded && !isNavigatingBack) {
                                     Log.d(TAG, "Navigating back...")
                                     cleanupAndGoBack()
                                 }
                             }
 
-
                             Log.d(TAG, "REPOST COMPLETED SUCCESSFULLY")
 
-
                         } else {
-                            Log.e(TAG, "✗ Response unsuccessful or body is null")
+                            Log.e(TAG, "Response unsuccessful or body is null")
                             withContext(Dispatchers.Main) {
                                 Toast.makeText(context, "Failed to repost", Toast.LENGTH_SHORT).show()
                             }
@@ -1047,15 +1042,11 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
                         }
                     }
 
-
-
                 } catch (t: Throwable) {
-
                     Log.e(TAG, "EXCEPTION CAUGHT")
                     Log.e(TAG, "Type: ${t.javaClass.simpleName}")
                     Log.e(TAG, "Message: ${t.message}")
                     Log.e(TAG, "Stack trace:", t)
-
 
                     val errorMessage = when (t) {
                         is UnknownHostException -> "No internet connection or server unreachable."
