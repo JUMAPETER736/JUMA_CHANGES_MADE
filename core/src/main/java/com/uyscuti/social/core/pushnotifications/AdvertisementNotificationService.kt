@@ -150,11 +150,6 @@ class AdvertisementNotificationService: Service() {
             .build()
     }
 
-    private fun startForegroundService() {
-        val notification = createForegroundNotification()
-        startForeground(foregroundNotificationId, notification)
-    }
-
     private fun createStableNotificationId(vararg components: String): Int {
         // Combine components into a single string and use its hashCode
         val combined = components.joinToString(separator = "|")

@@ -30,6 +30,7 @@ object CoreModule {
         @Named("chat_notification_compat_builder") chatNotificationBuilder: NotificationCompat.Builder,
         coreChatSocketClient: CoreChatSocketClient
     ): PushNotificationHandler {
-        return PushNotificationHandler(localStorage, context,dialogRepository,chatNotificationManager, chatNotificationBuilder,coreChatSocketClient,retrofitInstance)
+        return PushNotificationHandler(localStorage, context,dialogRepository,chatNotificationManager, chatNotificationBuilder,
+            retrofitInstance)
     }
 }

@@ -45,24 +45,16 @@ class PushNotificationHandler @Inject constructor(
     private var dialogRepository: DialogRepository,
     private var chatNotificationManager: NotificationManagerCompat,
     private var chatNotificationBuilder: NotificationCompat.Builder,
-    private var coreChatSocketClient: CoreChatSocketClient,
-    private var retrofitInstance: RetrofitInstance
+    retrofitInstance: RetrofitInstance
 
 ) : CoreChatSocketClient.ChatSocketEvents {
 
     private val TAG = "PushNotificationHandler"
 
-
-//    private var dialogRepository: DialogRepository = DialogRepository(ChatDatabase.getInstance(context).dialogDao(),retrofitInstance, localStorage)
-
-
     private var messageRepository: MessageRepository =
         MessageRepository(ChatDatabase.getInstance(context).messageDao(), retrofitInstance)
 
 
-    init {
-//        coreChatSocketClient.chatListener = this
-    }
 
     @RequiresPermission(Manifest.permission.POST_NOTIFICATIONS)
     private fun handleNotifications(chatId: String, message: String, user: String) {
@@ -100,13 +92,7 @@ class PushNotificationHandler @Inject constructor(
                 Manifest.permission.POST_NOTIFICATIONS
             ) != PackageManager.PERMISSION_GRANTED
         ) {
-            // TODO: Consider calling
-            //    ActivityCompat#requestPermissions
-            // here to request the missing permissions, and then overriding
-            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-            //                                          int[] grantResults)
-            // to handle the case where the user grants the permission. See the documentation
-            // for ActivityCompat#requestPermissions for more details.
+
             return
         }
         chatNotificationManager.notify(
@@ -116,7 +102,7 @@ class PushNotificationHandler @Inject constructor(
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .setAutoCancel(true)
                 .setWhen(currentTimeMillis)
-//            .addAction(replyAction)
+
                 .build()
         )
     }
@@ -140,10 +126,10 @@ class PushNotificationHandler @Inject constructor(
 
         Log.d(TAG, "onSocketConnect: New Message In PushNotificationHandler")
 
-        val chatId = message.chat
-        val text = message.content
-        val sender = message.sender.username
-//        handleNotifications(chatId, text, sender)
+        message.chat
+        message.content
+        message.sender.username
+
         updateDB(message)
     }
 
@@ -190,7 +176,7 @@ class PushNotificationHandler @Inject constructor(
                     when (getFileType(attachment.url)) {
                         FileType.IMAGE -> {
                             imageUrl = attachment.url
-//                            size = getFileSize(attachment.url)
+
 
                             Log.d(
                                 "Received Attachment ",
@@ -267,13 +253,7 @@ class PushNotificationHandler @Inject constructor(
                     Manifest.permission.POST_NOTIFICATIONS
                 ) != PackageManager.PERMISSION_GRANTED
             ) {
-                // TODO: Consider calling
-                //    ActivityCompat#requestPermissions
-                // here to request the missing permissions, and then overriding
-                //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-                //                                          int[] grantResults)
-                // to handle the case where the user grants the permission. See the documentation
-                // for ActivityCompat#requestPermissions for more details.
+
                 return@launch
             }
             handleNotifications(message.chat, message.content, message.sender.username)
@@ -320,7 +300,7 @@ class PushNotificationHandler @Inject constructor(
                             FileType.AUDIO -> {
                                 audioUrl = attachment.url
                                 Log.d(TAG, "Audio, Path Of Image Received: $audioUrl")
-//                                audioList.add(audioUrl)
+
                                 text = "🎵 Audio"
                             }
 
@@ -363,7 +343,7 @@ class PushNotificationHandler @Inject constructor(
                 docUrl = docUrl,
                 fileSize = 0,
             )
-//            dialogRepository.incrementUnreadCount(dialogToUpdate)
+
             dialogRepository.updateLastMessage(dialog, messageEntity)
         }
     }
