@@ -368,6 +368,20 @@ class FeedAdapter(
 
     }
 
+    // Add this method to your FeedAdapter class
+    fun getItemAt(position: Int): com.uyscuti.social.network.api.response.posts.Post? {
+        return try {
+            if (position >= 0 && position < itemCount) {
+                getItem(position)
+            } else {
+                null
+            }
+        } catch (e: Exception) {
+            Log.e("FeedAdapter", "Error getting item at position $position", e)
+            null
+        }
+    }
+
 
     inner class FeedTextOnyViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
 

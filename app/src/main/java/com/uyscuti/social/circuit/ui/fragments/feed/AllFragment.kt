@@ -830,15 +830,13 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
         val feedPosition = allFeedAdapter.getPositionById(event.post._id)
 
         if (feedPosition != -1) {
-            // Get the current post from adapter
-            val currentPost = allFeedAdapter.getItem(feedPosition)
+            // Get the current post from adapter using the wrapper method
+            val currentPost = allFeedAdapter.getItemAt(feedPosition)
 
             if (currentPost != null) {
-                // ✅ ONLY update isReposted flag
+                // ONLY update isReposted flag
                 currentPost.isReposted = event.post.isReposted
 
-                // ❌ DON'T update repostCount at all!
-                // The adapter will use totalMixedRePostCounts which was set in render()
 
                 // Sync ONLY the status in ViewModel
                 getFeedViewModel.updateRepostStatusOnly(

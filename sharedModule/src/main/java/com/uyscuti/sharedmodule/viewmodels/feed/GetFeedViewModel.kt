@@ -120,7 +120,7 @@ class GetFeedViewModel @Inject constructor(private val retrofitInstance: Retrofi
         }
     }
 
-    
+
     // Synchronized bookmark toggle across all feeds
     fun toggleBookmarkInAllFeeds(postId: String, isBookmarked: Boolean, bookmarkCount: Int) {
         Log.d(TAG, "toggleBookmarkInAllFeeds: postId=$postId, isBookmarked=$isBookmarked, count=$bookmarkCount")
@@ -393,6 +393,29 @@ class GetFeedViewModel @Inject constructor(private val retrofitInstance: Retrofi
 
     fun clearAllFeedData() {
         allFeedData.clear()
+    }
+
+    // Add this method to GetFeedViewModel (add it after toggleShareInAllFeeds)
+    fun updateRepostStatusOnly(postId: String, isReposted: Boolean) {
+        Log.d(TAG, "updateRepostStatusOnly: postId=$postId, isReposted=$isReposted")
+
+        // Update in allFeedData
+        allFeedData.find { it._id == postId }?.let { post ->
+            post.isReposted = isReposted
+            Log.d(TAG, "Updated repost status only in allFeedData for post: $postId")
+        }
+
+        // Update in myFeedData
+        myFeedData.find { it._id == postId }?.let { post ->
+            post.isReposted = isReposted
+            Log.d(TAG, "Updated repost status only in myFeedData for post: $postId")
+        }
+
+        // Update in allFavoriteFeedData
+        allFavoriteFeedData.find { it._id == postId }?.let { post ->
+            post.isReposted = isReposted
+            Log.d(TAG, "Updated repost status only in allFavoriteFeedData for post: $postId")
+        }
     }
 
 }
