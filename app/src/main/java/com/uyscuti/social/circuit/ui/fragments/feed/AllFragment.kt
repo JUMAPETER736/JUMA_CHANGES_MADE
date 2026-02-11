@@ -826,36 +826,38 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
         Log.d(TAG, "IsReposted: ${event.post.isReposted}")
         Log.d(TAG, "RepostCount: ${event.post.repostCount}")
 
-
-        //  Sync data in ViewModel
-        getFeedViewModel.toggleRepostInAllFeeds(
-            postId = event.post._id,
-            isReposted = event.post.isReposted,
-            repostCount = event.post.repostCount
-        )
-
         // Find the post in adapter
         val feedPosition = allFeedAdapter.getPositionById(event.post._id)
 
         if (feedPosition != -1) {
-            // Get the updated post from ViewModel
-            val updatedPost = getFeedViewModel.getPostById(event.post._id)
+            // Get the current post from adapter
+            val currentPost = allFeedAdapter.getItem(feedPosition)
 
-            if (updatedPost != null) {
-                //  Update the item AND notify the adapter
-                allFeedAdapter.updateItem(feedPosition, updatedPost)
-                allFeedAdapter.notifyItemChanged(feedPosition)  // ← ADD THIS LINE!
+            if (currentPost != null) {
+                // ✅ ONLY update isReposted flag
+                currentPost.isReposted = event.post.isReposted
+
+                // ❌ DON'T update repostCount at all!
+                // The adapter will use totalMixedRePostCounts which was set in render()
+
+                // Sync ONLY the status in ViewModel
+                getFeedViewModel.updateRepostStatusOnly(
+                    postId = event.post._id,
+                    isReposted = event.post.isReposted
+                )
+
+                // Notify adapter of the change
+                allFeedAdapter.notifyItemChanged(feedPosition)
 
                 Log.d(TAG, "Updated UI in AllFeed at position: $feedPosition")
-                Log.d(TAG, "  isReposted: ${updatedPost.isReposted}")
-                Log.d(TAG, "  repostCount: ${updatedPost.repostCount}")
+                Log.d(TAG, "  isReposted: ${currentPost.isReposted}")
+                Log.d(TAG, "  repostCount preserved from original")
             } else {
-                Log.e(TAG, "Updated post is null from ViewModel")
+                Log.e(TAG, "Current post is null from adapter")
             }
         } else {
             Log.w(TAG, "Post not found in adapter (position: $feedPosition)")
         }
-
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
