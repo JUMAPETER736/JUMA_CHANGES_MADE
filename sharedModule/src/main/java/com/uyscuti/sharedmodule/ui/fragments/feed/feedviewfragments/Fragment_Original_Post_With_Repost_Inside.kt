@@ -550,14 +550,19 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
             handleFollowButtonClick()
         }
 
-        // REMOVED: repostContainer click - make repost not clickable
-        // repostContainer.setOnClickListener { ... }
+        // MAIN POST CARD CLICK - This makes the main/original post clickable
+        quotedPostCard.setOnClickListener { view ->
+            view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
 
-        // REMOVED: mixedFilesCardViews click - repost media not clickable
-        // mixedFilesCardViews.setOnClickListener { ... }
+            Log.d(TAG, "Main/Original Post Card clicked! Post ID: ${post._id}")
 
-        // REMOVED: originalFeedImages click - repost file not clickable
-        // originalFeedImages.setOnClickListener { ... }
+            try {
+                navigateToFragment_Original_Post_Without_Repost_Inside(post)
+            } catch (e: Exception) {
+                Log.e(TAG, "Error navigating to original post fragment", e)
+                Toast.makeText(requireContext(), "Unable to load post", Toast.LENGTH_SHORT).show()
+            }
+        }
 
         // KEEP: Original post media is clickable
         originalFeedImage.setOnClickListener {
