@@ -49,8 +49,7 @@ class DirectReplyService : Service() {
         EventBus.getDefault().register(this)
 
         settings = getSharedPreferences(PREFS_NAME, 0)
-//        val accessToken = settings.getString("token", "").toString()
-//        binding.toolbar.setLogo(R.drawable.flash)
+
 
         myId = localStorage.getUserId()
     }
