@@ -1004,7 +1004,7 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
                         if (responseBody != null && responseBody.success) {
                             Log.d(TAG, "Repost created successfully")
 
-                            // ✅ CHANGED: Always increment count (no toggle)
+                            // Always increment count (no toggle)
                             val updatedPost = post.copy(
                                 _id = targetPostId,  // Use original post ID
                                 isReposted = responseBody.data.isReposted,
@@ -1040,8 +1040,8 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
                         Log.e(TAG, "API Error - Code: ${response.code()}")
                         Log.e(TAG, "Error Body: $errorBody")
 
+                        // SIMPLIFIED ERROR MESSAGES - NO DUPLICATE WARNING
                         val errorMessage = when (response.code()) {
-                            400 -> "You have already reposted this content."
                             401 -> "Authentication required. Please log in again."
                             403 -> "You don't have permission to repost this content."
                             404 -> "The original post was not found."
