@@ -817,47 +817,6 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
         EventBus.getDefault().post(FeedFavoriteClick(feedPosition, event.data))
     }
 
-
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    fun onRepostSuccess(event: RepostSuccessEvent) {
-
-        Log.d(TAG, "REPOST SUCCESS EVENT RECEIVED")
-        Log.d(TAG, "PostId: ${event.post._id}")
-        Log.d(TAG, "IsReposted: ${event.post.isReposted}")
-        Log.d(TAG, "RepostCount: ${event.post.repostCount}")
-
-        // Find the post in adapter
-        val feedPosition = allFeedAdapter.getPositionById(event.post._id)
-
-        if (feedPosition != -1) {
-            // Get the current post from adapter using the wrapper method
-            val currentPost = allFeedAdapter.getItemAt(feedPosition)
-
-            if (currentPost != null) {
-                // ONLY update isReposted flag
-                currentPost.isReposted = event.post.isReposted
-
-
-                // Sync ONLY the status in ViewModel
-                getFeedViewModel.updateRepostStatusOnly(
-                    postId = event.post._id,
-                    isReposted = event.post.isReposted
-                )
-
-                // Notify adapter of the change
-                allFeedAdapter.notifyItemChanged(feedPosition)
-
-                Log.d(TAG, "Updated UI in AllFeed at position: $feedPosition")
-                Log.d(TAG, "  isReposted: ${currentPost.isReposted}")
-                Log.d(TAG, "  repostCount preserved from original")
-            } else {
-                Log.e(TAG, "Current post is null from adapter")
-            }
-        } else {
-            Log.w(TAG, "Post not found in adapter (position: $feedPosition)")
-        }
-    }
-
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun feedUploadResponseEvent(event: FeedUploadResponseEvent) {
         Log.d("feedUploadResponseEvent", "feedUploadResponseEvent: ")
@@ -2061,6 +2020,60 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
     }
 
     override fun displayFloatingActionButton() {
+
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    fun onRepostSuccess(event: RepostSuccessEvent) {
+
+
+        Log.d(TAG, "REPOST SUCCESS EVENT RECEIVED")
+        Log.d(TAG, "PostId: ${event.post._id}")
+        Log.d(TAG, "IsReposted: ${event.post.isReposted}")
+        Log.d(TAG, "RepostCount: ${event.post.repostCount}")
+
+
+        // Find the post in adapter
+        val feedPosition = allFeedAdapter.getPositionById(event.post._id)
+
+        if (feedPosition != -1) {
+            // Get the current post from adapter
+            val currentPost = allFeedAdapter.getItemAt(feedPosition)
+
+            if (currentPost != null) {
+                val isRepostWrapper = currentPost.originalPost != null && currentPost.originalPost.isNotEmpty()
+
+                Log.d(TAG, "Found post at position: $feedPosition")
+                Log.d(TAG, "Is repost wrapper: $isRepostWrapper")
+                Log.d(TAG, "Current repostCount: ${currentPost.repostCount}")
+
+                // ONLY update isReposted flag
+                currentPost.isReposted = event.post.isReposted
+
+
+                // Sync ONLY the status in ViewModel
+                getFeedViewModel.updateRepostStatusOnly(
+                    postId = event.post._id,
+                    isReposted = event.post.isReposted
+                )
+
+                // Notify adapter of the change
+                allFeedAdapter.notifyItemChanged(feedPosition)
+
+                Log.d(TAG, "Updated UI at position: $feedPosition")
+                Log.d(TAG, "  isReposted: ${currentPost.isReposted}")
+                if (isRepostWrapper) {
+                    Log.d(TAG, "  repostCount: ${currentPost.repostCount} (preserved from original)")
+                } else {
+                    Log.d(TAG, "  repostCount: ${currentPost.repostCount}")
+                }
+            } else {
+                Log.e(TAG, "Current post is null from adapter at position: $feedPosition")
+            }
+        } else {
+            Log.w(TAG, "Post not found in adapter (position: $feedPosition)")
+        }
+
 
     }
 
