@@ -143,14 +143,13 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
         private const val ARG_POST = "ARG_POST"
 
         fun newInstance(
-
             data: Post,
             clickListener: OnFeedClickListener? = null
-
         ): Fragment_Original_Post_Without_Repost_Inside {
             return Fragment_Original_Post_Without_Repost_Inside().apply {
                 arguments = Bundle().apply {
-                    putString(ARG_ORIGINAL_POST, data.toString())
+                    // CHANGE THIS LINE:
+                    putString(ARG_ORIGINAL_POST, Gson().toJson(data))  // Was: data.toString()
                     putString("post_data", Gson().toJson(data))
                 }
             }
@@ -499,7 +498,6 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
             EventBus.getDefault().post(HideAppBar(true))
             EventBus.getDefault().post(HideBottomNav(true))
 
-            // UPDATED: Get post data - try JSON string first, then fallback to Serializable
             post = try {
                 val postJson = arguments?.getString(ARG_ORIGINAL_POST)
                 if (postJson != null) {

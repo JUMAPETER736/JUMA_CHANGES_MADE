@@ -151,7 +151,6 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
 
     private var currentPost: Post? = null
     private var currentPosition: Int = 0
-    private var likes: Int = 0
 
     private var totalRepostComments = 0
     private var totalMixedShareCounts = 0
@@ -1972,14 +1971,15 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
             })
     }
 
+    // In the navigation function:
     private fun navigateToFragment_Original_Post_Without_Repost_Inside(data: Post) {
         try {
-
             Log.d(TAG, "Navigating to original Post for Post ID: ${data._id}")
 
             val fragment = Fragment_Original_Post_Without_Repost_Inside().apply {
                 arguments = Bundle().apply {
-                    putSerializable(Fragment_Original_Post_Without_Repost_Inside.ARG_ORIGINAL_POST, data)
+                    // Use JSON serialization instead
+                    putString(ARG_ORIGINAL_POST, Gson().toJson(data))
                     putString("post_id", data._id)
                     val absoluteAdapterPosition = 0
                     putInt("adapter_position", absoluteAdapterPosition)
@@ -1987,6 +1987,7 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
                     putLong("navigation_timestamp", System.currentTimeMillis())
                 }
             }
+
             val activity = getActivityFromContext(itemView.context)
             if (activity != null) {
                 val fragmentManager = activity.supportFragmentManager
