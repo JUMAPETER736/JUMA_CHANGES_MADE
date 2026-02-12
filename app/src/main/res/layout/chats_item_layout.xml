@@ -1,55 +1,44 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/clListItem"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="horizontal"
-    android:background="?android:attr/selectableItemBackground"
-    android:clickable="true"
-    android:focusable="true"
-    android:paddingStart="16dp"
-    android:paddingEnd="16dp"
-    android:paddingTop="12dp"
-    android:paddingBottom="12dp">
+    android:padding="30dp"
+    android:elevation="30dp">
 
-    <!-- Avatar Image -->
     <ImageView
-        android:id="@+id/chatAvatar"
-        android:layout_width="50dp"
-        android:layout_height="50dp"
-        android:src="@drawable/flash21"
-        android:scaleType="centerCrop" />
-
-    <!-- Text Details -->
+        android:layout_width="30dp"
+        app:tint="@color/blueJeans"
+        android:layout_height="match_parent"
+        android:src="@drawable/chat_round_svgrepo_com"
+        android:id="@+id/settingsImageView"
+        />
     <LinearLayout
-        android:layout_width="0dp"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_weight="1"
-        android:layout_marginStart="12dp"
-        android:layout_gravity="center_vertical"
-        android:orientation="vertical">
-
-        <!-- Top text: Participant Names (bold) -->
+        android:orientation="vertical"
+        android:layout_marginLeft="5dp"
+        >
         <TextView
-            android:id="@+id/fullName"
+            android:id="@+id/titleTextView"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Uy Scuti"
-            android:textColor="@android:color/black"
+            android:elevation="10dp"
+            android:text="title"
+            android:textColor="@color/black"
             android:textSize="16sp"
-            android:textStyle="bold"
-            android:maxLines="1"
-            android:ellipsize="end" />
-
+            android:textStyle="bold" />
         <TextView
-            android:id="@+id/userName"
+            android:id="@+id/subtitleTextView"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="\@uyscuti"
-            android:textColor="@android:color/darker_gray"
-            android:textSize="14sp"
-            android:maxLines="1"
-            android:ellipsize="end" />
-
+            android:elevation="10dp"
+            android:text="subtitle"
+            android:textColor="#9F9C9C"
+            android:textSize="13sp"
+            />
     </LinearLayout>
-
 </LinearLayout>

@@ -360,7 +360,7 @@
             android:layout_width="24dp"
             android:layout_marginStart="16dp"
             android:layout_height="24dp"
-            android:src="@drawable/profilepic2"
+            android:src="@drawable/profile_photo"
             android:contentDescription="Report User"
             app:tint="@color/blueJeans" />
 

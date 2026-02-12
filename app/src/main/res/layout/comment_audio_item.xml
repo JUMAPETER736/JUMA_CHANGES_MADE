@@ -94,7 +94,7 @@
 <!--                        app:waveColor="@color/bluejeans"-->
 <!--                        />-->
 
-                    <com.uyscuti.sharedmodule.utils.waveformseekbar.WaveformSeekBar
+                    <com.uyscut.flashdesign.utils.waveformseekbar.WaveformSeekBar
                         android:id="@+id/wave"
                         android:layout_width="0dp"
                         android:layout_height="22dp"
@@ -136,7 +136,7 @@
                         android:layout_gravity="center"
                         android:layout_margin="16dp" />
 
-                    <com.uyscuti.sharedmodule.utils.waveformseekbar.WaveformSeekBar
+                    <com.uyscut.flashdesign.utils.waveformseekbar.WaveformSeekBar
                         android:id="@+id/secondWave"
                         android:layout_width="0dp"
                         android:layout_height="22dp"
@@ -256,7 +256,7 @@
             android:layout_height="0dp"
             android:layout_weight="1"
             android:visibility="visible"
-            tools:listitem="@layout/audio_comment_item_reply"
+            tools:listitem="@layout/comment_audio_item_reply"
             android:id="@+id/repliesRecyclerView"
             app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
             android:layout_marginTop="5dp"

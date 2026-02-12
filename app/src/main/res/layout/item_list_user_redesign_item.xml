@@ -10,8 +10,6 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
         tools:ignore="MissingConstraints"
         tools:layout_editor_absoluteX="-7dp"
         tools:layout_editor_absoluteY="16dp">
@@ -31,53 +29,58 @@
             app:strokeWidth="2dp" />
 
         <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:layout_marginStart="16dp"
-            android:layout_marginEnd="16dp"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:gravity="center"
             android:orientation="vertical"
             tools:ignore="MissingConstraints">
 
             <TextView
-                android:id="@+id/fullNameTextView"
+                android:id="@+id/titleTextView"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
                 android:fontFamily="sans-serif-medium"
-                android:text="Full Name"
-                android:textStyle="bold"
-                android:textColor="@android:color/black"
+                android:text="Username"
                 android:textSize="18sp"
-                android:maxLines="1"
-                android:ellipsize="end" />
+                app:layout_constraintBottom_toTopOf="@+id/subtitleTextView"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toEndOf="@+id/settingsImageView"
+                app:layout_constraintTop_toTopOf="@+id/settingsImageView"
+                app:layout_constraintVertical_chainStyle="packed" />
 
             <TextView
-                android:id="@+id/userNameTextView"
+                android:id="@+id/subtitleTextView"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
+                android:layout_marginEnd="16dp"
                 android:fontFamily="sans-serif"
-                android:text="\@username"
-                android:textColor="#666666"
+                android:text="subtitle"
                 android:textSize="14sp"
-                android:maxLines="1"
-                android:ellipsize="end" />
+                app:layout_constraintBottom_toTopOf="@+id/divider"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toEndOf="@+id/settingsImageView"
+                app:layout_constraintTop_toBottomOf="@+id/titleTextView" />
+
 
         </LinearLayout>
 
     </LinearLayout>
 
-    <View
-        android:id="@+id/divider"
-        android:layout_width="0dp"
-        android:layout_height="1dp"
-        android:layout_marginTop="12dp"
-        android:alpha="0.5"
-        android:background="@color/gray_dark"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/settingsImageView"
-        tools:ignore="NotSibling" />
+
+        <View
+            android:id="@+id/divider"
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_marginTop="12dp"
+            android:alpha="0.5"
+            android:background="@color/gray_dark"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent" />
+
+
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -33,7 +33,7 @@
 
         <!--    <include layout="@layout/content_messages" />-->
 
-        <com.uyscuti.social.chatsuit.messages.MessagesList
+        <com.uyscut.chatsuit.messages.MessagesList
             android:id="@+id/messagesList"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
@@ -67,7 +67,7 @@
             android:background="@color/bluejeans" />
 
 
-        <com.uyscuti.social.chatsuit.messages.MessageInput
+        <com.uyscut.chatsuit.messages.MessageInput
             android:id="@+id/input"
             android:visibility="visible"
             android:layout_width="match_parent"

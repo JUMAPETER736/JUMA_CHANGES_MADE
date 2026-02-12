@@ -212,7 +212,7 @@
                     android:layout_width="0dp"
                     android:layout_height="24dp"
                     android:layout_weight="1"
-                    android:src="@drawable/play_button_filled"/>
+                    android:src="@drawable/play"/>
 
                 <ImageView
                     android:id="@+id/nav_menu"
@@ -226,7 +226,7 @@
                     android:layout_width="0dp"
                     android:layout_height="24dp"
                     android:layout_weight="1"
-                    android:src="@drawable/favorite_black"/>
+                    android:src="@drawable/books"/>
 
                 <ImageView
                     android:id="@+id/nav_profile"

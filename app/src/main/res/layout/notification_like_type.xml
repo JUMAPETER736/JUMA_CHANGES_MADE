@@ -28,7 +28,7 @@
             android:layout_gravity="start"
             android:contentDescription="TODO"
             android:scaleType="fitCenter"
-            android:src="@drawable/profilepic2" />
+            android:src="@drawable/profile_photo" />
 
     </androidx.cardview.widget.CardView>
 
@@ -42,7 +42,7 @@
 
         <!-- Notification Message -->
         <TextView
-            android:fontFamily="@font/helvetica_regular"
+            android:fontFamily="@font/poppins_regular"
             android:id="@+id/username"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -57,7 +57,7 @@
             android:orientation="horizontal">
 
             <TextView
-                android:fontFamily="@font/helvetica_regular"
+                android:fontFamily="@font/poppins_regular"
                 android:id="@+id/notificationMessage"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"

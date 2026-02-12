@@ -15,7 +15,7 @@
         app:layout_constraintTop_toTopOf="parent"
         android:layout_marginHorizontal="50dp"
         android:layout_marginVertical="10dp"
-        android:src="@drawable/documents"
+        android:src="@drawable/document"
         android:id="@+id/profileImageView"
         />
     <TextView
@@ -185,7 +185,7 @@
         app:layout_constraintTop_toBottomOf="@+id/caption"
         android:id="@+id/tags"
         android:text=""
-        android:textColor="@color/bluejeans"
+        android:textColor="@color/blueJeans"
         android:layout_marginStart="50dp"
         android:layout_marginEnd="20dp"
         android:layout_marginTop="10dp"
@@ -213,7 +213,7 @@
         android:layout_marginStart="50dp"
         android:src="@drawable/favorite_svgrepo_com"
         android:id="@+id/like"
-        app:tint="@color/bluejeans" />
+        app:tint="@color/blueJeans" />
 
     <TextView
         android:layout_width="wrap_content"
@@ -233,7 +233,7 @@
         app:layout_constraintLeft_toRightOf="@id/like"
         android:layout_marginStart="20dp"
         android:src="@drawable/chat_round_svgrepo_com_shorts"
-        app:tint="@color/bluejeans"
+        app:tint="@color/blueJeans"
         android:id="@+id/comment"
         />
 
@@ -255,7 +255,7 @@
         android:layout_marginStart="20dp"
         android:src="@drawable/favorite_svgrepo_com__1_"
         android:id="@+id/favorite"
-        app:tint="@color/bluejeans"
+        app:tint="@color/blueJeans"
         />
 
     <ImageView
@@ -267,7 +267,7 @@
         android:layout_marginStart="20dp"
         android:src="@drawable/retweet_svgrepo_com"
         android:id="@+id/reFeed"
-        app:tint="@color/bluejeans"
+        app:tint="@color/blueJeans"
         />
     <ImageView
         android:layout_width="50dp"
@@ -278,7 +278,7 @@
         android:layout_marginStart="20dp"
         android:src="@drawable/baseline_share_24"
         android:id="@+id/share"
-        app:tint="@color/bluejeans"
+        app:tint="@color/blueJeans"
         />
     <ImageView
         android:layout_width="50dp"
@@ -289,7 +289,7 @@
         android:layout_marginStart="20dp"
         android:src="@drawable/options_vertical_svgrepo_com"
         android:id="@+id/moreOptions"
-        app:tint="@color/bluejeans"
+        app:tint="@color/blueJeans"
         />
     <!--    <View-->
     <!--        android:layout_width="match_parent"-->

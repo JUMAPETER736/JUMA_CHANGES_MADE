@@ -22,7 +22,7 @@
             android:src="@drawable/baseline_people_24"
             android:id="@+id/deleteImageView"
             android:layout_margin="16dp"
-            app:tint="@color/bluejeans" />
+            app:tint="@color/blueJeans" />
 
         <TextView
             android:layout_width="wrap_content"
@@ -49,7 +49,7 @@
             android:src="@drawable/download_02_svgrepo_com"
             android:id="@+id/downloadImageView"
             android:layout_margin="16dp"
-            app:tint="@color/bluejeans" />
+            app:tint="@color/blueJeans" />
 
         <TextView
             android:layout_width="wrap_content"
@@ -73,7 +73,7 @@
             android:src="@drawable/chat_24_black"
             android:id="@+id/sharetochat_button"
             android:layout_margin="16dp"
-            app:tint="@color/bluejeans" />
+            app:tint="@color/blueJeans" />
 
         <TextView
             android:layout_width="wrap_content"
@@ -100,7 +100,7 @@
             android:src="@drawable/baseline_share_24"
             android:id="@+id/shareFeed"
             android:layout_margin="16dp"
-            app:tint="@color/bluejeans" />
+            app:tint="@color/blueJeans" />
 
         <TextView
             android:layout_width="wrap_content"
@@ -125,7 +125,7 @@
             android:src="@drawable/retweet_svgrepo_com"
             android:id="@+id/rePostFeed"
             android:layout_margin="16dp"
-            app:tint="@color/bluejeans" />
+            app:tint="@color/blueJeans" />
 
         <TextView
             android:layout_width="wrap_content"

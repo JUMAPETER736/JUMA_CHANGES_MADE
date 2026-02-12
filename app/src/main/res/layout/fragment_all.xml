@@ -36,7 +36,7 @@
     <FrameLayout
         android:id="@+id/feed_text_view_fragment"
         android:layout_width="match_parent"
-        android:visibility="visible"
+        android:visibility="gone"
         android:layout_height="match_parent" />
 
 

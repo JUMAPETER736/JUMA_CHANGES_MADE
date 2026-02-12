@@ -155,7 +155,6 @@
         android:id="@+id/recyclerView3"
         android:layout_width="match_parent"
         android:layout_height="50dp"
-        android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="1.0"
@@ -268,7 +267,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:contentDescription="@string/content_description"
-                android:src="@drawable/documents"
+                android:src="@drawable/document"
                 android:visibility="gone"
                 app:layout_constraintDimensionRatio="16:9"
                 app:layout_constraintTop_toTopOf="parent"
@@ -430,6 +429,4 @@
             android:background="@drawable/fill_button_color"
             android:text="Repost" />
     </LinearLayout>
-
-
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -309,7 +309,7 @@
                         android:padding="12dp"
                         android:scaleType="centerCrop"
                         android:visibility="visible"
-                        app:srcCompat="@drawable/location_svgrepo_com" />
+                        app:srcCompat="@drawable/location" />
                 </LinearLayout>
 
                 <TextView
@@ -439,7 +439,7 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:contentDescription="@string/content_description"
-                            android:src="@drawable/documents"
+                            android:src="@drawable/document"
                             android:visibility="gone"
                             app:layout_constraintDimensionRatio="16:9"
                             app:layout_constraintTop_toTopOf="parent"

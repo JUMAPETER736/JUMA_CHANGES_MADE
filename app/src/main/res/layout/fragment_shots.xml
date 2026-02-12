@@ -6,7 +6,7 @@
     android:layout_height="match_parent"
     android:background="@color/black"
     android:theme="@style/FUllScreen"
-    >
+    tools:context=".ui.fragments.ShotsFragment">
 
     <androidx.media3.ui.PlayerView
         android:id="@+id/playerView"
@@ -16,8 +16,9 @@
         android:contentDescription="@string/content_description"
         android:clickable="true"
         app:use_controller="false"
-        android:focusable="true" />
+        android:focusable="true" >
 
+    </androidx.media3.ui.PlayerView>
 
     <androidx.viewpager2.widget.ViewPager2
         android:id="@+id/shortsViewPager"

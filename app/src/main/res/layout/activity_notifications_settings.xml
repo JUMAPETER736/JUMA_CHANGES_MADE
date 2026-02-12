@@ -9,7 +9,7 @@
         android:id="@+id/main"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/bluejeans"
+        android:background="@color/blue_fade"
         tools:context=".ui.NotificationsSettingsActivity">
 
         <!-- Header Section -->
@@ -113,7 +113,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:text="Default"
-                android:textColor="@color/bluejeans"
+                android:textColor="@color/blueJeans"
                 android:textSize="12sp"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/notificationSoundLabel"
@@ -248,7 +248,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:text="All contacts"
-                android:textColor="@color/bluejeans"
+                android:textColor="@color/blueJeans"
                 android:textSize="12sp"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/messagePrivacyLabel"
