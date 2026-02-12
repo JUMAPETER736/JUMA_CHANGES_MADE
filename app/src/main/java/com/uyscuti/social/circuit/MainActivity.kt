@@ -2929,19 +2929,7 @@ class MainActivity : AppCompatActivity(),
     }
 
 
-    private fun launchOauth() {
-        val handler = Handler()
-        handler.postDelayed(
-            {
-                val intent = Intent(this, GoogleOAuth::class.java)
-                startActivity(intent)
-            }, 2000
-        )
-    }
-
-
-
-    private fun observerAction() {
+         private fun observerAction() {
         mainViewModel.selectedDialogsCount.observe(this, Observer { count ->
             if (count != null && count > 0) {
                 if (actionMode == null) {
