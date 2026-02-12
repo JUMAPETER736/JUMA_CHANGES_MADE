@@ -80,7 +80,7 @@ class FeedRepostMultipleImageFragment : Fragment() , MultipleImagesListener {
         Glide.with(this)
             .load(data.author)
             .apply(RequestOptions.bitmapTransform(CircleCrop()))
-            .placeholder(R.drawable.profilepic2)
+            .placeholder(R.drawable.flash21)
             .diskCacheStrategy(DiskCacheStrategy.ALL)
             .into(binding.toolbar.feedProfilePic)
 
