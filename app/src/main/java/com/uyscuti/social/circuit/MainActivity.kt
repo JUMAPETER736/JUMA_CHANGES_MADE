@@ -68,7 +68,6 @@ import androidx.core.net.toUri
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.MediatorLiveData
-import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -89,15 +88,6 @@ import androidx.media3.exoplayer.source.MediaSource
 import androidx.media3.exoplayer.source.ProgressiveMediaSource
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import androidx.work.BackoffPolicy
-import androidx.work.Constraints
-import androidx.work.ExistingPeriodicWorkPolicy
-import androidx.work.ExistingWorkPolicy
-import androidx.work.NetworkType
-import androidx.work.OneTimeWorkRequestBuilder
-import androidx.work.OutOfQuotaPolicy
-import androidx.work.PeriodicWorkRequestBuilder
-import androidx.work.WorkManager
 import com.uyscuti.social.medialoader.MediaLoader
 import com.uyscuti.social.medialoader.DefaultConfigFactory
 import com.uyscuti.social.medialoader.DownloadManager
@@ -115,13 +105,10 @@ import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.tom_roush.pdfbox.pdmodel.PDDocument
 import com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.Fragment_Original_Post_With_Repost_Inside
 import com.uyscuti.sharedmodule.FlashApplication
-import com.uyscuti.sharedmodule.FlashWorker
 import com.uyscuti.social.business.forapp.fragment.BusinessProfileEditFragment
 import com.uyscuti.sharedmodule.model.Catalogue
 import com.uyscuti.social.business.util.ImagePicker
 import com.uyscuti.social.business.viewmodel.CatalogueAdapterViewModel
-import com.uyscuti.sharedmodule.callbacks.ChatSocketWorker
-import com.uyscuti.sharedmodule.callbacks.CombinedWorker
 import com.uyscuti.sharedmodule.calls.viewmodel.CallViewModel
 import com.uyscuti.sharedmodule.data.model.shortsmodels.Comment
 import com.uyscuti.sharedmodule.data.model.shortsmodels.CommentReplyResults
@@ -170,7 +157,6 @@ import com.uyscuti.social.network.api.response.comment.allcomments.Author
 import com.uyscuti.social.network.api.response.comment.allcomments.Avatar
 import com.uyscuti.social.network.api.response.comment.allcomments.CommentFiles
 import com.uyscuti.social.network.api.response.commentreply.allreplies.AllCommentReplies
-import com.uyscuti.social.network.api.response.getallshorts.Post
 
 import com.uyscuti.social.call.repository.MainRepository
 import com.uyscuti.social.call.service.MainServiceRepository
@@ -274,17 +260,12 @@ import ru.nikartm.support.ImageBadgeView
 
 import java.io.ByteArrayOutputStream
 import java.io.File
-import java.io.FileOutputStream
 import java.io.IOException
 import java.io.InputStream
-import java.net.HttpURLConnection
-import java.net.URL
 import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Collections.emptyList
 import java.util.Date
-import java.util.UUID
-import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
@@ -1553,35 +1534,6 @@ class MainActivity : AppCompatActivity(),
              vnRecordProgress = 0
          }
 
-         private fun addIdleDottedBar() {
-             val bar = View(this).apply {
-                 val dotSize = dpToPx(5)
-                 layoutParams = LinearLayout.LayoutParams(
-                     dotSize,
-                     dotSize
-                 ).apply {
-                     marginEnd = dpToPx(3) // 3dp spacing
-                     gravity = android.view.Gravity.CENTER_VERTICAL
-                 }
-                 background = GradientDrawable().apply {
-                     shape = GradientDrawable.OVAL
-                     setColor(Color.parseColor("#2563EB"))
-                 }
-                 scaleY = 1.0f
-                 tag = "idle_dot"
-             }
-
-             binding.waveDotsContainer.addView(bar)
-             waveBars.add(bar)
-             waveBarCount++
-
-             // Remove old bars from the START (left side) if too many
-             if (waveBars.size > maxWaveBars) {
-                 binding.waveDotsContainer.removeViewAt(0)
-                 waveBars.removeAt(0)
-             }
-         }
-
          private fun updateRecordWaveProgress(progress: Float) {
              CoroutineScope(Dispatchers.Main).launch {
                  binding.wave.progress = progress
@@ -2161,7 +2113,7 @@ class MainActivity : AppCompatActivity(),
 
         customDialog?.setDialogCallback(this)
 
-        val onBackPressedCallback = object : OnBackPressedCallback(true) {
+        object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 val fragmentManager = supportFragmentManager // if this is the main Activity
 
@@ -2711,245 +2663,13 @@ class MainActivity : AppCompatActivity(),
     }
 
 
-
-    private fun serverResponseToEntity(serverResponse: List<Post>): List<UserShortsEntity> {
-        return serverResponse.map { serverResponseItem ->
-            UserShortsEntity(
-                __v = serverResponseItem.__v,
-                _id = serverResponseItem._id,
-                content = serverResponseItem.content,
-                author = serverResponseItem.author,
-                comments = serverResponseItem.comments,
-                createdAt = serverResponseItem.createdAt,
-                images = serverResponseItem.images,
-                isBookmarked = serverResponseItem.isBookmarked,
-                isLiked = serverResponseItem.isLiked,
-                likes = serverResponseItem.likes,
-                tags = serverResponseItem.tags,
-                updatedAt = serverResponseItem.updatedAt,
-                thumbnail = serverResponseItem.thumbnail
-                // map other properties...
-            )
-        }
-    }
-
-
-
-
-    private fun startCombinedWorker() {
-        val workManager = WorkManager.getInstance(this)
-
-        val existingWorkPolicy = if (workManager.getWorkInfosByTag(WORKER_TAG).get().isEmpty()) {
-            ExistingWorkPolicy.REPLACE
-        } else {
-            Log.d(WORKER_TAG, "Combined Work already exists, Replacing.......")
-
-            ExistingWorkPolicy.REPLACE
-
-        }
-
-        val request = OneTimeWorkRequestBuilder<CombinedWorker>().setBackoffCriteria(
-            BackoffPolicy.LINEAR,
-            10,
-            TimeUnit.SECONDS
-        ).setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST).addTag(WORKER_TAG)
-            .build()
-
-        try {
-            workManager.enqueueUniqueWork(WORKER_TAG, existingWorkPolicy, request)
-        } catch (e: Exception) {
-            e.printStackTrace()
-            Log.e(WORKER_TAG, "Error enqueuing work: ${e.message}")
-        }
-
-        observeWorkStatus(request.id)
-    }
-
-    private fun downloadAndSaveImage(
-        mUrl: String, fileName: String, menuItem: MenuItem
-    ) {
-        Log.d("Download", "downloadAndSaveImage")
-        GlobalScope.launch(Dispatchers.IO) {
-            val url = URL(mUrl)
-            val connection = url.openConnection() as HttpURLConnection
-            connection.requestMethod = "GET"
-            connection.setRequestProperty("Accept-Encoding", "identity")
-            connection.connect()
-
-            try {
-                if (connection.responseCode in 200..299) {
-                    val inputStream = connection.inputStream
-                    val internalStoragePath = File(filesDir, "images")
-                    if (!internalStoragePath.exists()) {
-                        internalStoragePath.mkdirs()
-                    }
-
-                    val destinationFile = File(internalStoragePath, fileName)
-
-                    val outputStream = FileOutputStream(destinationFile)
-
-                    var bytesCopied: Long = 0
-                    val buffer = ByteArray(1024)
-                    var bytes = inputStream.read(buffer)
-                    while (bytes >= 0) {
-                        bytesCopied += bytes
-                        outputStream.write(buffer, 0, bytes)
-                        bytes = inputStream.read(buffer)
-                    }
-
-                    Log.d("Download", "File Downloaded: ${destinationFile.absolutePath}")
-                    Glide.with(applicationContext).asBitmap().load(destinationFile)
-                        .transform(CircleCrop()).placeholder(R.drawable.google)
-
-                        .error(R.drawable.error_drawable) // Drawable to display on load failure
-                        .fallback(R.drawable.fallback_drawable)
-                        .into(object : CustomTarget<Bitmap>() {
-                            override fun onResourceReady(
-                                resource: Bitmap, transition: Transition<in Bitmap>?
-                            ) {
-                                menuItem.icon = BitmapDrawable(resources, resource)
-                                Log.d("ProfilePic", "onResourceReady")
-                                Log.d(
-                                    "BitmapSize",
-                                    "Width: ${resource.width}, Height: ${resource.height}"
-                                )
-
-                            }
-
-                            override fun onLoadCleared(placeholder: Drawable?) {
-                                // Handle when the drawable is cleared
-                                menuItem.icon = placeholder
-                                Log.d("ProfilePic", "onLoadCleared")
-                            }
-
-                            override fun onLoadFailed(errorDrawable: Drawable?) {
-                                // Handle failure
-                                menuItem.icon = errorDrawable
-                                Log.d("ProfilePic", "onLoadFailed")
-
-                            }
-                        })
-                    outputStream.close()
-                    inputStream.close()
-                } else {
-                    Log.e("DownloadFailed", "HTTP response code: ${connection.responseCode}")
-                }
-            } catch (e: Exception) {
-                Log.e("DownloadFailed", e.message.toString())
-                e.printStackTrace()
-            }
-        }
-    }
-
-    private fun startCombinedWorkerPeriodic() {
-        Log.d(WORKER_TAG, "Creating Work Instance")
-        try {
-            val workManager = WorkManager.getInstance(this)
-
-            // Add constraints for internet connection or unmetered network
-            val constraints = Constraints.Builder()
-                .setRequiredNetworkType(NetworkType.CONNECTED) // Requires an internet connection
-                .build()
-
-            // Schedule the worker to run every 10 minutes with a flex interval of 5 minutes
-            val request = PeriodicWorkRequestBuilder<CombinedWorker>(
-                repeatInterval = 10, // Repeat every 10 minutes
-                repeatIntervalTimeUnit = TimeUnit.MINUTES,
-                flexTimeInterval = 5,
-                flexTimeIntervalUnit = TimeUnit.MINUTES
-            ).addTag("Flash_Master_Periodic_second").build()
-
-            try {
-                workManager.enqueueUniquePeriodicWork(
-                    "Flash_Master_Periodic_second",
-                    ExistingPeriodicWorkPolicy.CANCEL_AND_REENQUEUE,
-                    request
-                )
-            } catch (e: Exception) {
-                e.printStackTrace()
-                Log.e(WORKER_TAG, "Error enqueuing work: ${e.message}")
-            }
-
-            // observeWorkStatus(request.id)
-        } catch (e: Exception) {
-            Log.d(WORKER_TAG, "Error creating Work Instance: ${e.message}")
-        }
-    }
-
-    private fun observeWorkStatus(id: UUID) {
-        val workManager = WorkManager.getInstance(this)
-
-        workManager.getWorkInfoByIdLiveData(id).observe(this, Observer {
-            Log.d(WORKER_TAG, "Work Status: ${it?.state}")
-        })
-    }
-
-    private fun startChatSocketWorker() {
-        val request = OneTimeWorkRequestBuilder<ChatSocketWorker>().setBackoffCriteria(
-            BackoffPolicy.LINEAR, 10, TimeUnit.SECONDS
-        ) // Customize backoff criteria
-            .build()
-
-        WorkManager.getInstance(applicationContext).enqueue(request)
-    }
-
-    private fun startDirectReplyService() {
+         private fun startDirectReplyService() {
         val serviceIntent = Intent(this, DirectReplyService::class.java)
         startService(serviceIntent)
     }
 
-    private fun startCallWorker() {
-        val constraints =
-            Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build()
 
-        val request = OneTimeWorkRequestBuilder<FlashWorker>()
-
-            .setInitialDelay(10, TimeUnit.SECONDS).setBackoffCriteria(
-                BackoffPolicy.LINEAR, 10, TimeUnit.SECONDS
-            ) // Customize backoff criteria
-            .build()
-
-        WorkManager.getInstance(applicationContext).enqueue(request)
-
-    }
-
-    private fun startPeriodicCallWorker() {
-        val constraints =
-            Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build()
-
-        val request = PeriodicWorkRequestBuilder<FlashWorker>(
-            repeatInterval = 20, // 20 minutes
-            repeatIntervalTimeUnit = TimeUnit.MINUTES
-        ).setConstraints(constraints).setBackoffCriteria(
-            BackoffPolicy.LINEAR, 10, TimeUnit.SECONDS
-        ) // Customize backoff criteria
-            .build()
-
-        WorkManager.getInstance(applicationContext).enqueue(request)
-    }
-
-
-         private fun observerAction() {
-        mainViewModel.selectedDialogsCount.observe(this, Observer { count ->
-            if (count != null && count > 0) {
-                if (actionMode == null) {
-                    // ActionMode not started yet, start it
-                    startAction(count)
-                } else {
-                    // ActionMode already started, update the title
-                    actionMode?.title = "$count selected"
-                }
-
-
-            } else {
-                // No items selected, end the ActionMode if it's active
-                actionMode?.finish()
-
-            }
-        })
-    }
-
-    private fun observeMediator() {
+         private fun observeMediator() {
         // Observe both LiveData objects
         val mediatorLiveData = MediatorLiveData<Pair<Int, Int>>()
         mediatorLiveData.addSource(mainViewModel.selectedDialogsCount) {
@@ -3134,38 +2854,7 @@ class MainActivity : AppCompatActivity(),
     }
 
 
-    private fun createMessage(text: String, chatId: String): MessageEntity {
-        val createdAt = System.currentTimeMillis()
-        val lastSeen = Date(createdAt)
-
-        val avatar = settings.getString("avatar", "avatar").toString()
-
-        val user = UserEntity(
-            id = "0", name = "You", avatar = avatar, online = true, lastSeen = lastSeen
-        )
-
-        return MessageEntity(
-            id = "Text_${Random.nextInt()}",
-            chatId = chatId,
-            text = text,
-            userId = myId,
-            user = user,
-            createdAt = createdAt,
-            imageUrl = null,
-            voiceUrl = null,
-            voiceDuration = 0,
-            userName = "You",
-            status = "Sent",
-            videoUrl = null,
-            audioUrl = null,
-            docUrl = null,
-            fileSize = 0,
-            deleted = false
-        )
-    }
-
-
-    override fun onBackPressed() {
+         override fun onBackPressed() {
         val count = mainViewModel.selectedDialogsCount.value
 
         if (mainViewModel.selectedDialogsCount.value == 0) {
@@ -3198,31 +2887,8 @@ class MainActivity : AppCompatActivity(),
         onBackPressedListeners.add(listener)
     }
 
-    // Unregister a listener in your fragment
-    fun removeOnBackPressedListener(listener: OnBackPressedListener) {
-        onBackPressedListeners.remove(listener)
-    }
 
-
-    private fun initializeCallService() {
-        CoroutineScope(Dispatchers.IO).launch {
-
-            val username = settings.getString("username", "").toString()
-            val userId = settings.getString("_id", "").toString()
-
-            Log.d("VideoCall", "username : $username")
-            Log.d("VideoCall", "userId : $userId")
-
-            mainRepository.init(username)
-            mainServiceRepository.startService(username)
-            mainRepository.setUserName(username)
-
-        }
-    }
-
-
-
-    private fun performLogout() {
+         private fun performLogout() {
         CoroutineScope(Dispatchers.IO).launch {
             //delete data from local db
             deleteUserProfile()
@@ -3246,11 +2912,7 @@ class MainActivity : AppCompatActivity(),
     }
 
 
-    fun setDarkTheme() {
-        setTheme(R.style.DarkTheme)
-    }
-
-    private fun getUserProfile() {
+         private fun getUserProfile() {
 
         GlobalScope.launch {
             val response = try {
@@ -3538,14 +3200,7 @@ class MainActivity : AppCompatActivity(),
 
     }
 
-    private fun showTabs(id: String): Boolean {
-        return when (id) {
-            "R.id.chat" -> true
-            else -> false
-        }
-    }
-
-    private fun replaceFragment(fragment: Fragment, tag: String = "") {
+         private fun replaceFragment(fragment: Fragment, tag: String = "") {
 
         val fragmentManager = supportFragmentManager
         val fragmentTransaction = fragmentManager.beginTransaction()
@@ -3786,12 +3441,8 @@ class MainActivity : AppCompatActivity(),
         binding.bottomNavigationView.visibility = View.GONE
     }
 
-    fun showBottomNavigation() {
-        binding.bottomNavigationView.visibility = View.VISIBLE
-    }
 
-
-    @Subscribe(threadMode = ThreadMode.MAIN)
+         @Subscribe(threadMode = ThreadMode.MAIN)
     fun shortsCacheEvent(event: ShortsCacheEvent) {
         Log.d("shortsCacheEvent", "shortsCacheEvent - ${event.videoPath}")
 
@@ -8411,11 +8062,7 @@ class MainActivity : AppCompatActivity(),
     }
 
 
-    fun setAdapter() {
-
-    }
-
-    private fun feedCommentClicked(
+         private fun feedCommentClicked(
         position: Int,
         data: com.uyscuti.social.network.api.response.posts.Post
     ) {
