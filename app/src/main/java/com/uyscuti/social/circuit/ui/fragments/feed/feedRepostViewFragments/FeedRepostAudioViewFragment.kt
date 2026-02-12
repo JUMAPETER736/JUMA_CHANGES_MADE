@@ -128,7 +128,7 @@ class FeedRepostAudioViewFragment() : Fragment(), PlayFeedAudioInterface {
             Glide.with(this)
                 .load(data.author[0].account.avatar.url)
                 .apply(RequestOptions.bitmapTransform(CircleCrop()))
-                .placeholder(R.drawable.profilepic2)
+                .placeholder(R.drawable.flash21)
                 .diskCacheStrategy(DiskCacheStrategy.ALL)
                 .into(binding.toolbar.feedProfilePic)
 

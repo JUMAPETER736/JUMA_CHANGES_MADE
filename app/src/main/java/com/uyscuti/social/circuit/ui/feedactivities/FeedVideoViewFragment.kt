@@ -139,7 +139,7 @@ class FeedVideoViewFragment : Fragment(), PlayFeedVideoInterface {
         Glide.with(this)
             .load(data.author!!.account.avatar.url)
             .apply(RequestOptions.bitmapTransform(CircleCrop()))
-            .placeholder(R.drawable.profilepic2)
+            .placeholder(R.drawable.flash21)
             .diskCacheStrategy(DiskCacheStrategy.ALL)
             .into(binding.toolbar.feedProfilePic)
 
