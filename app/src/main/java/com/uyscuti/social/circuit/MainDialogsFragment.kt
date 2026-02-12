@@ -45,8 +45,8 @@ abstract class MainDialogsFragment : Fragment(), DialogsListAdapter.OnDialogClic
                 Glide.with(this)
                     .asBitmap()
                     .load(url)
-                    .placeholder(R.drawable.user)
-                    .error(R.drawable.user)
+                    .placeholder(R.drawable.flash21)
+                    .error(R.drawable.flash21)
                     .centerCrop()
                     .into(object : SimpleTarget<Bitmap>() {
 
@@ -68,9 +68,9 @@ abstract class MainDialogsFragment : Fragment(), DialogsListAdapter.OnDialogClic
 
                 Glide.with(this)
                     .asBitmap()
-                    .load(R.drawable.user)
-                    .placeholder(R.drawable.user)
-                    .error(R.drawable.user)
+                    .load(R.drawable.flash)
+                    .placeholder(R.drawable.flash)
+                    .error(R.drawable.flash)
                     .centerCrop()
                     .into(object : SimpleTarget<Bitmap>() {
 
