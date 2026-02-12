@@ -54,12 +54,12 @@ class SettingsActivity : AppCompatActivity() {
         val avatarBitmap: Bitmap? = if (avatarPath!!.isNotEmpty()) {
             BitmapFactory.decodeFile(avatarPath)
         } else {
-            BitmapFactory.decodeResource(resources, R.drawable.round_user)
+            BitmapFactory.decodeResource(resources, R.drawable.flash21)
         }
 
         // Create Bitmaps for icons
         val lockBitmap: Bitmap? = BitmapFactory.decodeResource(resources, R.drawable.google)
-        val userBitmap: Bitmap? = BitmapFactory.decodeResource(resources, R.drawable.round_user)
+        val userBitmap: Bitmap? = BitmapFactory.decodeResource(resources, R.drawable.flash21)
         val blockBitmap: Bitmap? = BitmapFactory.decodeResource(resources, R.drawable.google)
         val muteBitmap: Bitmap? = BitmapFactory.decodeResource(resources, R.drawable.google)
         val friendsBitmap: Bitmap? = BitmapFactory.decodeResource(resources, R.drawable.google)

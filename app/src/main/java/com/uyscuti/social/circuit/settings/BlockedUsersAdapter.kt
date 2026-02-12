@@ -46,8 +46,8 @@ class BlockedUsersAdapter(
             Glide.with(itemView.context)
                 .load(blockedUser.user.avatar?.url)
                 .apply(RequestOptions.bitmapTransform(CircleCrop()))
-                .placeholder(R.drawable.round_user)
-                .error(R.drawable.round_user)
+                .placeholder(R.drawable.flash21)
+                .error(R.drawable.flash21)
                 .into(avatarImageView)
 
             unblockButton.setOnClickListener {
