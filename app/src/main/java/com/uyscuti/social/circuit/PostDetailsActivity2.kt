@@ -258,7 +258,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
     private lateinit var binding: ActivityPostDetails2Binding
     private lateinit var clickListeners: OnClickListeners
 
-    //    private late init var BottomSheet1Binding: BottomSheet1Binding
+
     private var adapter: CommentsRecyclerViewAdapter? = null
     private var commentCount by Delegates.notNull<Int>()
     private var currentCommentAudioPath = ""

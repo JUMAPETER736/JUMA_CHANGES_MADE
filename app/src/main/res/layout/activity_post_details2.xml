@@ -7,9 +7,7 @@
 
 
 
-    <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-        xmlns:app="http://schemas.android.com/apk/res-auto"
-        xmlns:tools="http://schemas.android.com/tools"
+    <FrameLayout
         android:id="@+id/shortsViewPager"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -17,18 +15,6 @@
 
 
 
-        <!--    <VideoView-->
-        <!--        android:id="@+id/videoView"-->
-        <!--        android:layout_width="match_parent"-->
-        <!--        android:layout_height="match_parent"-->
-        <!--        android:layout_gravity="center" />-->
-
-        <!--    <com.google.android.exoplayer2.ui.PlayerView-->
-        <!--        android:id="@+id/exoPlayerView"-->
-        <!--        android:layout_width="match_parent"-->
-        <!--        android:layout_height="match_parent"-->
-        <!--        app:use_controller="true"-->
-        <!--        app:resize_mode="fill" />-->
 
         <androidx.media3.ui.PlayerView
             android:id="@+id/video_view"
@@ -265,7 +251,6 @@
                         android:layout_height="30dp"
                         android:layout_gravity="center"
                         android:progressTint="@color/bluejeans" />
-                    <!--                    android:progress="20"-->
                 </LinearLayout>
             </LinearLayout>
         </LinearLayout>
@@ -364,7 +349,7 @@
                     android:id="@+id/recyclerView"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    tools:listitem="@layout/bottom_sheet_1_item" />
+                    tools:listitem="@layout/comment_text_item" />
 
                 <ProgressBar
                     android:layout_width="50dp"
@@ -422,7 +407,7 @@
                     android:layout_marginRight="16dp"
                     android:background="@color/bluejeans" />
 
-                <com.uyscut.chatsuit.messages.CommentsInput
+                <com.uyscuti.social.chatsuit.messages.CommentsInput
                     android:id="@+id/input"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -434,6 +419,7 @@
                     app:inputCursorDrawable="@drawable/shape_custom_cursor"
                     app:inputHint="Comment..."
                     app:showAttachmentButton="true" />
+
             </LinearLayout>
 
             <LinearLayout
@@ -457,23 +443,7 @@
 
                     />
 
-                <!--                    <rm.com.audiowave.AudioWaveView-->
-                <!--                        android:id="@+id/wave"-->
-                <!--                        android:layout_width="0dp"-->
-                <!--                        android:layout_height="32dp"-->
-                <!--                        android:layout_weight="1"-->
-                <!--                        android:layout_gravity="center"-->
-                <!--                        android:layout_margin="16dp"-->
-                <!--                        app:animateExpansion="false"-->
-                <!--                        app:chunkWidth="3dp"-->
-                <!--                        app:chunkHeight="24dp"-->
-                <!--                        app:minChunkHeight="2dp"-->
-                <!--                        app:chunkSpacing="1dp"-->
-                <!--                        app:chunkRadius="1dp"-->
-                <!--                        app:touchable="true"-->
-                <!--                        app:waveColor="@color/bluejeans"-->
-                <!--                        />-->
-                <com.uyscut.flashdesign.utils.waveformseekbar.WaveformSeekBar
+                <com.uyscuti.sharedmodule.utils.waveformseekbar.WaveformSeekBar
                     android:id="@+id/wave"
                     android:layout_width="0dp"
                     android:layout_height="32dp"
@@ -574,7 +544,7 @@
 
                     </LinearLayout>
 
-                    <com.uyscut.flashdesign.views.WaveFormView
+                    <com.uyscuti.sharedmodule.views.WaveFormView
                         android:id="@+id/waveForm"
                         android:layout_width="match_parent"
                         android:layout_height="90dp"
@@ -646,7 +616,6 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:menu="@menu/main_menu"
         tools:ignore="MissingConstraints">
 
         <ImageButton
@@ -732,6 +701,9 @@
                 android:background="@drawable/shorts_upload_1"
                 android:scaleType="centerCrop"
                 app:tint="@color/white" />
+
         </androidx.cardview.widget.CardView>
+
     </androidx.appcompat.widget.Toolbar>
+
 </androidx.constraintlayout.widget.ConstraintLayout>
