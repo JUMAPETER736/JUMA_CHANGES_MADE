@@ -148,7 +148,7 @@ class FeedMultipleImagesRecyclerViewAdapter(private val imageList: List<String>?
 
             Glide.with(imageView.context)
                 .load(imageItem)
-                .placeholder(R.drawable.profilepic2)
+                .placeholder(R.drawable.flash21)
                 .diskCacheStrategy(DiskCacheStrategy.ALL)
                 .into(imageView)
             // You can also add click listeners or other bindings here if needed
