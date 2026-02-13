@@ -21,6 +21,7 @@ import com.uyscuti.sharedmodule.presentation.MainViewModel
 import com.uyscuti.sharedmodule.model.notificatioRead.NotificationRead
 import com.uyscuti.sharedmodule.model.notifications_data_class.INotification
 import com.uyscuti.sharedmodule.R
+import com.uyscuti.sharedmodule.User_Interfaces.OtherUserProfile.OtherUserProfileAccount
 import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
 import org.greenrobot.eventbus.EventBus
 
@@ -285,7 +286,7 @@ private lateinit var retrofitInterface: RetrofitInstance
                         notificationItem.owner,
                         false
                     )
-                    OtherUserProfile.openFromShorts(holder.itemView.context, otherUsersProfile)
+                 //   OtherUserProfileAccount.openFromShorts(holder.itemView.context, otherUsersProfile)
                 }
             }
             /**This is the function for favorite */
@@ -325,7 +326,7 @@ private lateinit var retrofitInterface: RetrofitInstance
                         notificationItem.avatar,
                         notificationItem.owner
                     )
-                    OtherUserProfile.openFromShorts(holder.itemView.context, otherUsersProfile)
+                   // OtherUserProfile.openFromShorts(holder.itemView.context, otherUsersProfile)
                 }
             }
             /**This is Like Notification View Holder */
@@ -367,7 +368,7 @@ private lateinit var retrofitInterface: RetrofitInstance
                         notificationItem.avatar,
                         notificationItem.owner
                     )
-                    OtherUserProfile.openFromShorts(holder.itemView.context, otherUsersProfile)
+                  //  OtherUserProfile.openFromShorts(holder.itemView.context, otherUsersProfile)
                 }
             }
             /**this is the function for comment view Holder*/
@@ -408,7 +409,7 @@ private lateinit var retrofitInterface: RetrofitInstance
                         notificationItem.avatar,
                         notificationItem.owner
                     )
-                    OtherUserProfile.openFromShorts(holder.itemView.context, otherUsersProfile)
+                   // OtherUserProfile.openFromShorts(holder.itemView.context, otherUsersProfile)
                     EventBus.getDefault().post(NotificationRead(true, notificationItem._id))
                 }
             }
