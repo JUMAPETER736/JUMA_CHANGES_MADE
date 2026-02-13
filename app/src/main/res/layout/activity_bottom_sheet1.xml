@@ -65,7 +65,7 @@
             android:layout_marginLeft="16dp"
             android:layout_marginRight="16dp"
             android:background="@color/bluejeans"/>
-        <com.uyscut.chatsuit.messages.MessageInput
+        <com.uyscuti.social.chatsuit.messages.MessageInput
             android:id="@+id/input"
             android:visibility="visible"
             android:layout_width="match_parent"
@@ -76,7 +76,9 @@
             app:inputButtonDefaultBgPressedColor="@color/bluejeans"
             app:inputCursorDrawable="@drawable/shape_custom_cursor"
             app:inputHint="@string/hint_enter_a_message"
-            app:showAttachmentButton="true"/>
+            app:showAttachmentButton="true"
+            tools:ignore="MissingClass" />
+
     </LinearLayout>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
