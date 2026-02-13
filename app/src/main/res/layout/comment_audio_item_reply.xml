@@ -12,7 +12,7 @@
         android:id="@+id/profilePic"
         android:layout_width="40dp"
         android:layout_height="40dp"
-        android:src="@drawable/person_button_svgrepo_com" />
+        android:src="@drawable/flash21" />
 
     <LinearLayout
         android:layout_width="0dp"
@@ -81,7 +81,7 @@
 
                         />
 
-                    <com.uyscut.flashdesign.utils.waveformseekbar.WaveformSeekBar
+                    <com.uyscuti.sharedmodule.utils.waveformseekbar.WaveformSeekBar
                         android:id="@+id/wave"
                         android:layout_width="0dp"
                         android:layout_height="22dp"
@@ -101,7 +101,9 @@
                         app:wave_progress="0"
                         app:wave_progress_color="@color/bluejeans"
                         app:wave_width="3dp" />
-                    <com.uyscut.flashdesign.utils.waveformseekbar.WaveformSeekBar
+
+
+                    <com.uyscuti.sharedmodule.utils.waveformseekbar.WaveformSeekBar
                         android:id="@+id/secondWave"
                         android:layout_width="0dp"
                         android:layout_height="22dp"
