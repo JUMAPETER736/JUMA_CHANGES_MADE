@@ -564,7 +564,7 @@
                     </LinearLayout>
 
                     <!-- Waveform visualization -->
-                    <com.uyscut.flashdesign.views.WaveFormView
+                    <com.uyscuti.sharedmodule.views.WaveFormView
                         android:id="@+id/waveForm"
                         android:layout_width="match_parent"
                         android:layout_height="60dp"
@@ -588,7 +588,7 @@
                             android:src="@drawable/play"
                             app:tint="@android:color/white" />
 
-                        <com.uyscut.flashdesign.utils.waveformseekbar.WaveformSeekBar
+                        <com.uyscuti.sharedmodule.utils.waveformseekbar.WaveformSeekBar
                             android:id="@+id/wave"
                             android:layout_width="0dp"
                             android:layout_height="32dp"
