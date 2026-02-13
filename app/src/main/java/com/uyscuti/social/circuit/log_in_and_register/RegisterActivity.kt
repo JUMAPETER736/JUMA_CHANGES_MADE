@@ -44,6 +44,8 @@ import org.json.JSONException
 
 @AndroidEntryPoint
 class RegisterActivity : AppCompatActivity() {
+
+
     private lateinit var binding: ActivityRegisterBinding
     private var isPasswordVisible = false
     private var isConfirmPasswordVisible = false
