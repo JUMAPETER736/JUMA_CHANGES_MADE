@@ -48,7 +48,8 @@ private const val ARG_PARAM2 = "param2"
 private const val TAG = "FeedVideoViewFragment"
 
 class FeedVideoViewFragment : Fragment(), PlayFeedVideoInterface {
-    // TODO: Rename and change types of parameters
+
+
     private var param1: String? = null
     private var param2: String? = null
     private lateinit var data: com.uyscuti.social.network.api.response.posts.Post
