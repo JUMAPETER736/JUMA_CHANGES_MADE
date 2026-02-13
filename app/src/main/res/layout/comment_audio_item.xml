@@ -12,7 +12,7 @@
         android:layout_width="40dp"
         android:layout_height="40dp"
         android:id="@+id/profilePic"
-        android:src="@drawable/person_button_svgrepo_com" />
+        android:src="@drawable/flash21" />
 
     <LinearLayout
         android:layout_width="0dp"
@@ -77,24 +77,8 @@
 
                         />
 
-<!--                    <rm.com.audiowave.AudioWaveView-->
-<!--                        android:id="@+id/wave"-->
-<!--                        android:layout_width="0dp"-->
-<!--                        android:layout_height="22dp"-->
-<!--                        android:layout_weight="1"-->
-<!--                        android:layout_gravity="center"-->
-<!--                        android:layout_margin="16dp"-->
-<!--                        app:animateExpansion="false"-->
-<!--                        app:chunkWidth="3dp"-->
-<!--                        app:chunkHeight="24dp"-->
-<!--                        app:minChunkHeight="2dp"-->
-<!--                        app:chunkSpacing="1dp"-->
-<!--                        app:chunkRadius="1dp"-->
-<!--                        app:touchable="true"-->
-<!--                        app:waveColor="@color/bluejeans"-->
-<!--                        />-->
 
-                    <com.uyscut.flashdesign.utils.waveformseekbar.WaveformSeekBar
+                    <com.uyscuti.sharedmodule.utils.waveformseekbar.WaveformSeekBar
                         android:id="@+id/wave"
                         android:layout_width="0dp"
                         android:layout_height="22dp"
@@ -136,7 +120,7 @@
                         android:layout_gravity="center"
                         android:layout_margin="16dp" />
 
-                    <com.uyscut.flashdesign.utils.waveformseekbar.WaveformSeekBar
+                    <com.uyscuti.sharedmodule.utils.waveformseekbar.WaveformSeekBar
                         android:id="@+id/secondWave"
                         android:layout_width="0dp"
                         android:layout_height="22dp"
@@ -176,14 +160,6 @@
 
                 </LinearLayout>
 
-<!--                <TextView-->
-<!--                    android:layout_width="wrap_content"-->
-<!--                    android:layout_height="wrap_content"-->
-<!--                    android:text="00:00"-->
-<!--                    android:id="@+id/audioDuration"-->
-<!--                    android:layout_gravity="top"-->
-<!--                    android:layout_marginStart="40dp"-->
-<!--                    />-->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
