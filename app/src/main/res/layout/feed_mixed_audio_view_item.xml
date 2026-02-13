@@ -89,7 +89,7 @@
                     android:src="@drawable/play_svgrepo_com"
                     />
 
-                <com.uyscut.flashdesign.utils.waveformseekbar.WaveformSeekBar
+                <com.uyscuti.sharedmodule.utils.waveformseekbar.WaveformSeekBar
                     android:id="@+id/waveSeekBar"
                     android:layout_width="0dp"
                     android:layout_height="48dp"
