@@ -452,7 +452,7 @@
                     android:layout_marginRight="16dp"
                     android:background="@color/bluejeans" />
 
-                <com.uyscut.chatsuit.messages.CommentsInput
+                <com.uyscuti.social.chatsuit.messages.CommentsInput
                     android:id="@+id/input"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -484,7 +484,6 @@
             android:id="@+id/VNLayout"
             android:visibility="gone"
             >
-            <!--        android:background="#808080"-->
 
 
             <androidx.cardview.widget.CardView
@@ -549,7 +548,7 @@
 
                     </LinearLayout>
 
-                    <com.uyscut.flashdesign.views.WaveFormView
+                    <com.uyscuti.sharedmodule.views.WaveFormView
                         android:layout_width="match_parent"
                         android:layout_height="90dp"
                         android:layout_marginTop="5dp"
@@ -584,23 +583,8 @@
 
                             />
 
-                        <!--                    <rm.com.audiowave.AudioWaveView-->
-                        <!--                        android:id="@+id/wave"-->
-                        <!--                        android:layout_width="0dp"-->
-                        <!--                        android:layout_height="32dp"-->
-                        <!--                        android:layout_weight="1"-->
-                        <!--                        android:layout_gravity="center"-->
-                        <!--                        android:layout_margin="16dp"-->
-                        <!--                        app:animateExpansion="false"-->
-                        <!--                        app:chunkWidth="3dp"-->
-                        <!--                        app:chunkHeight="24dp"-->
-                        <!--                        app:minChunkHeight="2dp"-->
-                        <!--                        app:chunkSpacing="1dp"-->
-                        <!--                        app:chunkRadius="1dp"-->
-                        <!--                        app:touchable="true"-->
-                        <!--                        app:waveColor="@color/bluejeans"-->
-                        <!--                        />-->
-                        <com.uyscut.flashdesign.utils.waveformseekbar.WaveformSeekBar
+
+                        <com.uyscuti.sharedmodule.utils.waveformseekbar.WaveformSeekBar
                             android:id="@+id/wave"
                             android:layout_width="0dp"
                             android:layout_height="32dp"
