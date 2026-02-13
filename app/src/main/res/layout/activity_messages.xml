@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fitsSystemWindows="true"
-    tools:context=".ui.MessagesActivity">
+    tools:context="com.uyscuti.sharedmodule.MessagesActivity">
 
     <RelativeLayout
         android:layout_width="wrap_content"
@@ -31,9 +31,8 @@
 
         </com.google.android.material.appbar.AppBarLayout>
 
-        <!--    <include layout="@layout/content_messages" />-->
 
-        <com.uyscut.chatsuit.messages.MessagesList
+        <com.uyscuti.social.chatsuit.messages.MessagesList
             android:id="@+id/messagesList"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
@@ -67,7 +66,7 @@
             android:background="@color/bluejeans" />
 
 
-        <com.uyscut.chatsuit.messages.MessageInput
+        <com.uyscuti.social.chatsuit.messages.MessageInput
             android:id="@+id/input"
             android:visibility="visible"
             android:layout_width="match_parent"

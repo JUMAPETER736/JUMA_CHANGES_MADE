@@ -96,7 +96,7 @@
     </RelativeLayout>
 
 
-    <com.uyscut.flashdesign.colorimagebottomnav.BottomNavigationView
+    <com.uyscuti.sharedmodule.bottomSheet.BottomNavigationView
         android:id="@+id/bottomNavigationView"
         android:layout_width="match_parent"
         android:layout_height="40dp"
@@ -110,25 +110,9 @@
         app:nav_backgroundColor="@color/bluejeans"
         app:nav_selectorColor="@color/white"
         app:nav_selectorSize="2dp"
-        app:nav_selectorTop="true" />
+        app:nav_selectorTop="true"
+        tools:ignore="MissingClass" />
 
 
-    <!--    <com.google.android.material.bottomnavigation.BottomNavigationView-->
-    <!--    app:nav_selectorTop="@drawable/item_line"-->
-    <!--        android:id="@+id/bottomNavigationView"-->
-    <!--        android:layout_width="match_parent"-->
-    <!--        android:layout_height="40dp"-->
-    <!--        app:elevation="20dp"-->
-    <!--        app:liftOnScroll="true"-->
-    <!--        app:itemBackground="@drawable/item_line"-->
-    <!--        android:background="@color/bluejeans"-->
-    <!--        app:labelVisibilityMode="unlabeled"-->
-    <!--        android:layout_gravity="bottom"-->
-    <!--        app:itemIconSize="18dp"-->
-    <!--        app:itemIconTint="@color/nav_selected"-->
-    <!--        app:itemActiveIndicatorStyle="@style/App.Custom.Indicator"-->
-    <!--        app:menu="@menu/bottom_navigation"-->
-    <!--        />-->
-    <!--    app:layout_behavior="com.google.android.material.behavior.HideBottomViewOnScrollBehavior"-->
-    <!--        app:itemIconSize="18dp"-->
+
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
