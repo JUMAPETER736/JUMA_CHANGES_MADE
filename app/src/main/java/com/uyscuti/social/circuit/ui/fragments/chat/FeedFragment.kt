@@ -318,6 +318,7 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
         }
     }
 
+    @SuppressLint("MissingInflatedId")
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     @OptIn(UnstableApi::class)
     override fun onCreateView(
