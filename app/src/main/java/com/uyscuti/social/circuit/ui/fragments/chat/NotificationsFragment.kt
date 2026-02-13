@@ -20,7 +20,6 @@ import androidx.media3.common.util.UnstableApi
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.room.Room
-import com.uyscuti.sharedmodule.OtherUserProfile
 import com.uyscuti.sharedmodule.adapter.notifications.NotificationDayAdapter
 import com.uyscuti.sharedmodule.adapter.notifications.NotificationsAdapter
 import com.uyscuti.sharedmodule.data.model.shortsmodels.OtherUsersProfile

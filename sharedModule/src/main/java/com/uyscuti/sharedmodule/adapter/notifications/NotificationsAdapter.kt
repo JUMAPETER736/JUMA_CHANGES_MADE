@@ -18,7 +18,6 @@ import com.bumptech.glide.load.resource.bitmap.CircleCrop
 import com.bumptech.glide.request.RequestOptions
 import com.uyscuti.sharedmodule.data.model.shortsmodels.OtherUsersProfile
 import com.uyscuti.sharedmodule.presentation.MainViewModel
-import com.uyscuti.sharedmodule.OtherUserProfile
 import com.uyscuti.sharedmodule.model.notificatioRead.NotificationRead
 import com.uyscuti.sharedmodule.model.notifications_data_class.INotification
 import com.uyscuti.sharedmodule.R

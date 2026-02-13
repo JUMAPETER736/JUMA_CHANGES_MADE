@@ -7,7 +7,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
-import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.annotation.OptIn
 import androidx.annotation.RequiresApi
@@ -21,7 +20,6 @@ import com.daimajia.androidanimations.library.Techniques
 import com.daimajia.androidanimations.library.YoYo
 import com.uyscuti.sharedmodule.R
 import com.uyscuti.sharedmodule.data.model.shortsmodels.OtherUsersProfile
-import com.uyscuti.sharedmodule.OtherUserProfile
 import com.uyscuti.sharedmodule.User_Interfaces.OtherUserProfile.OtherUserProfileAccount
 import com.uyscuti.sharedmodule.model.GoToUserProfileFragment
 import com.uyscuti.social.core.common.data.room.entity.UserShortsEntity
