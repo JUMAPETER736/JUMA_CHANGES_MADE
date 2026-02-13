@@ -738,7 +738,7 @@ class NotificationsFragment : Fragment(), NotificationsAdapter.NotificationActio
                         notification.owner
                     )
                     EventBus.getDefault().post(NotificationRead(true, notification._id))
-                    OtherUserProfile.Companion.openFromShorts(requireContext(), otherUsersProfile)
+                   // OtherUserProfile.Companion.openFromShorts(requireContext(), otherUsersProfile)
                 }
 
                 is UnfollowNotification -> {
@@ -749,7 +749,7 @@ class NotificationsFragment : Fragment(), NotificationsAdapter.NotificationActio
                         notification.owner
                     )
                     EventBus.getDefault().post(NotificationRead(true, notification._id))
-                    OtherUserProfile.Companion.openFromShorts(requireContext(), otherUsersProfile)
+                  //  OtherUserProfile.Companion.openFromShorts(requireContext(), otherUsersProfile)
                 }
             }
         }
