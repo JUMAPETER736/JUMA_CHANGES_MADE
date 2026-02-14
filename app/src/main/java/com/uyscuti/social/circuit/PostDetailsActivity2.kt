@@ -164,6 +164,7 @@ import com.uyscuti.sharedmodule.viewmodels.comments.RoomCommentReplyViewModel
 import com.uyscuti.sharedmodule.viewmodels.comments.RoomCommentsViewModel
 import com.uyscuti.sharedmodule.viewmodels.comments.ShortCommentReplyViewModel
 import com.uyscuti.sharedmodule.viewmodels.comments.ShortCommentsViewModel
+import com.uyscuti.social.circuit.user_interface.UniversalSearchActivity
 import com.uyscuti.social.compressor.VideoCompressor
 import com.uyscuti.social.compressor.VideoQuality
 import com.uyscuti.social.compressor.config.Configuration
@@ -499,7 +500,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
         val logoutMenuItem: MenuItem? = binding.toolbar.menu.findItem(R.id.logout)
 
         menuSearch?.setOnMenuItemClickListener {
-            val intent = Intent(this, SearchShortActivity::class.java)
+            val intent = Intent(this, UniversalSearchActivity::class.java)
             startActivity(intent)
             true
         }
