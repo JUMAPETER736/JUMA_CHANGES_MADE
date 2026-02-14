@@ -16,7 +16,6 @@ import androidx.fragment.app.FragmentPagerAdapter
 import com.uyscuti.sharedmodule.R
 import com.uyscuti.sharedmodule.interfaces.feedinterfaces.OnShortThumbnailClickListener
 import com.uyscuti.sharedmodule.model.User
-import com.uyscuti.sharedmodule.ui.fragments.forshorts.OtherUsersShortsProfileFragment
 import com.uyscuti.sharedmodule.fragments.MyUserBusinessProfileFragment
 import com.uyscuti.sharedmodule.ui.fragments.FragmentFactoryRegistry
 

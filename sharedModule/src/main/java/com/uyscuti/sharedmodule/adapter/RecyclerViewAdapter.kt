@@ -23,7 +23,7 @@ class RecyclerViewAdapter: PagingDataAdapter<UserShortsEntity, RecyclerViewAdapt
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MyViewHolder {
-        val inflater = LayoutInflater.from(parent.context).inflate(R.layout.shorts_user_profile_item, parent, false)
+        val inflater = LayoutInflater.from(parent.context).inflate(R.layout.profile_details_activity, parent, false)
 
         return MyViewHolder(inflater)
     }

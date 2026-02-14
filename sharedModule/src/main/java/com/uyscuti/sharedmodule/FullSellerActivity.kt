@@ -79,15 +79,17 @@ class FullSellerActivity : AppCompatActivity() {
 
 
         // Inflate and add the share icon
-        val shareIconView = LayoutInflater.from(this).inflate(R.layout.share_icon_layou, toolbar, false) as LinearLayout
-        val shareIcon = shareIconView.findViewById<ImageView>(R.id.shareIcon)
-        shareIcon.setOnClickListener {
-            val shareIntent = Intent(Intent.ACTION_SEND)
-            shareIntent.type = "text/plain"
-            shareIntent.putExtra(Intent.EXTRA_TEXT, "Check out this amazing business catalogue!")
-            startActivity(Intent.createChooser(shareIntent, "Share Catalogue"))
-        }
-        toolbar.addView(shareIconView)
+        //val shareIconView = LayoutInflater.from(this).inflate(R.layout.sha, toolbar, false) as LinearLayout
+        //val shareIcon = shareIconView.findViewById<ImageView>(R.id.shareIcon)
+
+//        shareIcon.setOnClickListener {
+//            val shareIntent = Intent(Intent.ACTION_SEND)
+//            shareIntent.type = "text/plain"
+//            shareIntent.putExtra(Intent.EXTRA_TEXT, "Check out this amazing business catalogue!")
+//            startActivity(Intent.createChooser(shareIntent, "Share Catalogue"))
+//        }
+
+       // toolbar.addView(shareIconView)
 
         // Inflate and add the heart icon
         val heartIconView = LayoutInflater.from(this).inflate(R.layout.heart_icon_layout, toolbar, false) as LinearLayout

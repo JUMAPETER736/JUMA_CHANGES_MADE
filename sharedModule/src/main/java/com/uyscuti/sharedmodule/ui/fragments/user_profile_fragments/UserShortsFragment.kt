@@ -16,7 +16,6 @@ import androidx.recyclerview.widget.RecyclerView
 import com.uyscuti.sharedmodule.R
 import com.uyscuti.sharedmodule.adapter.PaginatedAdapter
 import com.uyscuti.sharedmodule.adapter.RecyclerViewAdapter
-import com.uyscuti.sharedmodule.adapter.ShortsUserProfileAdapter
 import com.uyscuti.sharedmodule.model.GoToUserProfileShortsPlayerFragment
 import com.uyscuti.sharedmodule.model.UserProfileShortsStartGet
 import com.uyscuti.sharedmodule.model.UserProfileShortsViewModel
