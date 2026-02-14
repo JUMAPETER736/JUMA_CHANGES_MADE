@@ -36,7 +36,7 @@ import com.uyscuti.sharedmodule.ReportNotificationActivity2
 import com.uyscuti.sharedmodule.adapter.feed.FeedAdapter
 import com.uyscuti.sharedmodule.model.feed.SetAllFragmentScrollPosition
 import com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.FeedDocumentViewFragment
-import com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.FeedMixedFilesViewFragment
+//import com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.FeedMixedFilesViewFragment
 import com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.Fragment_Original_Post_With_Repost_Inside
 import com.uyscuti.sharedmodule.viewmodels.feed.GetFeedViewModel
 import com.uyscuti.social.circuit.R
@@ -137,7 +137,7 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
     private var feedTextViewFragment: FeedTextViewFragment?= null
     private var feedAudioViewFragment: FeedAudioViewFragment? = null
     private var feedMultipleImageViewFragment: FeedMultipleImageViewFragment? = null
-    private var feedMixedFilesViewFragment: FeedMixedFilesViewFragment? = null
+    //private var feedMixedFilesViewFragment: FeedMixedFilesViewFragment? = null
 
     private var feedDocsViewFragment: FeedDocumentViewFragment? = null
     private var feedImageViewFragment: FeedImageViewFragment? = null
@@ -1204,13 +1204,13 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
                 EventBus.getDefault().post(HideFeedFloatingActionButton())
                 frameLayout.visibility = View.VISIBLE
                 feedListView.visibility = View.GONE
-                feedMixedFilesViewFragment = FeedMixedFilesViewFragment()
+               // feedMixedFilesViewFragment = FeedMixedFilesViewFragment()
                 feedMixedFilesViewFragment?.setListener(this)
                 val args = Bundle().apply {
                     putInt("position", position)
                     putSerializable("data", data) // Adjust type if needed
                 }
-                feedMixedFilesViewFragment?.arguments = args
+               // feedMixedFilesViewFragment?.arguments = args
                 requireActivity().supportFragmentManager.beginTransaction()
                     .replace(
                         R.id.feed_text_view_fragment,
