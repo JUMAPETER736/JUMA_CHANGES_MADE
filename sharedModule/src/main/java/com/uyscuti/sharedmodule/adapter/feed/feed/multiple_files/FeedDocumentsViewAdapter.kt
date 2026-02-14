@@ -63,7 +63,7 @@ class FeedDocumentsViewAdapter(
     private val coroutineScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
 
     inner class SimpleViewHolder(parent: ViewGroup) : RecyclerView.ViewHolder(
-        LayoutInflater.from(parent.context).inflate(R.layout.feed_multiple_documents_view_item, parent, false)
+        LayoutInflater.from(parent.context).inflate(R.layout.feed_multiple_documents_only_view_item, parent, false)
     ) {
 
         private val documentName: TextView = itemView.findViewById(R.id.documentName)
