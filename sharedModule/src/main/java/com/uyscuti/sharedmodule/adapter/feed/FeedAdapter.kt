@@ -1847,6 +1847,8 @@ class FeedAdapter(
             }
         }
 
+   
+
         private fun navigateToOriginalPostWithoutRepostInside(data: com.uyscuti.social.network.api.response.posts.Post) {
             try {
                 Log.d(TAG, "Navigating to original Post for Post ID: ${data._id}")
@@ -2504,6 +2506,7 @@ class FeedAdapter(
             setupBookmarkButton(data)
             setupRepostButton(data)
             setupShareButton(data)
+            setupMoreOptionsButton(data)
         }
 
         private fun setupRepostButton(data: Post) {
