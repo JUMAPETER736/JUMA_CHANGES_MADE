@@ -27,7 +27,7 @@ class MultipleFeedDocAdapter(
     ): Pager2ViewHolder {
         return Pager2ViewHolder(
             LayoutInflater.from(parent.context)
-                .inflate(R.layout.feed_multiple_documents_view_item, parent, false)
+                .inflate(R.layout.feed_multiple_documents_only_view_item, parent, false)
         )
     }
 
