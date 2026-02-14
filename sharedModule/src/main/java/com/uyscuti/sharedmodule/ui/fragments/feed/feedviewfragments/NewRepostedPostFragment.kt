@@ -255,7 +255,7 @@ class NewRepostedPostFragment(
 
         val originalPostUsername: TextView = view.findViewById(R.id.originalPostUsername)
         val originalFeedTextContent: TextView = view.findViewById(R.id.originalFeedTextContent)
-        val userprofile: ImageView = view.findViewById(R.id.userprofile)
+        val userprofile: ImageView = view.findViewById(R.id.userProfileAvatar)
 
         val backButton: ImageView = view.findViewById(R.id.backButton)
         val repostButton: AppCompatButton = view.findViewById(R.id.repostButton)
@@ -534,7 +534,7 @@ class NewRepostedPostFragment(
         }
 
         val shortThumbNail: ImageView = view.findViewById(R.id.shortThumbNail)
-        val shortThumbNail2: ImageView = view.findViewById(R.id.shortThumbNails)
+        val shortThumbNail2: ImageView = view.findViewById(R.id.shortThumbNail)
         shortThumbNail2.setOnClickListener {
 
             ImagePicker.with(
@@ -544,7 +544,7 @@ class NewRepostedPostFragment(
                     imagePickLauncher?.launch(intent)
                 }
         }
-        val subTopicsTwo: ImageView = view.findViewById(R.id.subTopicstwo)
+        val subTopicsTwo: ImageView = view.findViewById(R.id.subTopics)
         subTopicsTwo.setOnClickListener {
             Log.d("subTopics", "subTopics clicked")
             val intent = Intent(requireContext(), TopicsActivity::class.java)
