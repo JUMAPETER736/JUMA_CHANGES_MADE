@@ -42,7 +42,7 @@ class FeedImagesViewAdapter(
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val view = LayoutInflater.from(parent.context)
-            .inflate(R.layout.feed_multiple_documents_view_item, parent, false)
+            .inflate(R.layout.feed_multiple_documents_only_view_item, parent, false)
         return ViewHolder(view)
     }
 

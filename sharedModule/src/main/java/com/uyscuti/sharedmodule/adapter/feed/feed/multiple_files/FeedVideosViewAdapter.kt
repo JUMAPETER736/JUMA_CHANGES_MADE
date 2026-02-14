@@ -23,7 +23,7 @@ class FeedVideosViewAdapter(
         private var onMultipleImagesClickListener: OnMultipleImagesClickListener? = null
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-        val view = LayoutInflater.from(parent.context).inflate(R.layout.feed_multiple_videos_item, parent, false)
+        val view = LayoutInflater.from(parent.context).inflate(R.layout.feed_multiple_videos_only_view_item, parent, false)
         return ViewHolder(view)
     }
 
