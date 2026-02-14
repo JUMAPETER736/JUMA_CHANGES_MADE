@@ -105,7 +105,7 @@ import com.uyscuti.sharedmodule.model.ShowBottomNav
 import com.uyscuti.sharedmodule.popupDialog.DialogManager
 import com.uyscuti.sharedmodule.presentation.DialogViewModel
 import com.uyscuti.sharedmodule.ui.GifActivity
-import com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.FeedMixedFilesViewFragment
+//import com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.FeedMixedFilesViewFragment
 import com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.Fragment_Original_Post_With_Repost_Inside
 import com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.NewRepostedPostFragment
 import com.uyscuti.sharedmodule.uploads.AudioActivity
@@ -253,7 +253,7 @@ class FavoriteFragment : Fragment(),
     private var feedTextViewFragment: FeedTextViewFragment?= null
     private var feedAudioViewFragment: FeedAudioViewFragment? = null
     private var feedMultipleImageViewFragment: FeedMultipleImageViewFragment? = null
-    private var feedMixedFilesViewFragment: FeedMixedFilesViewFragment? = null
+  //  private var feedMixedFilesViewFragment: FeedMixedFilesViewFragment? = null
     private lateinit var favoriteFeedAdapter: FeedAdapter
 
     private var fragmentOriginalPostWithRepostInside: Fragment_Original_Post_With_Repost_Inside? = null
@@ -1357,21 +1357,21 @@ class FavoriteFragment : Fragment(),
                 binding.rv.visibility = View.GONE
 
 
-                feedMixedFilesViewFragment = FeedMixedFilesViewFragment()
-                feedMixedFilesViewFragment?.setListener(this)
+               // feedMixedFilesViewFragment = FeedMixedFilesViewFragment()
+               // feedMixedFilesViewFragment?.setListener(this)
 
                 val args = Bundle().apply {
                     putInt("position", position)
                     putSerializable("data", data) // Adjust type if needed
                 }
-                feedMixedFilesViewFragment?.arguments = args
+               // feedMixedFilesViewFragment?.arguments = args
                 requireActivity().supportFragmentManager.beginTransaction()
-                    .replace(
-                        R.id.feed_text_view,
-                        feedMixedFilesViewFragment!!
-                    ) // Use the correct container ID
-                    .addToBackStack(null) // Optional, to add to back stack
-                    .commit()
+                  //  .replace(
+                        R.id.feed_text_view
+                        //feedMixedFilesViewFragment!!
+                  //  ) // Use the correct container ID
+                   // .addToBackStack(null) // Optional, to add to back stack
+                   // .commit()
 
             }
 
@@ -1435,7 +1435,7 @@ class FavoriteFragment : Fragment(),
                 EventBus.getDefault().post(HideFeedFloatingActionButton())
                 binding.feedTextView.visibility = View.VISIBLE
                 binding.rv.visibility = View.GONE
-                feedMixedFilesViewFragment?.setListener(this)
+               // feedMixedFilesViewFragment?.setListener(this)
                 val args = Bundle().apply {
                     putInt("position", position)
                     putSerializable("data", data) // Adjust type if needed
