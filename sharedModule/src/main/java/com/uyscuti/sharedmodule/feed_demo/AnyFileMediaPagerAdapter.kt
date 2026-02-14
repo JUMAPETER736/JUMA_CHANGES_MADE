@@ -29,7 +29,7 @@ class AnyFileMediaPagerAdapter(
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MediaViewHolder {
         val view = LayoutInflater.from(parent.context)
-            .inflate(R.layout.item_view_pager_1, parent, false)
+            .inflate(R.layout.item_view_pager, parent, false)
         return MediaViewHolder(view)
     }
 
