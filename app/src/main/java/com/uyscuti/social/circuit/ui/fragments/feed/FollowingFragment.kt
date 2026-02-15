@@ -1770,20 +1770,20 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
         }
     }
 
-    @SuppressLint("InflateParams")
+    @SuppressLint("InflateParams", "MissingInflatedId")
     override fun onMoreOptionsClickFromFeedTextViewFragment(
         position: Int,
         data: com.uyscuti.social.network.api.response.posts.Post
     ) {
-        val view: View = layoutInflater.inflate(R.layout.more_options_redesign_layout, null)
+        val view: View = layoutInflater.inflate(R.layout.feed_more_options_layout, null)
         val dialog = BottomSheetDialog(requireContext())
         dialog.setContentView(view)
         dialog.show()
         val reportOptionLayout : LinearLayout = view.findViewById(R.id.reportOption)
-        val hidePostLayout : LinearLayout = view.findViewById(R.id.hidePostOption)
+        val hidePostLayout : LinearLayout = view.findViewById(R.id.hidePostLayout)
 
-        val followUnfollowLayout : LinearLayout = view.findViewById(R.id.followUnfollowOption)
-        val notInterestedLayout : LinearLayout = view.findViewById(R.id.notInterestedOption)
+        val followUnfollowLayout : LinearLayout = view.findViewById(R.id.followUnfollowLayout)
+        val notInterestedLayout : LinearLayout = view.findViewById(R.id.notInterestedLayout)
         notInterestedLayout.visibility = View.GONE
         hidePostLayout.visibility = View.GONE
         followUnfollowLayout.visibility = View.GONE
