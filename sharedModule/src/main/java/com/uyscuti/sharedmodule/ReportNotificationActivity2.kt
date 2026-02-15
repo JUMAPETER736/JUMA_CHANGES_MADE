@@ -34,8 +34,8 @@ class ReportNotificationActivity2 : AppCompatActivity() {
         profileImageUrl?.let { url ->
             Glide.with(this)
                 .load(url)
-                .placeholder(R.drawable.bottom_nav_profile)
-                .error(R.drawable.bottom_nav_profile)
+                .placeholder(R.drawable.flash21)
+                .error(R.drawable.flash21)
                 .into(findViewById<ImageView>(R.id.userProfileImage))
         }
 
