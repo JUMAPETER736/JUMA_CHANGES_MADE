@@ -69,10 +69,6 @@ import com.google.android.material.snackbar.Snackbar
 import com.tom_roush.pdfbox.pdmodel.PDDocument
 import com.uyscuti.social.circuit.adapter.feed.ShareFeedPostAdapter
 import com.uyscuti.social.circuit.ui.feedactivities.FeedVideoViewFragment
-import com.uyscuti.social.circuit.ui.fragments.feed.feedRepostViewFragments.FeedRepostDocFragment
-import com.uyscuti.social.circuit.ui.fragments.feed.feedRepostViewFragments.FeedRepostImageFragment
-import com.uyscuti.social.circuit.ui.fragments.feed.feedRepostViewFragments.FeedRepostTextFragment
-import com.uyscuti.social.circuit.ui.fragments.feed.feedRepostViewFragments.FeedRepostVideoViewFragment
 import com.uyscut.flashdesign.ui.fragments.feed.feedviewfragments.FeedAudioViewFragment
 import com.uyscut.flashdesign.ui.fragments.feed.feedviewfragments.FeedMultipleImageViewFragment
 import com.uyscut.flashdesign.ui.fragments.feed.feedviewfragments.FeedTextViewFragment
@@ -144,8 +140,6 @@ import com.uyscuti.social.business.viewmodel.business.BusinessPostsViewModel
 import com.uyscuti.social.chatsuit.messages.CommentsInput
 import com.uyscuti.social.circuit.R
 import com.uyscuti.social.circuit.databinding.FragmentFavoriteBinding
-import com.uyscuti.social.circuit.ui.fragments.feed.feedRepostViewFragments.FeedRepostAudioViewFragment
-import com.uyscuti.social.circuit.ui.fragments.feed.feedRepostViewFragmentsimport.FeedRepostMultipleImageFragment
 import com.uyscuti.social.core.common.data.room.entity.FollowUnFollowEntity
 import com.uyscuti.social.core.common.data.room.entity.ShortsEntityFollowList
 import com.uyscuti.social.network.api.response.business.response.post.Post
@@ -255,12 +249,6 @@ class FavoriteFragment : Fragment(),
     private lateinit var favoriteFeedAdapter: FeedAdapter
 
     private var fragmentOriginalPostWithRepostInside: Fragment_Original_Post_With_Repost_Inside? = null
-    private var feedRepostDocFragment : FeedRepostDocFragment? = null
-    private var feedRepostTextFragment : FeedRepostTextFragment? = null
-    private var feedRepostVideoViewFragment : FeedRepostVideoViewFragment? = null
-    private var feedRepostAudioViewFragment : FeedRepostAudioViewFragment? = null
-    private var feedRepostImageFragment : FeedRepostImageFragment? = null
-    private var feedRepostMultipleImageFragment: FeedRepostMultipleImageFragment? = null
 
 
     private lateinit var businessAdapter: BusinessCatalogueAdapter
@@ -1453,16 +1441,7 @@ class FavoriteFragment : Fragment(),
                     putInt("position", position)
                     putSerializable("data", data) // Adjust type if needed
                 }
-                feedRepostMultipleImageFragment = FeedRepostMultipleImageFragment()
-                feedRepostMultipleImageFragment?.setListener(this)
-                feedRepostMultipleImageFragment?.arguments = args
-                requireActivity().supportFragmentManager.beginTransaction()
-                    .replace(
-                        R.id.feed_text_view_fragment,
-                        feedRepostMultipleImageFragment!!
-                    ) // Use the correct container ID
-                    .addToBackStack(null) // Optional, to add to back stack
-                    .commit()
+
 
             }
 
@@ -1476,16 +1455,7 @@ class FavoriteFragment : Fragment(),
                     putInt("position", position)
                     putSerializable("data", data) // Adjust type if needed
                 }
-                feedRepostAudioViewFragment = FeedRepostAudioViewFragment()
-                feedRepostAudioViewFragment?.setListener(this)
-                feedRepostAudioViewFragment?.arguments = args
-                requireActivity().supportFragmentManager.beginTransaction()
-                    .replace(
-                        R.id.feed_text_view_fragment,
-                        feedRepostAudioViewFragment!!
-                    ) // Use the correct container ID
-                    .addToBackStack(null) // Optional, to add to back stack
-                    .commit()
+
 
             }
             "image" -> {
@@ -1499,16 +1469,7 @@ class FavoriteFragment : Fragment(),
                     putInt("position", position)
                     putSerializable("data", data) // Adjust type if needed
                 }
-                feedRepostImageFragment = FeedRepostImageFragment()
-                feedRepostImageFragment?.setListener(this)
-                feedRepostImageFragment?.arguments = args
-                requireActivity().supportFragmentManager.beginTransaction()
-                    .replace(
-                        R.id.feed_text_view_fragment,
-                        feedRepostImageFragment!!
-                    ) // Use the correct container ID
-                    .addToBackStack(null) // Optional, to add to back stack
-                    .commit()
+
             }
 
             "text" -> {
@@ -1521,16 +1482,7 @@ class FavoriteFragment : Fragment(),
                     putInt("position", position)
                     putSerializable("data", data) // Adjust type if needed
                 }
-                feedRepostTextFragment = FeedRepostTextFragment()
-                feedRepostTextFragment?.setListener(this)
-                feedRepostTextFragment?.arguments = args
-                requireActivity().supportFragmentManager.beginTransaction()
-                    .replace(
-                        R.id.feed_text_view_fragment,
-                        feedRepostTextFragment!!
-                    ) // Use the correct container ID
-                    .addToBackStack(null) // Optional, to add to back stack
-                    .commit()
+
             }
 
             "docs" -> {
@@ -1544,16 +1496,6 @@ class FavoriteFragment : Fragment(),
                     putInt("position", position)
                     putSerializable("data", data) // Adjust type if needed
                 }
-                feedRepostDocFragment = FeedRepostDocFragment()
-                feedRepostDocFragment?.setListener(this)
-                feedRepostDocFragment?.arguments = args
-                requireActivity().supportFragmentManager.beginTransaction()
-                    .replace(
-                        R.id.feed_text_view_fragment,
-                        feedRepostDocFragment!!
-                    ) // Use the correct container ID
-                    .addToBackStack(null) // Optional, to add to back stack
-                    .commit()
 
             }
 
@@ -1568,16 +1510,6 @@ class FavoriteFragment : Fragment(),
                     putInt("position", position)
                     putSerializable("data", data) // Adjust type if needed
                 }
-                feedRepostVideoViewFragment = FeedRepostVideoViewFragment()
-                feedRepostVideoViewFragment?.setListener(this)
-                feedRepostVideoViewFragment?.arguments = args
-                requireActivity().supportFragmentManager.beginTransaction()
-                    .replace(
-                        R.id.feed_text_view_fragment,
-                        feedRepostVideoViewFragment!!
-                    ) // Use the correct container ID
-                    .addToBackStack(null) // Optional, to add to back stack
-                    .commit()
 
             }
         }
