@@ -173,7 +173,7 @@
                     android:layout_width="24dp"
                     android:layout_height="24dp"
                     android:layout_gravity="center"
-                    android:src="@drawable/ic_action_copy"
+                    android:src="@drawable/copy"
                     android:contentDescription="Copy Link"
                     app:tint="@color/blueJeans" />
             </com.google.android.material.card.MaterialCardView>

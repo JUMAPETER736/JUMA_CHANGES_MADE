@@ -325,7 +325,7 @@
                 android:id="@+id/muteOptionIcon"
                 android:layout_width="24dp"
                 android:layout_height="24dp"
-                android:src="@drawable/music_placeholder"
+                android:src="@drawable/music_icon"
                 android:contentDescription="Mute User"
                 app:tint="@color/blueJeans" />
 
@@ -420,7 +420,7 @@
                 android:id="@+id/copyLinkIcon"
                 android:layout_width="24dp"
                 android:layout_height="24dp"
-                android:src="@drawable/ic_action_copy"
+                android:src="@drawable/copy"
                 android:contentDescription="Copy Link"
                 app:tint="@color/blueJeans" />
 

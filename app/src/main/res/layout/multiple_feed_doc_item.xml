@@ -13,27 +13,6 @@
         android:contentDescription="@string/content_description"
         app:layout_constraintTop_toTopOf="parent"
         android:scaleType="centerCrop"
-        android:src="@drawable/document" />
+        android:src="@drawable/documents" />
 
-<!--    <TextView-->
-<!--        android:layout_width="wrap_content"-->
-<!--        android:layout_height="wrap_content"-->
-<!--        app:layout_constraintTop_toBottomOf="@id/img"-->
-<!--        app:layout_constraintStart_toStartOf="parent"-->
-<!--        android:text="File Name: "-->
-<!--        android:textSize="16sp"-->
-<!--        android:layout_marginTop="10dp"-->
-<!--        android:id="@+id/fileNameTextView"-->
-<!--        />-->
-
-<!--    <TextView-->
-<!--        android:layout_width="wrap_content"-->
-<!--        android:layout_height="wrap_content"-->
-<!--        app:layout_constraintTop_toBottomOf="@id/fileNameTextView"-->
-<!--        app:layout_constraintStart_toStartOf="@+id/fileNameTextView"-->
-<!--        android:text="No. of Pages: "-->
-<!--        android:textSize="16sp"-->
-<!--        android:id="@+id/numberOfPagesTextView"-->
-<!--        android:layout_marginTop="10dp"-->
-<!--        />-->
 </androidx.constraintlayout.widget.ConstraintLayout>
