@@ -18,7 +18,7 @@
             <ImageView
                 android:layout_width="50dp"
                 android:layout_height="50dp"
-                android:src="@drawable/document"
+                android:src="@drawable/documents"
                 />
             <TextView
                 android:layout_width="wrap_content"
@@ -60,7 +60,7 @@
             <ImageView
                 android:layout_width="50dp"
                 android:layout_height="50dp"
-                android:src="@drawable/document"
+                android:src="@drawable/documents"
                 android:visibility="gone"
                 android:id="@+id/documentIcon"
                 />

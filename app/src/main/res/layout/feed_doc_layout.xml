@@ -15,7 +15,7 @@
         app:layout_constraintTop_toTopOf="parent"
         android:layout_marginHorizontal="50dp"
         android:layout_marginVertical="10dp"
-        android:src="@drawable/document"
+        android:src="@drawable/documents"
         android:id="@+id/profileImageView"
         />
     <TextView
@@ -121,7 +121,7 @@
                 <ImageView
                     android:layout_width="50dp"
                     android:layout_height="50dp"
-                    android:src="@drawable/document"
+                    android:src="@drawable/documents"
                     />
                 <TextView
                     android:layout_width="wrap_content"
@@ -165,7 +165,7 @@
                 <ImageView
                     android:layout_width="50dp"
                     android:layout_height="50dp"
-                    android:src="@drawable/document"
+                    android:src="@drawable/documents"
                     android:visibility="gone"
                     android:id="@+id/documentIcon"
                     />
