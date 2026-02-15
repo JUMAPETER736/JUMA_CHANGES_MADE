@@ -109,7 +109,7 @@ class MultipleFeedAudiosAdapter(
 
 
                 else -> {
-                    holder.artworkImageView.setImageResource(R.drawable.music_placeholder) // Default image for other formats
+                    holder.artworkImageView.setImageResource(R.drawable.music_icon) // Default image for other formats
                 }
             }
         }

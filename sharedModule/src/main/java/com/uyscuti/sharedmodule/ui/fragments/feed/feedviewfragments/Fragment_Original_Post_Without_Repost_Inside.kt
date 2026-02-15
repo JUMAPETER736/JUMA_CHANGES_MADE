@@ -6509,7 +6509,7 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
                 likeButton.setImageResource(R.drawable.heart_svgrepo_com)
 
             } else {
-                likeButton.setImageResource(R.drawable.ic_heart)
+                likeButton.setImageResource(R.drawable.heart_svgrepo_com)
 
             }
         }

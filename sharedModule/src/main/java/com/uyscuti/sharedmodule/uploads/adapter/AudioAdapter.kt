@@ -70,11 +70,11 @@ class AudioAdapter(
             Glide.with(holder.itemView.context)
                 .asBitmap()
                 .load(albumArt)
-                .error(R.drawable.music_placeholder)
+                .error(R.drawable.music_icon)
                 .centerCrop()
                 .into(holder.albumArtImageView)
         } else {
-            holder.albumArtImageView.setImageResource(R.drawable.music_placeholder)
+            holder.albumArtImageView.setImageResource(R.drawable.music_icon)
         }
         holder.itemView.setOnClickListener {
             // Handle audio item click event

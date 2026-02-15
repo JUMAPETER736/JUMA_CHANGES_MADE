@@ -3388,7 +3388,7 @@ class FeedMixedFilesViewAdapter(
                 likeButton.setImageResource(R.drawable.heart_svgrepo_com)
 
             } else {
-                likeButton.setImageResource(R.drawable.ic_heart)
+                likeButton.setImageResource(R.drawable.heart_svgrepo_com)
 
             }
         }

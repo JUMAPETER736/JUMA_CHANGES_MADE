@@ -213,7 +213,7 @@
                     android:id="@+id/attachment2"
                     android:layout_gravity="center_vertical"
                     android:layout_margin="8dp"
-                    android:background="@drawable/attachment__2_"
+                    android:background="@drawable/attachment_white"
                     android:layout_height="25dp"
                     app:tint="@color/bluejeans" />
 
