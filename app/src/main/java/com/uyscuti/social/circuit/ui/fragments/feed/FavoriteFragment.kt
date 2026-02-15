@@ -1523,7 +1523,7 @@ class FavoriteFragment : Fragment(),
         val context = requireContext()
 
         val bottomSheetDialog = BottomSheetDialog(requireContext())
-        val shareView = layoutInflater.inflate(R.layout.example, null)
+        val shareView = layoutInflater.inflate(R.layout.bottom_dialog_for_share, null)
         val close_button = shareView.findViewById<ImageButton>(R.id.close_button)
         val recyclerView = shareView.findViewById<RecyclerView>(R.id.apps_recycler_view)
 
