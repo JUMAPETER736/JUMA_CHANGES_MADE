@@ -34,7 +34,7 @@
                 android:layout_height="match_parent"
                 android:id="@+id/artworkImageView"
                 android:visibility="gone"
-                android:src="@drawable/music_placeholder"
+                android:src="@drawable/music_icon"
                 android:scaleType="fitXY" />
 
             <LinearLayout

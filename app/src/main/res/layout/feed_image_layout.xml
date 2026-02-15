@@ -15,7 +15,7 @@
         app:layout_constraintTop_toTopOf="parent"
         android:layout_marginHorizontal="50dp"
         android:layout_marginVertical="10dp"
-        android:src="@drawable/document"
+        android:src="@drawable/documents"
         android:id="@+id/profileImageView"
         />
     <TextView
@@ -87,7 +87,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:id="@+id/feedImage"
-                android:src="@drawable/document"
+                android:src="@drawable/documents"
                 android:scaleType="centerCrop"
                 />
         </LinearLayout>
