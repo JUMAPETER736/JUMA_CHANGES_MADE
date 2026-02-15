@@ -11,7 +11,7 @@
         android:layout_width="64dp"
         android:padding="8dp"
         android:layout_height="64dp"
-        android:src="@drawable/music_placeholder"
+        android:src="@drawable/music_icon"
         android:contentDescription="@null" />
 
     <LinearLayout
