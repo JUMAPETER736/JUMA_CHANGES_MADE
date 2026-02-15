@@ -10,7 +10,7 @@
 
     <item
         android:id="@+id/menu_copy_link"
-        android:icon="@drawable/ic_action_copy"
+        android:icon="@drawable/copy"
         android:title="Copy Link"
         android:iconTint="@android:color/black" />
 

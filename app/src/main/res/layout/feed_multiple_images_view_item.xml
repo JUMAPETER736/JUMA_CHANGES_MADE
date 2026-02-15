@@ -28,7 +28,7 @@
             android:id="@+id/imageView"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:src="@drawable/music_placeholder"
+            android:src="@drawable/music_icon"
             android:background="@drawable/feed_mixed_image_view_rounded_corners"
             android:contentDescription="@string/content_description"
             android:scaleType="fitXY"/>
