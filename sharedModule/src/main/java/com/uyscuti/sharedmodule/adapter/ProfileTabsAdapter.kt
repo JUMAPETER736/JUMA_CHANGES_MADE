@@ -26,59 +26,61 @@ private val TAB_ICONS = arrayOf(
     R.drawable.scroll_text_line_svgrepo_com,
     R.drawable.business_bag_svgrepo_com,
 )
-class ProfileTabsAdapter(
-    private val context: Context, fm: FragmentManager, private val user: User) :
-    FragmentPagerAdapter(fm, BEHAVIOR_RESUME_ONLY_CURRENT_FRAGMENT) {
-
-    val TAG = "ProfileTabsAdapter"
-
-    private var onShortThumbnailClickListener: OnShortThumbnailClickListener? = null
-
-    fun setListener(listener: OnShortThumbnailClickListener) {
-        this.onShortThumbnailClickListener = listener
-    }
-
-    private lateinit var shortFragment: OtherUsersShortsProfileFragment
-    private var username: String? = null
-
-    fun setUsername(username: String?) {
-        this.username = username
-        Log.d(TAG, "username content: $username")
-    }
-
-    override fun getItem(position: Int): Fragment {
-        return when (position) {
-            0 ->{
-                shortFragment = OtherUsersShortsProfileFragment.newInstance(this.username!!)
 
 
-                onShortThumbnailClickListener?.let { shortFragment.setListener(it) }
-
-                return shortFragment
-
-            }
-            1 ->  FragmentFactoryRegistry.createFragment("profile", username!!) ?: EmptyFragment()
-            2 -> MyUserBusinessProfileFragment.newInstance(user)
-
-
-            else -> throw IllegalArgumentException("Invalid tab position: $position")
-        }
-    }
-
-    override fun getPageTitle(position: Int): CharSequence? {
-        // Return null to indicate that you want to use icons instead of text for tabs
-        return null
-    }
-
-    fun getIcon(position: Int): Drawable? {
-        // Return the icon for the specified position
-        return ContextCompat.getDrawable(context, TAB_ICONS[position])
-    }
-
-    override fun getCount(): Int {
-        return TAB_ICONS.size
-    }
-}
+//class ProfileTabsAdapter(
+//    private val context: Context, fm: FragmentManager, private val user: User) :
+//    FragmentPagerAdapter(fm, BEHAVIOR_RESUME_ONLY_CURRENT_FRAGMENT) {
+//
+//    val TAG = "ProfileTabsAdapter"
+//
+//    private var onShortThumbnailClickListener: OnShortThumbnailClickListener? = null
+//
+//    fun setListener(listener: OnShortThumbnailClickListener) {
+//        this.onShortThumbnailClickListener = listener
+//    }
+//
+//    private lateinit var shortFragment: OtherUsersShortsProfileFragment
+//    private var username: String? = null
+//
+//    fun setUsername(username: String?) {
+//        this.username = username
+//        Log.d(TAG, "username content: $username")
+//    }
+//
+//    override fun getItem(position: Int): Fragment {
+//        return when (position) {
+//            0 ->{
+//                shortFragment = OtherUsersShortsProfileFragment.newInstance(this.username!!)
+//
+//
+//                onShortThumbnailClickListener?.let { shortFragment.setListener(it) }
+//
+//                return shortFragment
+//
+//            }
+//            1 ->  FragmentFactoryRegistry.createFragment("profile", username!!) ?: EmptyFragment()
+//            2 -> MyUserBusinessProfileFragment.newInstance(user)
+//
+//
+//            else -> throw IllegalArgumentException("Invalid tab position: $position")
+//        }
+//    }
+//
+//    override fun getPageTitle(position: Int): CharSequence? {
+//        // Return null to indicate that you want to use icons instead of text for tabs
+//        return null
+//    }
+//
+//    fun getIcon(position: Int): Drawable? {
+//        // Return the icon for the specified position
+//        return ContextCompat.getDrawable(context, TAB_ICONS[position])
+//    }
+//
+//    override fun getCount(): Int {
+//        return TAB_ICONS.size
+//    }
+//}
 
 
 class EmptyFragment : Fragment() {
