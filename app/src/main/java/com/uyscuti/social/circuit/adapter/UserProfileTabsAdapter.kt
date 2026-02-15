@@ -2,19 +2,22 @@ package com.uyscuti.social.circuit.adapter
 
 import android.content.Context
 import android.graphics.drawable.Drawable
+import androidx.annotation.OptIn
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.FragmentPagerAdapter
+import androidx.media3.common.util.UnstableApi
 import com.uyscuti.sharedmodule.model.User
 import com.uyscuti.social.circuit.ui.fragments.feed.FavoriteFragment
 import com.uyscuti.social.circuit.ui.fragments.feed.MyFeedFragment
 import com.uyscuti.social.circuit.R
 import com.uyscuti.sharedmodule.fragments.GroupPlaceholderFragment
 import com.uyscuti.sharedmodule.fragments.MyUserBusinessProfileFragment
-import com.uyscuti.social.circuit.ui.fragments.user_profile_fragments.UserShortsFragment
 
-class UserProfileTabsAdapter(
+
+class UserProfileTabsAdapter @OptIn(UnstableApi::class) constructor
+    (
     private val context: Context, fm: FragmentManager, private val user: User) :
     FragmentPagerAdapter(fm, BEHAVIOR_RESUME_ONLY_CURRENT_FRAGMENT) {
 
@@ -32,7 +35,7 @@ class UserProfileTabsAdapter(
 
     init {
         // Add fragments to the adapter during initialization
-        addFragment(UserShortsFragment.newInstance("", ""), "user_shorts_fragment_tag")
+//        addFragment(UserShortsFragment.newInstance("", ""), "user_shorts_fragment_tag")
 
         addFragment(MyFeedFragment.newInstance("", ""), "group_placeholder_2_tag")
 
