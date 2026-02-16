@@ -692,18 +692,8 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
         hashtags.setOnClickListener { handleHashtagsClick() }
         originalHashtags.setOnClickListener { handleOriginalHashtagsClick() }
 
-        // Interaction buttons
 
-        likeButtonIcon.setOnClickListener { handleLikeClick() }
-
-        commentButtonIcon.setOnClickListener { handleCommentClick() }
-
-        favoritesButton.setOnClickListener { handleBookmarkClick() }
-
-        shareButtonIcon.setOnClickListener { handleShareClick() }
-
-
-        // FIXED: Reposter Profile Image Click
+        // Reposter Profile Image Click
         userReposterProfile.setOnClickListener { view ->
             view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
 
@@ -761,7 +751,7 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
             }
         }
 
-        // FIXED: Original Poster Profile Image Click
+        //  Original Poster Profile Image Click
         originalPostProfileImage.setOnClickListener { view ->
             view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
 
@@ -834,7 +824,7 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
 
     @OptIn(UnstableApi::class)
     private fun cleanupAndGoBack() {
-        // IMMEDIATE: Go back first - this is the priority
+        //  Go back first - this is the priority
         try {
             if (isAdded && !parentFragmentManager.isStateSaved) {
                 parentFragmentManager.popBackStackImmediate()
@@ -1164,7 +1154,7 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
                     )
 
                     // Make API call
-                    val response = retrofitInterface.apiService.repostsFeed(post._id, repostRequest)
+                    val response = retrofitInterface.apiService.toggleFeedRepost(post._id, repostRequest)
                     Log.d(
                         TAG,
                         "Repost API response: code=${response.code()}, success=${response.isSuccessful}"
@@ -1952,24 +1942,9 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
             putString("filter_type", filterType)
             putInt("filter_count", count)
         }
-        // FirebaseAnalytics.getInstance(this).logEvent("filter_applied", params)
+
     }
 
-    private fun handleLikeClick() {
-        Toast.makeText(context, "Like clicked", Toast.LENGTH_SHORT).show()
-    }
-
-    private fun handleCommentClick() {
-        Toast.makeText(context, "Comment clicked", Toast.LENGTH_SHORT).show()
-    }
-
-    private fun handleBookmarkClick() {
-        Toast.makeText(context, "Bookmark clicked", Toast.LENGTH_SHORT).show()
-    }
-
-    private fun handleShareClick() {
-        Toast.makeText(context, "Share clicked", Toast.LENGTH_SHORT).show()
-    }
 
     private fun formattedMongoDateTime(dateTimeString: String?): String {
         if (dateTimeString.isNullOrBlank()) return "Unknown Time"
@@ -2092,8 +2067,8 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
 
             // Always show reposted by information if available
             if (data.repostedUser != null) {
-                Log.d(TAG, "Setting up reposted by: ${data.repostedUser.username}")
-                setupRepostedByInfo(data.repostedUser)
+                Log.d(TAG, "Setting up reposted by: ${data.repostedUser!!.username}")
+                setupRepostedByInfo(data.repostedUser!!)
             }
 
             setupCurrentUserProfile()
@@ -2386,20 +2361,20 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
             if (!likeButtonIcon.isEnabled) return@setOnClickListener
 
             Log.d(TAG, "Like clicked for post: ${data._id}")
-            Log.d(TAG, "Current state before toggle: isLiked=${data.isLiked}, likes=${data.likes}")
 
-            val newLikeStatus = !(data.isLiked ?: false)
             val previousLikeStatus = data.isLiked ?: false
             val previousLikesCount = data.likes
 
-            // Update data immediately
+            Log.d(TAG, "Current state before toggle: isLiked=$previousLikeStatus, likes=$previousLikesCount")
+
+            // Optimistic update
+            val newLikeStatus = !previousLikeStatus
             data.isLiked = newLikeStatus
-            data.likes = if (newLikeStatus) data.likes + 1 else maxOf(0, data.likes - 1)
-            totalMixedLikesCounts = data.likes
+            data.likes = if (newLikeStatus) previousLikesCount + 1 else maxOf(0, previousLikesCount - 1)
 
             Log.d(TAG, "New state after toggle: isLiked=${data.isLiked}, likes=${data.likes}")
 
-            // Update UI immediately for better UX
+            // Update UI immediately
             updateLikeButtonUI(data.isLiked ?: false)
             updateMetricDisplay(likesCount, data.likes, "like")
 
@@ -2409,69 +2384,75 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
                 .repeat(1)
                 .playOn(likeButtonIcon)
 
-            // Disable button during network call
+            // Disable button during API call
             likeButtonIcon.isEnabled = false
             likeButtonIcon.alpha = 0.8f
 
-            val likeRequest = LikeRequest(newLikeStatus)
-            RetrofitClient.likeService.toggleLike(data._id, likeRequest)
-                .enqueue(object : Callback<LikeResponse> {
-                    override fun onResponse(call: Call<LikeResponse>, response: Response<LikeResponse>) {
-                        likeButtonIcon.alpha = 1f
-                        likeButtonIcon.isEnabled = true
+            // Make API call
+            lifecycleScope.launch {
+                try {
+                    val response = retrofitInterface.apiService.likeUnLikeFeed(data._id)
 
-                        if (response.isSuccessful) {
-                            response.body()?.let { likeResponse ->
-                                Log.d(TAG, "Like API success - Server count: ${likeResponse.likesCount}")
-                                // Only update if server count is significantly different
-                                if (likeResponse.likesCount != null &&
-                                    abs(likeResponse.likesCount - data.likes) > 1
-                                ) {
-                                    data.likes = likeResponse.likesCount
-                                    totalMixedLikesCounts = data.likes
-                                    updateMetricDisplay(likesCount, data.likes, "like")
-                                    Log.d(TAG, "Updated likes count from server: ${data.likes}")
-                                }
-                            }
-                        } else {
-                            Log.e(TAG, "Like sync failed: ${response.code()}")
-                            // Only revert on actual API errors, not JSON parsing issues
-                            if (response.code() != 200) {
-                                data.isLiked = previousLikeStatus
-                                data.likes = previousLikesCount
-                                totalMixedLikesCounts = data.likes
+                    likeButtonIcon.alpha = 1f
+                    likeButtonIcon.isEnabled = true
+
+                    if (response.isSuccessful) {
+                        response.body()?.let { likeResponse ->
+                            if (likeResponse.success) {
+                                // Sync with server
+                                data.isLiked = likeResponse.data.isLiked
+
+                                // Update UI to match server state
                                 updateLikeButtonUI(data.isLiked ?: false)
                                 updateMetricDisplay(likesCount, data.likes, "like")
-                                Log.d(TAG, "Reverted to previous state: isLiked=${data.isLiked}, likes=${data.likes}")
+
+                                Log.d(TAG, "Like synced - isLiked=${data.isLiked}, count=${data.likes}")
+
+                                // Notify listener
+                                feedClickListener?.likeUnLikeFeed(0, data)
+                            } else {
+                                Log.e(TAG, "Like failed - success=false")
+                                revertLikeState(data, previousLikeStatus, previousLikesCount)
                             }
+                        } ?: run {
+                            Log.e(TAG, "Like response body is null")
+                            revertLikeState(data, previousLikeStatus, previousLikesCount)
                         }
+                    } else {
+                        Log.e(TAG, "Like API error: ${response.code()} - ${response.message()}")
+                        revertLikeState(data, previousLikeStatus, previousLikesCount)
                     }
+                } catch (e: com.google.gson.JsonSyntaxException) {
+                    likeButtonIcon.alpha = 1f
+                    likeButtonIcon.isEnabled = true
 
-                    override fun onFailure(call: Call<LikeResponse>, t: Throwable) {
-                        likeButtonIcon.alpha = 1f
-                        likeButtonIcon.isEnabled = true
+                    // JSON parsing error - but the operation likely succeeded on server
+                    Log.w(TAG, "Like API returned malformed JSON but operation likely succeeded - keeping UI state")
+                    // Don't revert - the server probably processed the request successfully
 
-                        // Check if it's a JSON parsing error
-                        if (t is MalformedJsonException ||
-                            t.message?.contains("MalformedJsonException") == true) {
-                            Log.w(TAG, "Like API returned malformed JSON but operation likely succeeded - keeping UI state")
-                            // Don't revert UI changes for JSON parsing errors as the operation likely succeeded
-                            return
-                        }
+                } catch (e: Exception) {
+                    likeButtonIcon.alpha = 1f
+                    likeButtonIcon.isEnabled = true
 
-                        Log.e(TAG, "Like network error - reverting changes", t)
-                        // Only revert for actual network failures
-                        data.isLiked = previousLikeStatus
-                        data.likes = previousLikesCount
-                        totalMixedLikesCounts = data.likes
-                        updateLikeButtonUI(data.isLiked ?: false)
-                        updateMetricDisplay(likesCount, data.likes, "like")
-                        Log.d(TAG, "Reverted to previous state after network error: isLiked=${data.isLiked}, likes=${data.likes}")
-                    }
-                })
+                    Log.e(TAG, "Like network error", e)
+                    revertLikeState(data, previousLikeStatus, previousLikesCount)
 
-            feedClickListener.likeUnLikeFeed(0, data)
+                    Toast.makeText(
+                        requireContext(),
+                        "Network error. Please try again.",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
         }
+    }
+
+    private fun revertLikeState(data: Post, previousStatus: Boolean, previousCount: Int) {
+        data.isLiked = previousStatus
+        data.likes = previousCount
+        updateLikeButtonUI(data.isLiked ?: false)
+        updateMetricDisplay(likesCount, data.likes, "like")
+        Log.d(TAG, "Reverted to previous state after network error: isLiked=$previousStatus, likes=$previousCount")
     }
 
     private fun setupBookmarkButton(data: com.uyscuti.social.network.api.response.posts.Post) {
@@ -2962,34 +2943,6 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
         // Set click listener for cancel button
         btnCancel.setOnClickListener {
             bottomSheetDialog.dismiss()
-        }
-    }
-
-
-    private fun setupOriginalPostMedia(data: Post) {
-        try {
-            if (data.originalPost.isNotEmpty() && data.originalPost[0].files.isNotEmpty()) {
-                val originalPost = data.originalPost[0]  // Get the original post object
-                val originalFiles = originalPost.files
-
-                // Show the media container
-                mixedFilesCardView.visibility = View.VISIBLE
-
-
-                val adapter = OriginalPostMediaAdapter(data, recyclerView)
-                recyclerView.adapter = adapter
-
-                // Log each file URL like in the successful case
-                originalFiles.forEachIndexed { index, file ->
-                    Log.d(TAG, "image feed $index item count ${originalFiles.size}")
-                    Log.d(TAG, "image getItemCount: ${originalFiles.size} ${file.url}")
-                }
-
-                Log.d(TAG, "Original post media adapter setup completed")
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error setting up original post media", e)
-            mixedFilesCardView.visibility = View.GONE
         }
     }
 
@@ -3848,7 +3801,10 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
                                 fileIds = originalPostData.fileIds,
                                 fileNames = originalPostData.fileNames,
                                 fileSizes = originalPostData.fileSizes.map { fileSizeX ->
-                                    FileSize()
+                                    FileSize(
+                                        fileId = fileSizeX.fileId,
+                                        fileSize = fileSizeX.fileSize.toLongOrNull() ?: 0L
+                                    )
                                 },
                                 fileTypes = originalPostData.fileTypes,
                                 files = ArrayList(originalPostData.files),
@@ -6197,11 +6153,7 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
                     }
                 }
             }
-
-
         }
-
-
     }
 
 }
