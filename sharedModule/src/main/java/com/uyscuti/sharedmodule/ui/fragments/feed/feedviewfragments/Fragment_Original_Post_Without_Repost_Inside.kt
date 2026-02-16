@@ -882,8 +882,7 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
         Log.d(TAG, "populatePostData: Post has ${post.files?.size ?: 0} files")
 
         try {
-            // Set comment count
-            totalMixedComments = post.comments
+            totalMixedComments = post.comments ?: 0
             updateMetricDisplay(commentCount, totalMixedComments, "comment")
 
             if (!isViewsInitialized()) {
@@ -891,37 +890,38 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
                 return
             }
 
-            // Set header
             if (::headerTitle.isInitialized) {
                 headerTitle.text = "Post"
             }
 
-            // Determine if this is a repost or original post
-            val hasOriginalPost = post.originalPost != null && post.originalPost.isNotEmpty()
+            // ✅ SAFE DETECTION: Check for valid data, not just existence
+            val hasValidOriginalPost = try {
+                !post.originalPost.isNullOrEmpty() &&
+                        post.originalPost[0]._id?.isNotBlank() == true &&
+                        post.originalPost[0].files?.isNotEmpty() == true
+            } catch (e: Exception) {
+                Log.w(TAG, "Error checking originalPost validity: ${e.message}")
+                false
+            }
 
-            if (hasOriginalPost) {
-                // REPOST SCENARIO - show original post's content
-                val repostedPostData = post.originalPost[0]
-                Log.d(TAG, "populatePostData: This is a REPOST, showing original post data")
+            if (hasValidOriginalPost) {
+                // TRUE REPOST - has valid original post data
+                val originalPostData = post.originalPost[0]
+                Log.d(TAG, "populatePostData: VALID REPOST detected - Original ID: ${originalPostData._id}")
 
                 showRepostHeader(post)
-                populatePostContent(repostedPostData)
-                populateOriginalAuthorInfo(repostedPostData)
+                populatePostContent(originalPostData)
+                populateOriginalAuthorInfo(originalPostData)
 
-                // Setup media handler with original post's files
-                postMediaHandler = PostMediaHandler(post, repostedPostData)
-
+                postMediaHandler = PostMediaHandler(post, originalPostData)
             } else {
-                // ORIGINAL POST SCENARIO - show this post's content
-                Log.d(TAG, "populatePostData: This is an ORIGINAL POST, showing direct post data")
+                // ORIGINAL POST - use direct post data
+                Log.d(TAG, "populatePostData: ORIGINAL POST detected - ID: ${post._id}")
 
                 populateRegularPost(post)
-
-                // Setup media handler with this post's files
                 postMediaHandler = PostMediaHandler(post, null)
             }
 
-            // Setup media views - THIS IS CRITICAL
             postMediaHandler.setupMediaViews()
 
             Log.d(TAG, "populatePostData: Media setup completed")
@@ -2068,7 +2068,7 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
                 }
             })
     }
-    
+
 
     private fun hideAllMediaViews() {
         Log.d(TAG, "hideAllMediaViews: Hiding all media containers")
