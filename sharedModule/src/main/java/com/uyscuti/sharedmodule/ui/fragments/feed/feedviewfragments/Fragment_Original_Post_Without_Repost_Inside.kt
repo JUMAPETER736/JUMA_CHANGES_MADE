@@ -3526,20 +3526,29 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
         : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
         private var mediaItems: List<MediaItem> = emptyList()
+        
 
-        override fun getItemCount(): Int {
-            Log.d("MediaOriginalPostAdapter", "getItemCount returning: ${mediaItems.size}")
-            return mediaItems.size
-        }
-
-
-
-        @SuppressLint("Notify Data Set Changed")
         fun submitList(items: List<MediaItem>) {
             Log.d("MediaAdapter", "submitList called with ${items.size} items")
+
+            // Store the items
             mediaItems = items
+
+            // Log each item for debugging
+            items.forEachIndexed { index, item ->
+                Log.d("MediaAdapter", "Item $index: fileType=${item.fileType}, fileId=${item.fileId}, url=${item.file.url}")
+            }
+
+            // Notify adapter
             notifyDataSetChanged()
-            Log.d("MediaAdapter", "notify Data Set Changed () called")
+
+            Log.d("MediaAdapter", "Adapter now has ${itemCount} items")
+        }
+
+        override fun getItemCount(): Int {
+            val count = mediaItems.size
+            Log.d("MediaOriginalPostAdapter", "getItemCount returning: $count")
+            return count
         }
 
         override fun getItemViewType(position: Int): Int {
