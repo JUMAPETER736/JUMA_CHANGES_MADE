@@ -132,7 +132,6 @@ import kotlin.getValue
 
 private const val FRAGMENT_ORIGINAL_POST_WITHOUT_REPOST = 1
 
-
 @AndroidEntryPoint
 class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFilesClickListener {
 
@@ -221,6 +220,8 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
     private lateinit var shareCount: TextView
     private lateinit var followButton: AppCompatButton
     private var isFollowing = false
+    private var isFollowingUser = false
+    private var isFollowed = false
 
     private val followingUserIds = mutableSetOf<String>()
     private val relationshipsViewModel: UserRelationshipsViewModel by activityViewModels()
@@ -1327,7 +1328,7 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
                         .start()
                 } else {
                     Log.w(
-                           TAG, "ViewHolder at position $position is null, notifying removal directly"
+                        TAG, "ViewHolder at position $position is null, notifying removal directly"
                     )
                     allFeedAdapter.notifyItemRemoved(position) // Fallback for off-screen items
                 }
@@ -1357,31 +1358,50 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
         }
     }
 
+    @SuppressLint("SetTextI18n")
     private fun handleFollowButtonClick() {
         post?.let { currentPost ->
             // Extract ACCOUNT ID and USERNAME
-            val feedOwnerId: String
-            val feedOwnerUsername: String
+            val feedOwnerId: String?
+            val feedOwnerUsername: String?
 
-            when {
-                // Case 1: Reposted post - use original author's account ID
-                currentPost.originalPost.isNotEmpty() -> {
-                    val originalAuthor = currentPost.originalPost[0].author
-                    feedOwnerId = originalAuthor.owner  // Use owner field (account ID)
-                    feedOwnerUsername = originalAuthor.account.username
-                    Log.d(TAG, "Follow button - Original author ID: $feedOwnerId (@$feedOwnerUsername)")
-                }
-                // Case 2: Regular post - use main author's account ID
-                else -> {
-                    feedOwnerId = currentPost.author?.account?._id ?: ""
-                    feedOwnerUsername = currentPost.author?.account?.username ?: "unknown"
-                    Log.d(TAG, "Follow button - Main author ID: $feedOwnerId (@$feedOwnerUsername)")
-                }
+            // Check for valid original post
+            val hasValidOriginalPost = try {
+                !currentPost.originalPost.isNullOrEmpty() &&
+                        currentPost.originalPost[0]._id?.isNotBlank() == true &&
+                        currentPost.originalPost[0].author?.owner?.isNotBlank() == true
+            } catch (e: Exception) {
+                false
             }
+
+            if (hasValidOriginalPost) {
+                // Case 1: Reposted post - use original author's account ID
+                val originalAuthor = currentPost.originalPost[0].author
+                feedOwnerId = originalAuthor.owner
+                feedOwnerUsername = originalAuthor.account?.username ?: "unknown"
+                Log.d(TAG, "handleFollowButtonClick: Using ORIGINAL author - ID: $feedOwnerId (@$feedOwnerUsername)")
+            } else {
+                // Case 2: Regular post - use main author's account ID
+                feedOwnerId = currentPost.author?.account?._id
+                feedOwnerUsername = currentPost.author?.account?.username ?: "unknown"
+                Log.d(TAG, "handleFollowButtonClick: Using DIRECT author - ID: $feedOwnerId (@$feedOwnerUsername)")
+            }
+
+            if (feedOwnerId.isNullOrBlank()) {
+                Log.e(TAG, "handleFollowButtonClick: feedOwnerId is null or blank!")
+                Toast.makeText(requireContext(), "Unable to follow user", Toast.LENGTH_SHORT).show()
+                return
+            }
+
+            YoYo.with(Techniques.Pulse)
+                .duration(300)
+                .playOn(followButton)
+
+            Log.d(TAG, "Follow button clicked for user: $feedOwnerId (@$feedOwnerUsername)")
 
             val currentUserId = LocalStorage.getInstance(requireContext()).getUserId()
 
-            // Check following status by BOTH ID and USERNAME
+            // Check following status
             val cachedFollowingList = FeedAdapter.getCachedFollowingList()
             val cachedFollowingUsernames = FeedAdapter.getCachedFollowingUsernames()
 
@@ -1400,130 +1420,144 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
             isFollowing = !isFollowing
 
             if (isFollowing) {
-                // Hide button immediately
+                // Hide button immediately after following
                 followButton.visibility = View.GONE
 
-
-                // Update FeedAdapter cache
+                // Add to following lists
+                followingUserIds.add(feedOwnerId)
                 FeedAdapter.addToFollowingCache(feedOwnerId)
-                FeedAdapter.setCachedFollowingList(followingUserIds)
-
-                // Save to local storage
                 FollowingManager(requireContext()).addToFollowing(feedOwnerId)
 
                 // Build display name for toast
                 val displayName = when {
-                    currentPost.originalPost.isNotEmpty() -> {
+                    hasValidOriginalPost -> {
                         val author = currentPost.originalPost[0].author
                         when {
-                            author.firstName.isNotBlank() && author.lastName.isNotBlank() ->
+                            !author.firstName.isNullOrBlank() && !author.lastName.isNullOrBlank() ->
                                 "${author.firstName} ${author.lastName}"
-                            author.firstName.isNotBlank() -> author.firstName
-                            author.lastName.isNotBlank() -> author.lastName
-                            else -> author.account.username
+                            !author.firstName.isNullOrBlank() -> author.firstName
+                            !author.lastName.isNullOrBlank() -> author.lastName
+                            else -> author.account?.username ?: "User"
                         }
                     }
                     else -> {
                         val author = currentPost.author
                         when {
-                            author.firstName.isNotBlank() && author.lastName.isNotBlank() ->
+                            author?.firstName?.isNotBlank() == true && author.lastName?.isNotBlank() == true ->
                                 "${author.firstName} ${author.lastName}"
-                            author.firstName.isNotBlank() -> author.firstName
-                            author.lastName.isNotBlank() -> author.lastName
-                            else -> author.account.username
+                            author?.firstName?.isNotBlank() == true -> author.firstName
+                            author?.lastName?.isNotBlank() == true -> author.lastName
+                            else -> author?.account?.username ?: "User"
                         }
                     }
                 }
 
-                showToast("Now following $displayName")
-                Log.d(TAG, "Added account $feedOwnerId (@$feedOwnerUsername) to following list")
+                Toast.makeText(requireContext(), "Now following $displayName", Toast.LENGTH_SHORT).show()
+                Log.d(TAG, "✓ Added $feedOwnerId (@$feedOwnerUsername) to following list")
 
             } else {
+                // Unfollowing - show button again with correct text
+
+                // Remove from following lists
+                followingUserIds.remove(feedOwnerId)
+                FeedAdapter.removeFromFollowingCache(feedOwnerId)
+                FollowingManager(requireContext()).removeFromFollowing(feedOwnerId)
 
                 // Check if they follow you to show correct button text
                 val theyFollowMe = FeedAdapter.isUserInMyFollowersList(feedOwnerId)
 
+                Log.d(TAG, "After unfollow - they follow me: $theyFollowMe")
+
                 // Show button with appropriate text
                 followButton.text = if (theyFollowMe) "Follow Back" else "Follow"
                 followButton.visibility = View.VISIBLE
+                followButton.backgroundTintList = ContextCompat.getColorStateList(
+                    requireContext(),
+                    R.color.blueJeans
+                )
 
-
-                // Update FeedAdapter cache
-                FeedAdapter.removeFromFollowingCache(feedOwnerId)
-                FeedAdapter.setCachedFollowingList(followingUserIds)
-
-                // Remove from local storage
-                FollowingManager(requireContext()).removeFromFollowing(feedOwnerId)
-
-                showToast("Unfollowed")
-                Log.d(TAG, "✓ Removed account $feedOwnerId (@$feedOwnerUsername) from following list")
+                Toast.makeText(requireContext(), "Unfollowed", Toast.LENGTH_SHORT).show()
+                Log.d(TAG, "✓ Removed $feedOwnerId (@$feedOwnerUsername) from following list - Button text: '${followButton.text}'")
             }
-
-            updateFollowButtonUI()
         }
     }
+
 
     private fun setupInitialFollowButtonState(data: Post) {
-        val feedOwnerId: String
-        val feedOwnerUsername: String
+        try {
+            val feedOwnerId: String?
+            val feedOwnerUsername: String?
 
-        when {
-            // FIX: Use safe null check
-            !data.originalPost.isNullOrEmpty() -> {
+            // ✅ SAFE: Check if original post has valid data
+            val hasValidOriginalPost = try {
+                !data.originalPost.isNullOrEmpty() &&
+                        data.originalPost[0]._id?.isNotBlank() == true &&
+                        data.originalPost[0].author?.owner?.isNotBlank() == true
+            } catch (e: Exception) {
+                false
+            }
+
+            if (hasValidOriginalPost) {
                 val originalAuthor = data.originalPost[0].author
                 feedOwnerId = originalAuthor.owner
-                feedOwnerUsername = originalAuthor.account.username
-            }
-            else -> {
-                feedOwnerId = data.author?.account?._id ?: ""
+                feedOwnerUsername = originalAuthor.account?.username ?: "unknown"
+                Log.d(TAG, "setupInitialFollowButtonState: Using ORIGINAL post author - ID: $feedOwnerId (@$feedOwnerUsername)")
+            } else {
+                feedOwnerId = data.author?.account?._id
                 feedOwnerUsername = data.author?.account?.username ?: "unknown"
+                Log.d(TAG, "setupInitialFollowButtonState: Using DIRECT post author - ID: $feedOwnerId (@$feedOwnerUsername)")
             }
-        }
 
-        val currentUserId = LocalStorage.getInstance(requireContext()).getUserId()
-        val cachedFollowingList = FeedAdapter.getCachedFollowingList()
-        val cachedFollowingUsernames = FeedAdapter.getCachedFollowingUsernames()
+            // If we couldn't get a valid ID, hide button and return
+            if (feedOwnerId.isNullOrBlank()) {
+                followButton.visibility = View.GONE
+                Log.w(TAG, "Initial setup: No valid user ID, hiding follow button")
+                return
+            }
 
-        val isAlreadyFollowing = followingUserIds.contains(feedOwnerId) ||
-                cachedFollowingList.contains(feedOwnerId) ||
-                cachedFollowingUsernames.contains(feedOwnerUsername)
+            val currentUserId = LocalStorage.getInstance(requireContext()).getUserId()
 
-        if (feedOwnerId == currentUserId || isAlreadyFollowing) {
-            followButton.visibility = View.GONE
-            Log.d(TAG, "Initial setup: Follow button hidden for $feedOwnerId (@$feedOwnerUsername)")
-        } else {
-            followButton.visibility = View.VISIBLE
+            // Check if already following
+            val cachedFollowingList = FeedAdapter.getCachedFollowingList()
+            val cachedFollowingUsernames = FeedAdapter.getCachedFollowingUsernames()
 
-            // Check if this user follows us back
-            val theyFollowMe = FeedAdapter.isUserInMyFollowersList(feedOwnerId)
-            followButton.text = if (theyFollowMe) "Follow Back" else "Follow"
+            val isAlreadyFollowing = followingUserIds.contains(feedOwnerId) ||
+                    cachedFollowingList.contains(feedOwnerId) ||
+                    cachedFollowingUsernames.contains(feedOwnerUsername)
 
-            Log.d(TAG, "Initial setup: Follow button shown for $feedOwnerId (@$feedOwnerUsername) - Text: '${followButton.text}'")
-        }
-    }
+            Log.d(TAG, "setupInitialFollowButtonState: Checking $feedOwnerId (@$feedOwnerUsername)")
+            Log.d(TAG, "  - Current user: $currentUserId")
+            Log.d(TAG, "  - Already following: $isAlreadyFollowing")
 
-    private fun updateFollowButtonUI() {
-        if (isFollowing) {
-            followButton.visibility = View.GONE
-        } else {
-            followButton.visibility = View.VISIBLE
+            // Hide if own post or already following
+            if (feedOwnerId == currentUserId || isAlreadyFollowing) {
+                followButton.visibility = View.GONE
+                Log.d(TAG, "Initial setup: Follow button HIDDEN for $feedOwnerId (@$feedOwnerUsername)")
+            } else {
+                followButton.visibility = View.VISIBLE
 
-            post?.let { currentPost ->
-                val feedOwnerId = when {
-                    currentPost.originalPost.isNotEmpty() ->
-                        currentPost.originalPost[0].author.owner
-                    else ->
-                        currentPost.author?.account?._id ?: ""
+                // ✅ Check if this user follows YOU back
+                val theyFollowMe = FeedAdapter.isUserInMyFollowersList(feedOwnerId)
+
+                Log.d(TAG, "  - They follow me: $theyFollowMe")
+
+                // Set appropriate button text
+                if (theyFollowMe) {
+                    followButton.text = "Follow Back"
+                    Log.d(TAG, "Initial setup: Showing 'Follow Back' for $feedOwnerId (@$feedOwnerUsername)")
+                } else {
+                    followButton.text = "Follow"
+                    Log.d(TAG, "Initial setup: Showing 'Follow' for $feedOwnerId (@$feedOwnerUsername)")
                 }
 
-                //Just read from cache - FollowingFragment already loaded this
-                val theyFollowMe = FeedAdapter.isUserInMyFollowersList(feedOwnerId)
-                followButton.text = if (theyFollowMe) "Follow Back" else "Follow"
-
-                Log.d(TAG, "Updated button UI - Text: '${followButton.text}' for user $feedOwnerId")
+                followButton.backgroundTintList = ContextCompat.getColorStateList(
+                    requireContext(),
+                    R.color.blueJeans
+                )
             }
-
-            followButton.setBackgroundResource(R.drawable.follow_button_background)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error in setupInitialFollowButtonState: ${e.message}", e)
+            followButton.visibility = View.GONE
         }
     }
 

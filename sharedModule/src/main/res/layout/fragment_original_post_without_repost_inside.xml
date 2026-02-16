@@ -183,7 +183,7 @@
                                         android:layout_width="wrap_content"
                                         android:layout_height="wrap_content"
                                         android:background="@color/white"
-                                        android:text="Unknown User"
+                                        android:text="Uy Scuti"
                                         android:textColor="@color/black"
                                         android:textSize="@dimen/quoted_username_size"
                                         android:textStyle="bold"
@@ -195,7 +195,7 @@
                                         android:layout_width="wrap_content"
                                         android:layout_height="wrap_content"
                                         android:background="@color/white"
-                                        android:text="\@SoftwareDeveloper"
+                                        android:text="\@uyscuti"
                                         android:textColor="@color/gray_dark"
                                         android:textSize="@dimen/quoted_handle_size"
                                         android:maxLines="1"
@@ -232,6 +232,7 @@
                                     android:focusable="true"
                                     android:elevation="2dp"
                                     android:stateListAnimator="@null"/>
+
                             </LinearLayout>
 
                             <!-- Quoted Content -->
