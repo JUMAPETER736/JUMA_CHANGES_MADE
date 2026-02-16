@@ -3297,13 +3297,19 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
             val mediaType = determineMediaType()
             Log.d("PostMediaHandler", "Determined media type: $mediaType")
 
+            // Create adapter with proper context
+            val context = recyclerViews?.context ?: run {
+                Log.e("PostMediaHandler", "Context is null, cannot create adapter")
+                return
+            }
+
             val mediaAdapter = MediaOriginalPostAdapter(
                 files = files,
                 thumbnails = thumbnails,
                 durations = durations,
                 fileTypes = fileTypes,
                 fileIds = fileIds,
-                context = requireContext(),
+                context = context,
                 post = post
             )
 
@@ -3323,11 +3329,9 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
                     showAudioContainer()
                     setupCleanRecyclerView(mediaAdapter)
 
-                    // Force audio container to stay visible with delay
+                    // Force visibility for audio
                     multipleAudiosContainer?.postDelayed({
-                        Log.d("PostMediaHandler", "Post-setup check - multipleAudiosContainer visibility: ${multipleAudiosContainer?.visibility}")
                         if (multipleAudiosContainer?.visibility != View.VISIBLE) {
-                            Log.w("PostMediaHandler", "Audio container became invisible, forcing back to visible")
                             multipleAudiosContainer?.visibility = View.VISIBLE
                             recyclerViews?.requestLayout()
                         }
@@ -3526,7 +3530,7 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
         : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
         private var mediaItems: List<MediaItem> = emptyList()
-        
+
 
         fun submitList(items: List<MediaItem>) {
             Log.d("MediaAdapter", "submitList called with ${items.size} items")
