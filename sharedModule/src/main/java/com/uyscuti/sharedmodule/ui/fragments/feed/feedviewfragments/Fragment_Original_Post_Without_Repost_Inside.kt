@@ -1547,67 +1547,6 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
         }
     }
 
-    private fun populatePostData(post: Post) {
-
-        Log.d(TAG, "populatePostData: Starting to populate data for post ${post._id}")
-        Log.d(TAG, "populatePostData: Post comments = ${post.comments}")
-        Log.d(TAG, "populatePostData: Post likes = ${post.likes}")
-        Log.d(TAG, "populatePostData: Post bookmarkCount = ${post.bookmarkCount}")
-        Log.d(TAG, "populatePostData: Post shareCount = ${post.shareCount}")
-        Log.d(TAG, "populatePostData: Post repostCount = ${post.repostCount}")
-
-        // FIX: Safe null check
-        if (!post.originalPost.isNullOrEmpty()) {
-            val originalPost = post.originalPost[0]
-            Log.d(TAG, "populatePostData: OriginalPost commentCount = ${originalPost.commentCount}")
-        }
-
-        try {
-            totalMixedComments = post.comments
-            updateMetricDisplay(commentCount, totalMixedComments, "comment")
-
-            // Ensure views are initialized before using them
-            if (!isViewsInitialized()) {
-                Log.e(TAG, "Views not initialized, cannot populate post data")
-                return
-            }
-
-            // Set header title with safe access
-            if (::headerTitle.isInitialized) {
-                headerTitle.text = "Post"
-            } else {
-                Log.w(TAG, "headerTitle not initialized")
-            }
-
-            // Initialize and setup media handler based on post type
-            // FIX: Safe null check
-            postMediaHandler = if (!post.originalPost.isNullOrEmpty()) {
-                val repostedPostData = post.originalPost[0]
-                Log.d("MediaDebug", "Handling media from original post with ${repostedPostData.files.size} files")
-                showRepostHeader(post)
-
-                //Populate the original post content and author info for reposts**
-                populatePostContent(repostedPostData)
-                populateOriginalAuthorInfo(repostedPostData)
-
-                PostMediaHandler(post, repostedPostData)
-            } else {
-                Log.d("MediaDebug", "Handling media for regular post with ${post.files.size} files")
-
-                // For regular posts, populate normally
-                populateRegularPost(post)
-
-                PostMediaHandler(post, null)
-            }
-
-            // Setup media views
-            postMediaHandler.setupMediaViews()
-
-        } catch (e: Exception) {
-            Log.e(TAG, "Error populating post data: ${e.message}", e)
-        }
-    }
-
     private fun populatePostContent(post: OriginalPost) {
         try {
             if (::dateTime.isInitialized) {
@@ -2076,7 +2015,101 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
     }
 
 
+    private fun populatePostData(post: Post) {
 
+        Log.d(TAG, "populatePostData: Starting to populate data for post ${post._id}")
+        Log.d(TAG, "populatePostData: Post comments = ${post.comments}")
+        Log.d(TAG, "populatePostData: Post likes = ${post.likes}")
+        Log.d(TAG, "populatePostData: Post bookmarkCount = ${post.bookmarkCount}")
+        Log.d(TAG, "populatePostData: Post shareCount = ${post.shareCount}")
+        Log.d(TAG, "populatePostData: Post repostCount = ${post.repostCount}")
+
+        // ADD NULL CHECK
+        if (post.originalPost != null && post.originalPost.isNotEmpty()) {
+            val originalPost = post.originalPost[0]
+            Log.d(TAG, "populatePostData: OriginalPost commentCount = ${originalPost.commentCount}")
+        }
+
+        try {
+            totalMixedComments = post.comments
+            updateMetricDisplay(commentCount, totalMixedComments, "comment")
+
+            // Ensure views are initialized before using them
+            if (!isViewsInitialized()) {
+                Log.e(TAG, "Views not initialized, cannot populate post data")
+                return
+            }
+
+            // Set header title with safe access
+            if (::headerTitle.isInitialized) {
+                headerTitle.text = "Post"
+            } else {
+                Log.w(TAG, "headerTitle not initialized")
+            }
+
+            // Add proper null checks and handle empty files
+            postMediaHandler = if (post.originalPost != null && post.originalPost.isNotEmpty()) {
+                val repostedPostData = post.originalPost[0]
+
+                // CHECK if repostedPostData has files
+                if (repostedPostData.files != null && repostedPostData.files.isNotEmpty()) {
+                    Log.d("MediaDebug", "Handling media from original post with ${repostedPostData.files.size} files")
+                    showRepostHeader(post)
+
+                    // Populate the original post content and author info for reposts
+                    populatePostContent(repostedPostData)
+                    populateOriginalAuthorInfo(repostedPostData)
+
+                    PostMediaHandler(post, repostedPostData)
+                } else {
+                    Log.w("MediaDebug", "Original post has no files, falling back to regular post")
+
+                    // Check if main post has files
+                    if (post.files != null && post.files.isNotEmpty()) {
+                        populateRegularPost(post)
+                        PostMediaHandler(post, null)
+                    } else {
+                        Log.e("MediaDebug", "No files available anywhere")
+                        hideAllMediaViews()
+                        PostMediaHandler(post, null)
+                    }
+                }
+            } else {
+                // CHECK if regular post has files
+                if (post.files != null && post.files.isNotEmpty()) {
+                    Log.d("MediaDebug", "Handling media for regular post with ${post.files.size} files")
+
+                    // For regular posts, populate normally
+                    populateRegularPost(post)
+
+                    PostMediaHandler(post, null)
+                } else {
+                    Log.e("MediaDebug", "Regular post has no files")
+                    hideAllMediaViews()
+                    PostMediaHandler(post, null)
+                }
+            }
+
+            // Setup media views
+            postMediaHandler.setupMediaViews()
+
+        } catch (e: Exception) {
+            Log.e(TAG, "Error populating post data: ${e.message}", e)
+            e.printStackTrace() // D stack trace for debugging
+        }
+    }
+
+    private fun hideAllMediaViews() {
+        Log.d(TAG, "hideAllMediaViews: Hiding all media containers")
+        try {
+            mixedFilesCardView?.visibility = View.GONE
+            originalFeedImage?.visibility = View.GONE
+            multipleAudiosContainer?.visibility = View.GONE
+            recyclerViews?.visibility = View.GONE
+        } catch (e: Exception) {
+            Log.e(TAG, "Error hiding media views: ${e.message}", e)
+        }
+    }
 
     // Fixed setupLikeButton - Replace in your FeedAdapter.kt
 
