@@ -1848,10 +1848,21 @@ class FeedAdapter(
         }
 
 
-
         private fun navigateToOriginalPostWithoutRepostInside(data: com.uyscuti.social.network.api.response.posts.Post) {
             try {
                 Log.d(TAG, "Navigating to original Post for Post ID: ${data._id}")
+
+                //  Debug the files BEFORE serialization
+                Log.d(TAG, "=== FILES DEBUG ===")
+                Log.d(TAG, "Files count: ${data.files?.size ?: 0}")
+                Log.d(TAG, "Files null? ${data.files == null}")
+                data.files?.forEachIndexed { index, file ->
+                    Log.d(TAG, "File $index: URL=${file.url}, fileId=${file.fileId}")
+                }
+                Log.d(TAG, "FileIds count: ${data.fileIds?.size ?: 0}")
+                Log.d(TAG, "Thumbnails count: ${data.thumbnail?.size ?: 0}")
+                Log.d(TAG, "FileTypes count: ${data.fileTypes?.size ?: 0}")
+                Log.d(TAG, "=== END FILES DEBUG ===")
 
                 val firstName = data.author?.firstName ?: ""
                 val lastName = data.author?.lastName ?: ""
@@ -1862,9 +1873,17 @@ class FeedAdapter(
                     else -> data.author?.account?.username ?: "Unknown User"
                 }
 
+                //  Create JSON and check it
+                val postJson = Gson().toJson(data)
+                Log.d(TAG, "=== JSON DEBUG ===")
+                Log.d(TAG, "JSON length: ${postJson.length}")
+                Log.d(TAG, "JSON contains 'files': ${postJson.contains("\"files\"")}")
+                Log.d(TAG, "JSON first 500 chars: ${postJson.take(500)}")
+                Log.d(TAG, "=== END JSON DEBUG ===")
+
                 val fragment = Fragment_Original_Post_Without_Repost_Inside().apply {
                     arguments = Bundle().apply {
-                        putString(Fragment_Original_Post_Without_Repost_Inside.ARG_ORIGINAL_POST, Gson().toJson(data))
+                        putString(Fragment_Original_Post_Without_Repost_Inside.ARG_ORIGINAL_POST, postJson)
                         putString("post_id", data._id)
                         putInt("adapter_position", absoluteAdapterPosition)
                         putString("navigation_source", "feed_mixed_files")
@@ -1875,6 +1894,10 @@ class FeedAdapter(
                         putString("author_profile_image_url", data.author?.account?.avatar?.url ?: "")
                         putString("user_id", data.author?._id ?: "")
 
+                        // Pass file count for verification
+                        putInt("file_count", data.files?.size ?: 0)
+
+                        Log.d(TAG, "Bundle - Files count: ${data.files?.size ?: 0}")
                         Log.d(TAG, "Author Info - Name: $displayName, Username: ${data.author?.account?.username}, ID: ${data.author?._id}")
                     }
                 }
@@ -1883,6 +1906,7 @@ class FeedAdapter(
 
             } catch (e: Exception) {
                 Log.e(TAG, "Error navigating to original post fragment: ${e.message}", e)
+                e.printStackTrace()
             }
         }
 

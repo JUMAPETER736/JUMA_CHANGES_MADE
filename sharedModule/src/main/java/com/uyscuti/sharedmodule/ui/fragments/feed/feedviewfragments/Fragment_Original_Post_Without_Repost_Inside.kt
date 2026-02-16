@@ -3136,11 +3136,7 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
 
         private val post: Post,
         private val originalPost: OriginalPost?
-
-    )
-
-    {
-
+    ) {
         private val files: List<File>
         private val thumbnails: List<ThumbnailX>
         private val durations: List<Duration>
@@ -3148,29 +3144,36 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
         private val fileIds: List<String>
 
         init {
+
             when (post) {
+
                 is OriginalPost -> {
-                    files = post.files
-                    thumbnails = post.thumbnail
-                    durations = post.duration
+                    files = post.files ?: emptyList()
+                    thumbnails = post.thumbnail ?: emptyList()
+                    durations = post.duration ?: emptyList()
                     fileTypes = post.fileTypes
-                    fileIds = post.fileIds as List<String>
+                    //Safe cast with elvis operator
+                    fileIds = (post.fileIds as? List<String>) ?: emptyList()
                 }
+
                 is Post -> {
-                    // FIX: Safe null check before calling firstOrNull()
-                    val originalPost = post.originalPost?.firstOrNull()
-                    if (originalPost != null) {
-                        files = originalPost.files
-                        thumbnails = originalPost.thumbnail
-                        durations = originalPost.duration
-                        fileTypes = originalPost.fileTypes
-                        fileIds = originalPost.fileIds as List<String>
+
+                    val originalPostData = post.originalPost?.firstOrNull()
+
+                    if (originalPostData != null) {
+                        files = originalPostData.files ?: emptyList()
+                        thumbnails = originalPostData.thumbnail ?: emptyList()
+                        durations = originalPostData.duration ?: emptyList()
+                        fileTypes = originalPostData.fileTypes
+                        // Safe cast with elvis operator
+                        fileIds = (originalPostData.fileIds as? List<String>) ?: emptyList()
                     } else {
-                        files = post.files
-                        thumbnails = post.thumbnail
-                        durations = post.duration
+                        files = post.files ?: emptyList()
+                        thumbnails = post.thumbnail ?: emptyList()
+                        durations = post.duration ?: emptyList()
                         fileTypes = post.fileTypes
-                        fileIds = post.fileIds as List<String>
+                        //  Safe cast with elvis operator
+                        fileIds = (post.fileIds as? List<String>) ?: emptyList()
                     }
                 }
                 else -> {
@@ -3576,29 +3579,24 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
             Log.d("MediaOriginalPostAdapter", "onCreateViewHolder called with viewType: $viewType")
-            val view = LayoutInflater.from(context).inflate(viewType, parent, false)
+
+            // Use parent context and attachToRoot = false
+            val view = LayoutInflater.from(parent.context).inflate(viewType, parent, false)
+
+            // Ensure view has proper layout params
+            if (view.layoutParams == null) {
+                view.layoutParams = RecyclerView.LayoutParams(
+                    RecyclerView.LayoutParams.MATCH_PARENT,
+                    RecyclerView.LayoutParams.WRAP_CONTENT
+                )
+            }
 
             val holder = when (viewType) {
-                R.layout.feed_multiple_images_only_view_item -> {
-
-                    FeedImagesOnly(view)
-                }
-                R.layout.feed_multiple_videos_only_view_item -> {
-
-                    FeedVideosOnly(view)
-                }
-                R.layout.feed_multiple_audios_only_view_item -> {
-
-                    FeedAudiosOnly(view)
-                }
-                R.layout.feed_multiple_documents_only_view_item -> {
-
-                    FeedDocumentsOnly(view)
-                }
-                else -> {
-
-                    FeedCombinationOfMultipleFiles(view)
-                }
+                R.layout.feed_multiple_images_only_view_item -> FeedImagesOnly(view)
+                R.layout.feed_multiple_videos_only_view_item -> FeedVideosOnly(view)
+                R.layout.feed_multiple_audios_only_view_item -> FeedAudiosOnly(view)
+                R.layout.feed_multiple_documents_only_view_item -> FeedDocumentsOnly(view)
+                else -> FeedCombinationOfMultipleFiles(view)
             }
 
             Log.d("MediaOriginalPostAdapter", "ViewHolder created: ${holder::class.java.simpleName}")
@@ -3634,7 +3632,6 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
             }
             Log.d("MediaOriginalPostAdapter", "onBindViewHolder completed for position $position")
         }
-
 
 
     }
