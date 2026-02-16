@@ -877,6 +877,61 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
         Log.d(TAG, "onDestroy: Cleanup")
     }
 
+    private fun populatePostData(post: Post) {
+        Log.d(TAG, "populatePostData: Starting to populate data for post ${post._id}")
+        Log.d(TAG, "populatePostData: Post has ${post.files?.size ?: 0} files")
+
+        try {
+            // Set comment count
+            totalMixedComments = post.comments
+            updateMetricDisplay(commentCount, totalMixedComments, "comment")
+
+            if (!isViewsInitialized()) {
+                Log.e(TAG, "Views not initialized, cannot populate post data")
+                return
+            }
+
+            // Set header
+            if (::headerTitle.isInitialized) {
+                headerTitle.text = "Post"
+            }
+
+            // Determine if this is a repost or original post
+            val hasOriginalPost = post.originalPost != null && post.originalPost.isNotEmpty()
+
+            if (hasOriginalPost) {
+                // REPOST SCENARIO - show original post's content
+                val repostedPostData = post.originalPost[0]
+                Log.d(TAG, "populatePostData: This is a REPOST, showing original post data")
+
+                showRepostHeader(post)
+                populatePostContent(repostedPostData)
+                populateOriginalAuthorInfo(repostedPostData)
+
+                // Setup media handler with original post's files
+                postMediaHandler = PostMediaHandler(post, repostedPostData)
+
+            } else {
+                // ORIGINAL POST SCENARIO - show this post's content
+                Log.d(TAG, "populatePostData: This is an ORIGINAL POST, showing direct post data")
+
+                populateRegularPost(post)
+
+                // Setup media handler with this post's files
+                postMediaHandler = PostMediaHandler(post, null)
+            }
+
+            // Setup media views - THIS IS CRITICAL
+            postMediaHandler.setupMediaViews()
+
+            Log.d(TAG, "populatePostData: Media setup completed")
+
+        } catch (e: Exception) {
+            Log.e(TAG, "Error populating post data: ${e.message}", e)
+            e.printStackTrace()
+        }
+    }
+
     @SuppressLint("InflateParams", "MissingInflatedId", "ServiceCast")
     fun moreOptionsClick(
         position: Int,
@@ -930,7 +985,7 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
         // Show the dialog
         dialog.show()
 
-        // ==================== SHARE ACTION ====================
+        //  SHARE ACTION
         shareAction.setOnClickListener {
             val shareIntent = Intent(Intent.ACTION_SEND)
             shareIntent.type = "text/plain"
@@ -939,7 +994,7 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
             dialog.dismiss()
         }
 
-        // ==================== DOWNLOAD ACTION ====================
+        //  DOWNLOAD ACTION
         downloadFiles.setOnClickListener {
             Log.d("DownloadButton", "Data: $data")
             if (data.files.isNotEmpty()) {
@@ -955,7 +1010,7 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
             downloadFiles.visibility = View.GONE
         }
 
-        // ==================== MUTE ACTION ====================
+        //  MUTE ACTION
         muteOptionLayout.setOnClickListener {
             Log.d("MuteButton", "Mute button clicked for user: $authorId")
             dialog.dismiss()
@@ -967,7 +1022,7 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
             }
         }
 
-        // ==================== BLOCK USER ACTION ====================
+        //  BLOCK USER ACTION
         blockUserLayout.setOnClickListener {
             Log.d("BlockButton", "Block button clicked for user: $authorId")
             dialog.dismiss()
@@ -988,7 +1043,7 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
             }
         }
 
-        // ==================== REPOST ACTION ====================
+        //  REPOST ACTION
         quoteFeedLayout.setOnClickListener {
             val fragment = Fragment_Edit_Post_To_Repost(data)
             val transaction = requireActivity().supportFragmentManager.beginTransaction()
@@ -998,7 +1053,7 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
             dialog.dismiss()
         }
 
-        // ==================== COPY LINK ACTION ====================
+        //  COPY LINK ACTION
         copyLink.setOnClickListener {
             val postId = data._id
             val linkToCopy = "https://circuitSocial.app/post/$postId"
@@ -1009,20 +1064,20 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
             dialog.dismiss()
         }
 
-        // ==================== NOT INTERESTED ACTION ====================
+        //  NOT INTERESTED ACTION
         notInterested.setOnClickListener {
             handleNotInterested(data)
             dialog.dismiss()
         }
 
-        // ==================== HIDE POST ACTION ====================
+        //  HIDE POST ACTION
         hidePostLayout.setOnClickListener {
             Log.d(TAG, "hidePostLayout: hide post clicked")
             hideSinglePost(position, data)
             dialog.dismiss()
         }
 
-        // ==================== REPORT USER ACTION ====================
+        //  REPORT USER ACTION
         reportUser.setOnClickListener {
             Log.d("reportUser", "Report button clicked")
             val intent = Intent(requireActivity(), ReportNotificationActivity2::class.java)
@@ -1034,7 +1089,7 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
         followUnfollowLayout.visibility = View.GONE
     }
 
-    // ==================== MUTE TOGGLE ====================
+    //  MUTE TOGGLE
     private fun handleMuteToggle(userId: String, position: Int) {
         lifecycleScope.launch {
             try {
@@ -1081,7 +1136,7 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
         }
     }
 
-    // ==================== BLOCK USER CONFIRMATION ====================
+    //  BLOCK USER CONFIRMATION
     private fun showBlockConfirmationDialog(userId: String, username: String, position: Int) {
         AlertDialog.Builder(requireContext())
             .setTitle("Block $username?")
@@ -1096,7 +1151,7 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
             .show()
     }
 
-    // ==================== BLOCK USER ====================
+    //  BLOCK USER
     private fun handleBlockUser(userId: String, position: Int) {
         lifecycleScope.launch {
             try {
@@ -1147,7 +1202,7 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
     }
 
 
-    // ==================== UNBLOCK USER ====================
+    //  UNBLOCK USER
     private fun handleUnblockUser(userId: String, username: String) {
         lifecycleScope.launch {
             try {
@@ -2013,91 +2068,7 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
                 }
             })
     }
-
-
-    private fun populatePostData(post: Post) {
-
-        Log.d(TAG, "populatePostData: Starting to populate data for post ${post._id}")
-        Log.d(TAG, "populatePostData: Post comments = ${post.comments}")
-        Log.d(TAG, "populatePostData: Post likes = ${post.likes}")
-        Log.d(TAG, "populatePostData: Post bookmarkCount = ${post.bookmarkCount}")
-        Log.d(TAG, "populatePostData: Post shareCount = ${post.shareCount}")
-        Log.d(TAG, "populatePostData: Post repostCount = ${post.repostCount}")
-
-        // ADD NULL CHECK
-        if (post.originalPost != null && post.originalPost.isNotEmpty()) {
-            val originalPost = post.originalPost[0]
-            Log.d(TAG, "populatePostData: OriginalPost commentCount = ${originalPost.commentCount}")
-        }
-
-        try {
-            totalMixedComments = post.comments
-            updateMetricDisplay(commentCount, totalMixedComments, "comment")
-
-            // Ensure views are initialized before using them
-            if (!isViewsInitialized()) {
-                Log.e(TAG, "Views not initialized, cannot populate post data")
-                return
-            }
-
-            // Set header title with safe access
-            if (::headerTitle.isInitialized) {
-                headerTitle.text = "Post"
-            } else {
-                Log.w(TAG, "headerTitle not initialized")
-            }
-
-            // Add proper null checks and handle empty files
-            postMediaHandler = if (post.originalPost != null && post.originalPost.isNotEmpty()) {
-                val repostedPostData = post.originalPost[0]
-
-                // CHECK if repostedPostData has files
-                if (repostedPostData.files != null && repostedPostData.files.isNotEmpty()) {
-                    Log.d("MediaDebug", "Handling media from original post with ${repostedPostData.files.size} files")
-                    showRepostHeader(post)
-
-                    // Populate the original post content and author info for reposts
-                    populatePostContent(repostedPostData)
-                    populateOriginalAuthorInfo(repostedPostData)
-
-                    PostMediaHandler(post, repostedPostData)
-                } else {
-                    Log.w("MediaDebug", "Original post has no files, falling back to regular post")
-
-                    // Check if main post has files
-                    if (post.files != null && post.files.isNotEmpty()) {
-                        populateRegularPost(post)
-                        PostMediaHandler(post, null)
-                    } else {
-                        Log.e("MediaDebug", "No files available anywhere")
-                        hideAllMediaViews()
-                        PostMediaHandler(post, null)
-                    }
-                }
-            } else {
-                // CHECK if regular post has files
-                if (post.files != null && post.files.isNotEmpty()) {
-                    Log.d("MediaDebug", "Handling media for regular post with ${post.files.size} files")
-
-                    // For regular posts, populate normally
-                    populateRegularPost(post)
-
-                    PostMediaHandler(post, null)
-                } else {
-                    Log.e("MediaDebug", "Regular post has no files")
-                    hideAllMediaViews()
-                    PostMediaHandler(post, null)
-                }
-            }
-
-            // Setup media views
-            postMediaHandler.setupMediaViews()
-
-        } catch (e: Exception) {
-            Log.e(TAG, "Error populating post data: ${e.message}", e)
-            e.printStackTrace() // D stack trace for debugging
-        }
-    }
+    
 
     private fun hideAllMediaViews() {
         Log.d(TAG, "hideAllMediaViews: Hiding all media containers")
@@ -3144,45 +3115,21 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
         private val fileIds: List<String>
 
         init {
-
-            when (post) {
-
-                is OriginalPost -> {
-                    files = post.files ?: emptyList()
-                    thumbnails = post.thumbnail ?: emptyList()
-                    durations = post.duration ?: emptyList()
-                    fileTypes = post.fileTypes
-                    //Safe cast with elvis operator
-                    fileIds = (post.fileIds as? List<String>) ?: emptyList()
-                }
-
-                is Post -> {
-
-                    val originalPostData = post.originalPost?.firstOrNull()
-
-                    if (originalPostData != null) {
-                        files = originalPostData.files ?: emptyList()
-                        thumbnails = originalPostData.thumbnail ?: emptyList()
-                        durations = originalPostData.duration ?: emptyList()
-                        fileTypes = originalPostData.fileTypes
-                        // Safe cast with elvis operator
-                        fileIds = (originalPostData.fileIds as? List<String>) ?: emptyList()
-                    } else {
-                        files = post.files ?: emptyList()
-                        thumbnails = post.thumbnail ?: emptyList()
-                        durations = post.duration ?: emptyList()
-                        fileTypes = post.fileTypes
-                        //  Safe cast with elvis operator
-                        fileIds = (post.fileIds as? List<String>) ?: emptyList()
-                    }
-                }
-                else -> {
-                    files = emptyList()
-                    thumbnails = emptyList()
-                    durations = emptyList()
-                    fileTypes = null
-                    fileIds = emptyList()
-                }
+            // FIX: Simplify the logic
+            if (originalPost != null) {
+                // Use original post's files (for reposts)
+                files = originalPost.files ?: emptyList()
+                thumbnails = originalPost.thumbnail ?: emptyList()
+                durations = originalPost.duration ?: emptyList()
+                fileTypes = originalPost.fileTypes
+                fileIds = (originalPost.fileIds as? List<String>) ?: emptyList()
+            } else {
+                // Use main post's files (for original posts)
+                files = post.files ?: emptyList()
+                thumbnails = post.thumbnail ?: emptyList()
+                durations = post.duration ?: emptyList()
+                fileTypes = post.fileTypes
+                fileIds = (post.fileIds as? List<String>) ?: emptyList()
             }
 
             logMediaDetails()
