@@ -222,7 +222,7 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
     private lateinit var commentButtonIcon: ImageView
     private lateinit var favoritesButton: ImageView
     private lateinit var favoriteCounts: TextView
-    private lateinit var repostCount: TextView
+    private var repostCount: TextView? = null
     private lateinit var shareButtonIcon: ImageView
 
     private var totalMixedComments = 0
@@ -235,6 +235,7 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
     private var documentWebView: WebView? = null
     private var isVideoPlaying = false
     private var mediaPlayer: MediaPlayer? = null
+
 
     private val Post.safeRepostCount: Int
         get() = repostCount ?: 0
@@ -383,9 +384,7 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
         return binding.root
     }
 
-    @OptIn(UnstableApi::class)
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-
         super.onViewCreated(view, savedInstanceState)
 
         // Initialize all view components from binding
@@ -399,7 +398,6 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
         render(data)
         setupClickListeners()
         setupTextWatcher()
-        // setupBackNavigation()
         initializeMediaHandling()
         setupLikeButton(data)
         setupBookmarkButton(data)
@@ -432,7 +430,6 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
     }
 
     private fun initializeViewComponents() {
-
         reposterName = binding.reposterName
         reposterUsername = binding.reposterUsername
         cancelButton = binding.cancelButton
@@ -458,14 +455,198 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
         shareCount = binding.shareCount
         replyInput = binding.replyInput
         tagPeopleLayout = binding.tagPeopleLayout
-        topicsLayout = binding.topicsLayout
-        locationLayout = binding.locationLayout
+        topicsLayout = binding.topicsLayout  // Note: your XML uses "topics_layout"
+        locationLayout = binding.locationLayout  // Note: your XML uses "location_layout"
         favoritesButton = binding.favoritesButton
         likeButtonIcon = binding.likeButtonIcon
         commentButtonIcon = binding.commentButtonIcon
         AddMoreFeed = binding.addMoreFeed
         shareButtonIcon = binding.shareButtonIcon
 
+        // repostCount is not in the layout, so leave it null
+        // Or you can comment out this line entirely since it's nullable now
+    }
+
+    private fun render(data: Post) {
+        try {
+            Log.d(TAG, "Render: Starting comprehensive DATA display for Post ${data._id}")
+
+            currentPost = data
+
+            setupPostInfo(data)
+            setupUserInfo(data)
+            setupContentAndMedia(data)
+
+            Log.d(TAG, "render: Completed comprehensive setup for Post ${data._id}")
+        } catch (e: Exception) {
+            Log.e(TAG, "Error in comprehensive render method", e)
+        }
+    }
+
+    private fun setupContentAndMedia(data: Post) {
+        try {
+            Log.d(TAG, "Setting up all available content and media")
+            Log.d(TAG, "Main post files: ${data.files?.size ?: 0}")
+            Log.d(TAG, "Original post count: ${data.originalPost?.size ?: 0}")
+
+            var contentDisplayed = false
+            var mediaDisplayed = false
+
+            // Check what we have
+            val hasMainPostContent = !data.content.isNullOrEmpty()
+            val hasMainPostMedia = !data.files.isNullOrEmpty() && data.files.isNotEmpty()
+            val hasOriginalPost = !data.originalPost.isNullOrEmpty() && data.originalPost.isNotEmpty()
+
+            // Log what we found
+            Log.d(TAG, "hasMainPostContent: $hasMainPostContent")
+            Log.d(TAG, "hasMainPostMedia: $hasMainPostMedia")
+            Log.d(TAG, "hasOriginalPost: $hasOriginalPost")
+
+            if (hasOriginalPost) {
+                val originalPost = data.originalPost[0]
+                Log.d(TAG, "Original post type: ${originalPost::class.java.simpleName}")
+                Log.d(TAG, "Original post files: ${originalPost.files?.size ?: 0}")
+
+                if (!originalPost.files.isNullOrEmpty() && originalPost.files.isNotEmpty()) {
+                    originalPost.files.forEachIndexed { index, file ->
+                        Log.d(TAG, "Original post file $index: ${file.url}")
+                    }
+                }
+            }
+
+            // CONTENT LOGIC
+            if (hasMainPostContent) {
+                originalFeedTextContent.text = data.content
+                originalFeedTextContent.visibility = View.VISIBLE
+                contentDisplayed = true
+                Log.d(TAG, "Displaying main post content: ${data.content.take(50)}...")
+            } else if (hasOriginalPost) {
+                val originalPost = data.originalPost[0]
+                if (!originalPost.content.isNullOrEmpty()) {
+                    originalFeedTextContent.text = originalPost.content
+                    originalFeedTextContent.visibility = View.VISIBLE
+                    contentDisplayed = true
+                    Log.d(TAG, "Displaying original post content: ${originalPost.content.take(50)}...")
+                }
+            }
+
+            // MEDIA LOGIC - THE KEY FIX
+            if (hasMainPostMedia) {
+                Log.d(TAG, "Using main post media with ${data.files.size} files")
+                setupMainPostMedia(data)
+                mixedFilesCardView.visibility = View.VISIBLE
+                mediaDisplayed = true
+            } else if (hasOriginalPost) {
+                val originalPost = data.originalPost[0]
+
+                if (!originalPost.files.isNullOrEmpty() && originalPost.files.isNotEmpty()) {
+                    Log.d(TAG, "Using original post media with ${originalPost.files.size} files")
+
+                    // Create a temporary Post object with the original post's files
+                    val postWithOriginalFiles = data.copy(
+                        files = ArrayList(originalPost.files),
+                        fileIds = originalPost.fileIds,
+                        fileTypes = originalPost.fileTypes,
+                        fileNames = originalPost.fileNames,
+                        thumbnail = originalPost.thumbnail,
+                        duration = originalPost.duration,
+                        numberOfPages = originalPost.numberOfPages
+                    )
+
+                    Log.d(TAG, "Created temporary post with ${postWithOriginalFiles.files.size} files")
+
+                    setupMainPostMedia(postWithOriginalFiles)
+                    mixedFilesCardView.visibility = View.VISIBLE
+                    mediaDisplayed = true
+                } else {
+                    Log.d(TAG, "Original post has no files")
+                }
+            }
+
+            // Set visibility based on what was displayed
+            if (!contentDisplayed) {
+                originalFeedTextContent.visibility = View.GONE
+                Log.d(TAG, "No content found to display")
+            }
+
+            if (!mediaDisplayed) {
+                mixedFilesCardView.visibility = View.GONE
+                Log.d(TAG, "No media found to display")
+            }
+
+            Log.d(TAG, "Content and media setup completed - Content: $contentDisplayed, Media: $mediaDisplayed")
+
+        } catch (e: Exception) {
+            Log.e(TAG, "Error setting up content and media", e)
+            originalFeedTextContent.visibility = View.GONE
+            mixedFilesCardView.visibility = View.GONE
+        }
+    }
+
+    private fun setupMainPostMedia(data: Post) {
+        try {
+            Log.d(TAG, "setupMainPostMedia called")
+            Log.d(TAG, "Post ID: ${data._id}")
+            Log.d(TAG, "Files count: ${data.files?.size ?: 0}")
+
+            if (data.files.isNullOrEmpty()) {
+                Log.e(TAG, "No files to display - files is null or empty")
+                mixedFilesCardView.visibility = View.GONE
+                return
+            }
+
+            // Log each file URL
+            data.files.forEachIndexed { index, file ->
+                Log.d(TAG, "File $index URL: ${file.url}")
+                Log.d(TAG, "File $index ID: ${file.fileId}")
+            }
+
+            // Show the media container
+            mixedFilesCardView.visibility = View.VISIBLE
+
+            // Set up the adapter
+            val adapter = OriginalPostMediaAdapter(data, recyclerView)
+            recyclerView.adapter = adapter
+
+            Log.d(TAG, "Adapter set with ${adapter.itemCount} items")
+            Log.d(TAG, "Main post media adapter setup completed")
+
+        } catch (e: Exception) {
+            Log.e(TAG, "Error setting up main post media", e)
+            mixedFilesCardView.visibility = View.GONE
+        }
+    }
+
+    private fun forceRefreshAllMetrics() {
+        try {
+            Log.d(TAG, "forceRefreshAllMetrics: Forcing refresh of all metric displays")
+
+            currentPost?.let { post ->
+                // Update all metrics safely
+                updateMetricDisplay(commentCount, post.comments, "comment")
+                updateMetricDisplay(likesCount, post.likes, "like")
+                updateMetricDisplay(favoriteCounts, post.bookmarkCount, "bookmark")
+                updateMetricDisplay(shareCount, post.shareCount, "share")
+
+                // Only update repostCount if it exists in the layout
+                repostCount?.let { textView ->
+                    updateMetricDisplay(textView, post.repostCount, "repost")
+                } ?: Log.d(TAG, "repostCount TextView not in layout, skipping")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error in forceRefreshAllMetrics", e)
+        }
+    }
+
+    private fun updateMetricDisplay(textView: TextView, count: Int, metricType: String) {
+        try {
+            Log.d(TAG, "updateMetricDisplay: Updating $metricType display to $count")
+            textView.text = count.toString()
+            textView.visibility = View.VISIBLE
+            Log.d(TAG, "updateMetricDisplay: Set $metricType text to '$count' - TextView ID: ${textView.id}")
+        } catch (e: Exception) {
+            Log.e(TAG, "Error updating $metricType display", e)
+        }
     }
 
     private fun setupClickListeners() {
@@ -653,7 +834,7 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
 
     @OptIn(UnstableApi::class)
     private fun cleanupAndGoBack() {
-        //  Go back first - this is the priority
+        // IMMEDIATE: Go back first - this is the priority
         try {
             if (isAdded && !parentFragmentManager.isStateSaved) {
                 parentFragmentManager.popBackStackImmediate()
@@ -942,19 +1123,26 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
 
     @RequiresPermission(Manifest.permission.ACCESS_NETWORK_STATE)
     @SuppressLint("SetTextI18n")
-    private fun performRepost(comment: String, newFiles: List<java.io.File>? = null) {
+    private fun performRepost(comment: String, newFiles: List<File>? = null) {
 
-        Log.d(TAG, "PERFORM REPOST STARTED")
-        Log.d(TAG, "PostId: ${currentPost?._id}")
-        Log.d(TAG, "Comment: $comment")
+        Log.d(
+            TAG,
+            "performRepost called, currentPost=${currentPost?._id}, comment=$comment, newFiles=${newFiles?.size}"
+        )
 
+        // Check network connectivity
         if (!isNetworkAvailable()) {
             Log.e(TAG, "No network connectivity detected")
-            Toast.makeText(context, "No internet connection. Please check your network.", Toast.LENGTH_SHORT).show()
+            Toast.makeText(
+                context,
+                "No internet connection. Please check your network.",
+                Toast.LENGTH_SHORT
+            ).show()
             return
         }
 
         currentPost?.let { post ->
+            // Prevent duplicate requests
             if (isReposting) {
                 Log.d(TAG, "Repost already in progress, ignoring")
                 return
@@ -967,122 +1155,113 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
                 try {
                     Log.d(TAG, "Initiating repost API call for postId: ${post._id}")
 
-                    // Determine which post ID to use - always use the original post ID
-                    val targetPostId = if (post.originalPost.isNotEmpty()) {
-                        // This is a repost wrapper, use the original post ID
-                        post.originalPost[0]._id
-                    } else {
-                        // This is an original post
-                        post._id
-                    }
-
-                    Log.d(TAG, "Target post ID for repost: $targetPostId")
-
                     // Create repost request
                     val repostRequest = RepostRequest(
+                        isReposted = true,
                         comment = comment,
-                        files = null,
+                        files = newFiles as List<com.uyscuti.social.network.api.response.getrepostsPostsoriginal.File>?,
                         tags = null
                     )
 
-                    Log.d(TAG, "Request body: $repostRequest")
-
-                    // Make API call using the toggle endpoint
-                    val response = withContext(Dispatchers.IO) {
-                        retrofitInterface.apiService.toggleFeedRepost(targetPostId, repostRequest)
-                    }
-
-                    Log.d(TAG, "API RESPONSE")
-                    Log.d(TAG, "Code: ${response.code()}")
-                    Log.d(TAG, "Success: ${response.isSuccessful}")
-                    Log.d(TAG, "Message: ${response.message()}")
+                    // Make API call
+                    val response = retrofitInterface.apiService.repostsFeed(post._id, repostRequest)
+                    Log.d(
+                        TAG,
+                        "Repost API response: code=${response.code()}, success=${response.isSuccessful}"
+                    )
 
                     if (response.isSuccessful) {
-                        val responseBody = response.body()
-                        Log.d(TAG, "Body: $responseBody")
+                        val repostResponse = response.body()
+                        if (repostResponse != null) {
+                            post.isReposted = true
 
-                        if (responseBody != null && responseBody.success) {
-                            Log.d(TAG, "Repost created successfully")
+                            Log.d(TAG, "Reposting successful")
 
-                            // Always increment count (no toggle)
-                            val updatedPost = post.copy(
-                                _id = targetPostId,  // Use original post ID
-                                isReposted = responseBody.data.isReposted,
-                                repostCount = responseBody.data.repostCount
-                            )
-
-                            Log.d(TAG, "Updated state - isReposted: ${updatedPost.isReposted}, count: ${updatedPost.repostCount}")
-
+                            // Show success message and navigate back immediately
                             withContext(Dispatchers.Main) {
-                                Toast.makeText(context, "Reposted successfully!", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, "Reposting successful!", Toast.LENGTH_SHORT).show()
 
-                                // Post event to update all feeds
-                                Log.d(TAG, "Posting RepostSuccessEvent to EventBus")
-                                EventBus.getDefault().post(RepostSuccessEvent(updatedPost))
-
-                                // Always navigate back after successful repost
+                                // Navigate back immediately - no delay needed
                                 if (isAdded && !isNavigatingBack) {
-                                    Log.d(TAG, "Navigating back...")
-                                    cleanupAndGoBack()
+                                    //safeNavigateBack()
                                 }
                             }
 
-                            Log.d(TAG, "REPOST COMPLETED SUCCESSFULLY")
-
                         } else {
-                            Log.e(TAG, "Response unsuccessful or body is null")
+                            Log.d(TAG, "Repost failed: Response body is null")
                             withContext(Dispatchers.Main) {
                                 Toast.makeText(context, "Failed to repost", Toast.LENGTH_SHORT).show()
                             }
                         }
                     } else {
-                        val errorBody = response.errorBody()?.string()
-                        Log.e(TAG, "API Error - Code: ${response.code()}")
-                        Log.e(TAG, "Error Body: $errorBody")
-
-                        // SIMPLIFIED ERROR MESSAGES - NO DUPLICATE WARNING
+                        // Handle API error codes
                         val errorMessage = when (response.code()) {
+                            400 -> "Invalid request. Please check your input."
                             401 -> "Authentication required. Please log in again."
                             403 -> "You don't have permission to repost this content."
                             404 -> "The original post was not found."
+                            409 -> "You have already reposted this content."
                             429 -> "Too many requests. Please try again later."
                             500 -> "Server error. Please try again later."
                             else -> "Failed to repost. Please try again."
                         }
-
+                        Log.e(
+                            TAG,
+                            "Repost failed with code: ${response.code()}, message: ${response.message()}"
+                        )
                         withContext(Dispatchers.Main) {
-                            Toast.makeText(context, errorMessage, Toast.LENGTH_LONG).show()
+                            Toast.makeText(context, errorMessage, Toast.LENGTH_SHORT).show()
                         }
                     }
-
                 } catch (t: Throwable) {
-                    Log.e(TAG, "EXCEPTION CAUGHT")
-                    Log.e(TAG, "Type: ${t.javaClass.simpleName}")
-                    Log.e(TAG, "Message: ${t.message}")
-                    Log.e(TAG, "Stack trace:", t)
+                    Log.e(TAG, "Reposting exception - Exception type: ${t.javaClass.simpleName}")
+                    Log.e(TAG, "Reposting exception - Message: ${t.message}")
+                    Log.e(TAG, "Reposting exception - Stack trace:", t)
 
+                    // Handle different exception types
                     val errorMessage = when (t) {
-                        is UnknownHostException -> "No internet connection or server unreachable."
-                        is SocketTimeoutException -> "Request timed out. Please try again."
-                        is ConnectException -> "Connection failed. Please check your internet."
-                        is SSLException -> "Security error. Please try again."
-                        else -> "Network error: ${t.message}"
-                    }
+                        is UnknownHostException -> {
+                            Log.e(
+                                TAG,
+                                "UnknownHostException - DNS resolution failed or no internet"
+                            )
+                            "No internet connection or server unreachable. Please check your network."
+                        }
 
+                        is SocketTimeoutException -> {
+                            Log.e(TAG, "SocketTimeoutException - Request timed out")
+                            "Request timed out. Please try again."
+                        }
+
+                        is ConnectException -> {
+                            Log.e(TAG, "ConnectException - Connection failed")
+                            "Connection failed. Please check your internet connection."
+                        }
+
+                        is SSLException -> {
+                            Log.e(TAG, "SSLException - SSL/TLS error")
+                            "Security error. Please try again."
+                        }
+
+                        else -> {
+                            Log.e(TAG, "Unknown network error: ${t.javaClass.simpleName}")
+                            "Network error: ${t.message}"
+                        }
+                    }
                     withContext(Dispatchers.Main) {
                         Toast.makeText(context, errorMessage, Toast.LENGTH_SHORT).show()
                     }
                 } finally {
                     isReposting = false
-                    Log.d(TAG, "Repost flag reset")
                 }
             }
         } ?: run {
-            Log.e(TAG, "performRepost: No post selected")
+            Log.d(TAG, "performRepost: No post selected")
             Toast.makeText(context, "No post selected", Toast.LENGTH_SHORT).show()
             isReposting = false
         }
     }
+
 
     override fun onDestroy() {
         try {
@@ -1827,15 +2006,7 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
         }
     }
 
-    private fun handleUserProfileClick() {
-        Toast.makeText(context, "Navigate to your profile", Toast.LENGTH_SHORT).show()
-    }
 
-
-    private fun handleOriginalUserProfileClick() {
-        val username = data.author.account?.username ?: "Unknown User"
-        Toast.makeText(context, "View $username's profile", Toast.LENGTH_SHORT).show()
-    }
 
     private fun handleMediaClick() {
         Toast.makeText(context, "Open media viewer", Toast.LENGTH_SHORT).show()
@@ -1849,32 +2020,7 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
         Toast.makeText(context, "View hashtag feed", Toast.LENGTH_SHORT).show()
     }
 
-    private fun render(data: Post) {
-        try {
-            Log.d(TAG, "Render: Starting comprehensive DATA display for Post ${data._id}")
 
-            currentPost = data
-
-            setupPostInfo(data)
-            setupUserInfo(data)
-
-            // Collect files from both main post and original post
-            val allFiles = mutableListOf<com.uyscuti.social.network.api.response.posts.File>()
-            if (data.originalPost.isNotEmpty()) {
-                allFiles.addAll(data.originalPost[0].files)
-            }
-            if (data.files.isNotEmpty()) {
-                allFiles.addAll(data.files)
-            }
-
-            // Pass collected files
-            setupContentAndMedia(data)
-
-            Log.d(TAG, "render: Completed comprehensive setup for Post ${data._id}")
-        } catch (e: Exception) {
-            Log.e(TAG, "Error in comprehensive render method", e)
-        }
-    }
 
     private fun setupPostInfo(data: Post) {
         try {
@@ -1946,8 +2092,8 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
 
             // Always show reposted by information if available
             if (data.repostedUser != null) {
-                Log.d(TAG, "Setting up reposted by: ${data.repostedUser!!.username}")
-                setupRepostedByInfo(data.repostedUser!!)
+                Log.d(TAG, "Setting up reposted by: ${data.repostedUser.username}")
+                setupRepostedByInfo(data.repostedUser)
             }
 
             setupCurrentUserProfile()
@@ -2231,203 +2377,101 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
         }
     }
 
-    private fun setupMainPostMedia(data: Post) {
-        try {
-            if (data.files.isNotEmpty()) {
-                // Show the media container
-                mixedFilesCardView.visibility = View.VISIBLE
-
-                // Set up the adapter with main post files
-                val adapter = OriginalPostMediaAdapter(data, recyclerView)
-                recyclerView.adapter = adapter
-
-                // Log each file URL like in the successful case
-                data.files.forEachIndexed { index, file ->
-                    Log.d(TAG, "image feed $index item count ${data.files.size}")
-                    Log.d(TAG, "image getItemCount: ${data.files.size} ${file.url}")
-                }
-
-                Log.d(TAG, "Main post media adapter setup completed")
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error setting up main post media", e)
-            mixedFilesCardView.visibility = View.GONE
-        }
-    }
-
-
-    @SuppressLint("DefaultLocale")
-    private fun updateMetricDisplay(textView: TextView, count: Int, metricType: String) {
-        Log.d(TAG, "updateMetricDisplay: Updating $metricType display to $count")
-
-        val displayText = when {
-            count == 0 -> "0"
-            count < 1000 -> count.toString()
-            count < 1000000 -> {
-                val formatted = count / 1000.0
-                if (formatted == formatted.toInt().toDouble()) {
-                    "${formatted.toInt()}K"
-                } else {
-                    String.format("%.1fK", formatted)
-                }
-            }
-            else -> {
-                val formatted = count / 1000000.0
-                if (formatted == formatted.toInt().toDouble()) {
-                    "${formatted.toInt()}M"
-                } else {
-                    String.format("%.1fM", formatted)
-                }
-            }
-        }
-
-        val updateUI = {
-            try {
-                textView.text = displayText
-                textView.visibility = View.VISIBLE
-
-                // Force layout refresh
-                textView.requestLayout()
-                textView.invalidate()
-
-                // Force parent to refresh
-                (textView.parent as? View)?.requestLayout()
-
-                Log.d(TAG, "updateMetricDisplay: Set $metricType text to '$displayText' - TextView ID: ${textView.id}")
-            } catch (e: Exception) {
-                Log.e(TAG, "Error updating $metricType display", e)
-            }
-        }
-
-        if (Thread.currentThread() != Looper.getMainLooper().thread) {
-
-        } else {
-            updateUI()
-        }
-
-        // Double-check the UI was actually updated
-        Handler(Looper.getMainLooper()).postDelayed({
-            if (textView.text.toString() != displayText) {
-                Log.w(TAG, "UI update failed for $metricType, retrying...")
-                textView.text = displayText
-                textView.requestLayout()
-            }
-        }, 100)
-    }
-
-    private fun forceRefreshAllMetrics() {
-        currentPost?.let { post ->
-            Log.d(TAG, "forceRefreshAllMetrics: Forcing refresh of all metric displays")
-
-            Handler(Looper.getMainLooper()).post {
-                try {
-                    // Force update all metrics with current values
-                    updateMetricDisplay(commentCount, totalMixedComments, "comment")
-                    updateMetricDisplay(likesCount, post.safeLikes, "like")
-                    updateMetricDisplay(favoriteCounts, post.safeBookmarkCount, "bookmark")
-                    updateMetricDisplay(shareCount, post.safeShareCount, "share")
-                    updateMetricDisplay(repostCount, post.safeRepostCount, "repost")
-
-                    Log.d(TAG, "forceRefreshAllMetrics: All metrics refreshed")
-                } catch (e: Exception) {
-                    Log.e(TAG, "Error in forceRefreshAllMetrics", e)
-                }
-            }
-        }
-    }
-
-
-    private fun setupLikeButton(data: com.uyscuti.social.network.api.response.posts.Post) {
-        updateLikeButtonUI(data.isLiked)
+    private fun setupLikeButton(data: Post) {
+        Log.d(TAG, "Setting up like button - Initial state: isLiked=${data.isLiked}, likes=${data.likes}")
+        updateLikeButtonUI(data.isLiked ?: false)
         updateMetricDisplay(likesCount, data.likes, "like")
 
         likeButtonIcon.setOnClickListener {
             if (!likeButtonIcon.isEnabled) return@setOnClickListener
 
-            it.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+            Log.d(TAG, "Like clicked for post: ${data._id}")
+            Log.d(TAG, "Current state before toggle: isLiked=${data.isLiked}, likes=${data.likes}")
 
-            val previousLikeStatus = data.isLiked
-            val previousLikeCount = data.likes
+            val newLikeStatus = !(data.isLiked ?: false)
+            val previousLikeStatus = data.isLiked ?: false
+            val previousLikesCount = data.likes
 
-            // Optimistic UI update
-            data.isLiked = !previousLikeStatus
-            data.likes = if (data.isLiked) previousLikeCount + 1 else maxOf(0, previousLikeCount - 1)
+            // Update data immediately
+            data.isLiked = newLikeStatus
+            data.likes = if (newLikeStatus) data.likes + 1 else maxOf(0, data.likes - 1)
+            totalMixedLikesCounts = data.likes
 
-            updateLikeButtonUI(data.isLiked)
+            Log.d(TAG, "New state after toggle: isLiked=${data.isLiked}, likes=${data.likes}")
+
+            // Update UI immediately for better UX
+            updateLikeButtonUI(data.isLiked ?: false)
             updateMetricDisplay(likesCount, data.likes, "like")
 
-            YoYo.with(if (data.isLiked) Techniques.Tada else Techniques.Pulse)
-                .duration(500)
+            // Animation
+            YoYo.with(if (newLikeStatus) Techniques.Tada else Techniques.Pulse)
+                .duration(300)
                 .repeat(1)
                 .playOn(likeButtonIcon)
 
+            // Disable button during network call
             likeButtonIcon.isEnabled = false
             likeButtonIcon.alpha = 0.8f
 
-            CoroutineScope(Dispatchers.Main).launch {
-                try {
-                    val response = retrofitInterface.apiService.likeUnLikeFeed(data._id)
+            val likeRequest = LikeRequest(newLikeStatus)
+            RetrofitClient.likeService.toggleLike(data._id, likeRequest)
+                .enqueue(object : Callback<LikeResponse> {
+                    override fun onResponse(call: Call<LikeResponse>, response: Response<LikeResponse>) {
+                        likeButtonIcon.alpha = 1f
+                        likeButtonIcon.isEnabled = true
 
-                    likeButtonIcon.alpha = 1f
-                    likeButtonIcon.isEnabled = true
-
-                    if (response.isSuccessful) {
-                        response.body()?.let { likeResponse ->
-                            if (likeResponse.success) {
-                                // Sync with server data
-                                data.isLiked = likeResponse.data.isLiked
-
-
-                                updateLikeButtonUI(data.isLiked)
-                                updateMetricDisplay(likesCount, data.likes, "like")
-
-                                // Safely access likedByUserIds (it might be null)
-                                val likedByCount = likeResponse.data.likedByUserIds?.size ?: 0
-                                Log.d(TAG, "Like synced - isLiked=${data.isLiked}, count=${data.likes}, likedBy=$likedByCount users")
-
-                                // Notify adapter
-                                feedClickListener.likeUnLikeFeed(0, data)
-                            } else {
-                                Log.e(TAG, "Like failed - success=false")
-                                revertLikeState(data, previousLikeStatus, previousLikeCount)
+                        if (response.isSuccessful) {
+                            response.body()?.let { likeResponse ->
+                                Log.d(TAG, "Like API success - Server count: ${likeResponse.likesCount}")
+                                // Only update if server count is significantly different
+                                if (likeResponse.likesCount != null &&
+                                    abs(likeResponse.likesCount - data.likes) > 1
+                                ) {
+                                    data.likes = likeResponse.likesCount
+                                    totalMixedLikesCounts = data.likes
+                                    updateMetricDisplay(likesCount, data.likes, "like")
+                                    Log.d(TAG, "Updated likes count from server: ${data.likes}")
+                                }
                             }
-                        } ?: run {
-                            Log.e(TAG, "Like response body is null")
-                            revertLikeState(data, previousLikeStatus, previousLikeCount)
+                        } else {
+                            Log.e(TAG, "Like sync failed: ${response.code()}")
+                            // Only revert on actual API errors, not JSON parsing issues
+                            if (response.code() != 200) {
+                                data.isLiked = previousLikeStatus
+                                data.likes = previousLikesCount
+                                totalMixedLikesCounts = data.likes
+                                updateLikeButtonUI(data.isLiked ?: false)
+                                updateMetricDisplay(likesCount, data.likes, "like")
+                                Log.d(TAG, "Reverted to previous state: isLiked=${data.isLiked}, likes=${data.likes}")
+                            }
                         }
-                    } else {
-                        Log.e(TAG, "Like API error: ${response.code()} - ${response.message()}")
-                        revertLikeState(data, previousLikeStatus, previousLikeCount)
-
-                        Toast.makeText(
-                            likeButtonIcon.context,
-                            "Failed to update like",
-                            Toast.LENGTH_SHORT
-                        ).show()
                     }
-                } catch (e: Exception) {
-                    likeButtonIcon.alpha = 1f
-                    likeButtonIcon.isEnabled = true
 
-                    Log.e(TAG, "Like network error", e)
-                    revertLikeState(data, previousLikeStatus, previousLikeCount)
+                    override fun onFailure(call: Call<LikeResponse>, t: Throwable) {
+                        likeButtonIcon.alpha = 1f
+                        likeButtonIcon.isEnabled = true
 
-                    Toast.makeText(
-                        likeButtonIcon.context,
-                        "Network error. Please check your connection.",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
-            }
+                        // Check if it's a JSON parsing error
+                        if (t is MalformedJsonException ||
+                            t.message?.contains("MalformedJsonException") == true) {
+                            Log.w(TAG, "Like API returned malformed JSON but operation likely succeeded - keeping UI state")
+                            // Don't revert UI changes for JSON parsing errors as the operation likely succeeded
+                            return
+                        }
+
+                        Log.e(TAG, "Like network error - reverting changes", t)
+                        // Only revert for actual network failures
+                        data.isLiked = previousLikeStatus
+                        data.likes = previousLikesCount
+                        totalMixedLikesCounts = data.likes
+                        updateLikeButtonUI(data.isLiked ?: false)
+                        updateMetricDisplay(likesCount, data.likes, "like")
+                        Log.d(TAG, "Reverted to previous state after network error: isLiked=${data.isLiked}, likes=${data.likes}")
+                    }
+                })
+
+            feedClickListener.likeUnLikeFeed(0, data)
         }
-    }
-
-    private fun revertLikeState(data: Post, previousStatus: Boolean, previousCount: Int) {
-        data.isLiked = previousStatus
-        data.likes = previousCount
-        updateLikeButtonUI(data.isLiked)
-        updateMetricDisplay(likesCount, data.likes, "like")
-        Log.d(TAG, "Reverted to previous state: isLiked=$previousStatus, likes=$previousCount")
     }
 
     private fun setupBookmarkButton(data: com.uyscuti.social.network.api.response.posts.Post) {
@@ -2949,75 +2993,6 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
         }
     }
 
-    private fun setupContentAndMedia(data: Post) {
-        try {
-            Log.d(TAG, "Setting up all available content and media")
-
-            var contentDisplayed = false
-            var mediaDisplayed = false
-
-            // ALWAYS try to display main post content first
-            if (!data.content.isNullOrEmpty()) {
-                originalFeedTextContent.text = data.content
-                originalFeedTextContent.visibility = View.VISIBLE
-                contentDisplayed = true
-                Log.d(TAG, "Displaying main post content: ${data.content.take(50)}...")
-            }
-
-            // ALWAYS try to display main post media first
-            if (data.files.isNotEmpty()) {
-                setupMainPostMedia(data)
-                mixedFilesCardView.visibility = View.VISIBLE
-                mediaDisplayed = true
-                Log.d(TAG, "Displaying main post media: ${data.files.size} files")
-            }
-
-            // Only if main post has no content, check original post content
-            if (!contentDisplayed && data.originalPost.isNotEmpty()) {
-                val originalPost = data.originalPost[0]
-                if (!originalPost.content.isNullOrEmpty()) {
-                    originalFeedTextContent.text = originalPost.content
-                    originalFeedTextContent.visibility = View.VISIBLE
-                    contentDisplayed = true
-                    Log.d(TAG, "Displaying original post content: ${originalPost.content.take(50)}...")
-                }
-            }
-
-            // Only if main post has no media, check original post media
-            if (!mediaDisplayed && data.originalPost.isNotEmpty()) {
-                val originalPost = data.originalPost[0]
-                if (originalPost.files.isNotEmpty()) {
-                    // Pass the original post instead of the entire data object
-                    setupOriginalPostMedia(data)
-                    mixedFilesCardView.visibility = View.VISIBLE
-                    mediaDisplayed = true
-                    Log.d(TAG, "Displaying original post media: ${originalPost.files.size} files")
-                }
-            }
-
-            // Set visibility based on what was displayed
-            if (contentDisplayed) {
-                Log.d(TAG, "Content successfully displayed")
-            } else {
-                originalFeedTextContent.visibility = View.GONE
-                Log.d(TAG, "No content found to display")
-            }
-
-            if (mediaDisplayed) {
-                Log.d(TAG, "Media successfully displayed")
-            } else {
-                mixedFilesCardView.visibility = View.GONE
-                Log.d(TAG, "No media found to display")
-            }
-
-            Log.d(TAG, "Content and media setup completed - Content: $contentDisplayed, Media: $mediaDisplayed")
-
-        } catch (e: Exception) {
-            Log.e(TAG, "Error setting up content and media", e)
-            originalFeedTextContent.visibility = View.GONE
-            mixedFilesCardView.visibility = View.GONE
-        }
-    }
 
     private fun Int.dpToPx(context: Context?): Int {
         return if (context == null) {
@@ -3873,10 +3848,7 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
                                 fileIds = originalPostData.fileIds,
                                 fileNames = originalPostData.fileNames,
                                 fileSizes = originalPostData.fileSizes.map { fileSizeX ->
-                                    FileSize(
-                                        fileId = fileSizeX.fileId,
-                                        fileSize = fileSizeX.fileSize.toLongOrNull() ?: 0L
-                                    )
+                                    FileSize()
                                 },
                                 fileTypes = originalPostData.fileTypes,
                                 files = ArrayList(originalPostData.files),
