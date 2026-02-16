@@ -473,6 +473,7 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
         return binding.root
     }
 
+
     @OptIn(UnstableApi::class)
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -483,33 +484,23 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
             initializeRecyclerView()
             setupInteractionButtonsClickPrevention()
             setupBackPressHandler()
-            // Verify views are initialized
+
             if (!isViewsInitialized()) {
                 Log.e(TAG, "Critical views not initialized properly")
                 return
             }
 
-            // Setup other components
             setupRecyclerViews()
 
             // Hide UI elements
             EventBus.getDefault().post(HideAppBar(true))
             EventBus.getDefault().post(HideBottomNav(true))
 
-            // DEBUG: Log all bundle keys
-            Log.d(TAG, "=== DEBUG: Checking Bundle Contents ===")
-            arguments?.keySet()?.forEach { key ->
-                val value = arguments?.get(key)
-                Log.d(TAG, "Bundle key: '$key' = ${value?.toString()?.take(100)}")
-            }
-            Log.d(TAG, "=== END DEBUG ===")
-
+            // Parse post data
             post = try {
-                // Try ARG_ORIGINAL_POST first
                 var postJson = arguments?.getString(ARG_ORIGINAL_POST)
                 Log.d(TAG, "ARG_ORIGINAL_POST JSON length: ${postJson?.length ?: 0}")
 
-                // If null, try post_data
                 if (postJson == null) {
                     postJson = arguments?.getString("post_data")
                     Log.d(TAG, "post_data JSON length: ${postJson?.length ?: 0}")
@@ -522,21 +513,12 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
                     }
                 } else {
                     Log.e(TAG, "No JSON string found in arguments")
-                    // Fallback to old method for backward compatibility
                     (arguments?.getSerializable(ARG_ORIGINAL_POST) as? Post
-                        ?: arguments?.getSerializable(ARG_POST) as? Post).also {
-                        if (it != null) {
-                            Log.d(TAG, "Found post via Serializable: ${it._id}")
-                        } else {
-                            Log.e(TAG, "Serializable also returned null")
-                        }
-                    }
+                        ?: arguments?.getSerializable(ARG_POST) as? Post)
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Error parsing post data: ${e.message}", e)
-                e.printStackTrace()
-                arguments?.getSerializable(ARG_ORIGINAL_POST) as? Post
-                    ?: arguments?.getSerializable(ARG_POST) as? Post
+                null
             }
 
             if (post == null) {
@@ -546,93 +528,51 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
             }
 
             post?.let { postData ->
-
                 Log.d(TAG, "Post ID: ${postData._id}")
-                Log.d(TAG, "Post commentCount: ${postData.comments}")
-                Log.d(TAG, "Post comments: ${postData.comments}")
-                Log.d(TAG, "Post likes: ${postData.likes}")
-                Log.d(TAG, "Post safeCommentCount: ${postData.safeCommentCount}")
-                Log.d(TAG, "Post safeLikes: ${postData.safeLikes}")
 
                 currentPost = postData
 
-                // FIX: Handle null originalPost safely
-                totalMixedComments = if (!postData.originalPost.isNullOrEmpty()) {
-                    val originalPost = postData.originalPost[0]
-                    Log.d(TAG, "Original post comment count: ${originalPost.commentCount}")
-                    originalPost.commentCount ?: postData.comments
-                } else {
-                    // This is already an original post (not a repost), use its own comment count
-                    Log.d(TAG, "No nested original post, using direct comment count")
+                //  Setup click listeners FIRST before any potential exceptions
+                setupClickListeners(postData)
+                Log.d(TAG, "Click listeners set up successfully")
+
+                // Initialize comment count safely
+                totalMixedComments = try {
+                    if (!postData.originalPost.isNullOrEmpty() &&
+                        postData.originalPost[0]._id?.isNotBlank() == true) {
+                        val originalPost = postData.originalPost[0]
+                        Log.d(TAG, "Original post comment count: ${originalPost.commentCount}")
+                        originalPost.commentCount ?: postData.comments ?: 0
+                    } else {
+                        Log.d(TAG, "No nested original post, using direct comment count")
+                        postData.comments ?: 0
+                    }
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error getting comment count: ${e.message}")
                     postData.comments ?: 0
                 }
 
                 Log.d(TAG, "Final totalMixedComments: $totalMixedComments")
 
-                // CRITICAL: Force immediate UI updates with actual values
+                // Force UI updates
                 Handler(Looper.getMainLooper()).post {
                     Log.d(TAG, "Forcing immediate UI update with values:")
-                    Log.d(TAG, "- Comments: $totalMixedComments")
-                    Log.d(TAG, "- Likes: ${postData.safeLikes}")
-                    Log.d(TAG, "- Bookmarks: ${postData.safeBookmarkCount}")
-                    Log.d(TAG, "- Shares: ${postData.safeShareCount}")
-                    Log.d(TAG, "- Reposts: ${postData.safeRepostCount}")
-
-                    // Update each metric individually with error handling
                     try {
                         commentCount.text = totalMixedComments.toString()
                         commentCount.visibility = View.VISIBLE
-                        commentCount.requestLayout()
-                        Log.d(TAG, "Comment count updated to: ${commentCount.text}")
-                    } catch (e: Exception) {
-                        Log.e(TAG, "Error updating comment count", e)
-                    }
-
-                    try {
                         likesCount.text = postData.safeLikes.toString()
                         likesCount.visibility = View.VISIBLE
-                        likesCount.requestLayout()
-                        Log.d(TAG, "Likes count updated to: ${likesCount.text}")
-                    } catch (e: Exception) {
-                        Log.e(TAG, "Error updating likes count", e)
-                    }
-
-                    try {
                         favoriteCounts.text = postData.safeBookmarkCount.toString()
                         favoriteCounts.visibility = View.VISIBLE
-                        favoriteCounts.requestLayout()
-                        Log.d(TAG, "Bookmark count updated to: ${favoriteCounts.text}")
-                    } catch (e: Exception) {
-                        Log.e(TAG, "Error updating bookmark count", e)
-                    }
-
-                    try {
                         shareCount.text = postData.safeShareCount.toString()
                         shareCount.visibility = View.VISIBLE
-                        shareCount.requestLayout()
-                        Log.d(TAG, "Share count updated to: ${shareCount.text}")
-                    } catch (e: Exception) {
-                        Log.e(TAG, "Error updating share count", e)
-                    }
-
-                    try {
                         repostCount.text = postData.safeRepostCount.toString()
                         repostCount.visibility = View.VISIBLE
-                        repostCount.requestLayout()
-                        Log.d(TAG, "Repost count updated to: ${repostCount.text}")
                     } catch (e: Exception) {
-                        Log.e(TAG, "Error updating repost count", e)
-                    }
-
-                    // Force parent layout refresh
-                    try {
-                        (view as? ViewGroup)?.requestLayout()
-                    } catch (e: Exception) {
-                        Log.e(TAG, "Error refreshing parent layout", e)
+                        Log.e(TAG, "Error updating counts", e)
                     }
                 }
 
-                // Also try the updateMetricDisplay method
                 Handler(Looper.getMainLooper()).postDelayed({
                     updateMetricDisplay(commentCount, totalMixedComments, "comment")
                     updateMetricDisplay(likesCount, postData.safeLikes, "like")
@@ -641,18 +581,24 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
                     updateMetricDisplay(repostCount, postData.safeRepostCount, "repost")
                 }, 100)
 
-                // Populate other data
-                populatePostData(postData)
+                // Wrap potentially failing methods in try-catch
+                try {
+                    populatePostData(postData)
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error in populatePostData: ${e.message}", e)
+                    e.printStackTrace()
+                }
 
-                // Setup buttons
-                setupLikeButton(postData)
-                setupBookmarkButton(postData)
-                setupCommentButton(postData)
-                setupShareButton(postData)
-                setupRepostButton(postData)
-                setupClickListeners(postData)
+                try {
+                    setupLikeButton(postData)
+                    setupBookmarkButton(postData)
+                    setupCommentButton(postData)
+                    setupShareButton(postData)
+                    setupRepostButton(postData)
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error setting up buttons: ${e.message}", e)
+                }
 
-                // Force another refresh after everything is set up
                 Handler(Looper.getMainLooper()).postDelayed({
                     forceRefreshAllMetrics()
                 }, 300)
@@ -662,6 +608,7 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
 
         } catch (e: Exception) {
             Log.e(TAG, "Error in onViewCreated: ${e.message}", e)
+            e.printStackTrace()
         }
     }
 
@@ -708,33 +655,46 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
     }
 
     private fun setupClickListeners(data: Post) {
-        Log.d(TAG, "setupClickListeners - Data type: ${data::class.java.simpleName}, ID: ${data._id}")
+        Log.d(TAG, "setupClickListeners - START - Data type: ${data::class.java.simpleName}, ID: ${data._id}")
 
-        setupInitialFollowButtonState(data)
+        try {
+            setupInitialFollowButtonState(data)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error in setupInitialFollowButtonState", e)
+        }
 
         cancelButton.setOnClickListener {
-            Log.d(TAG, "Cancel button clicked")
+            Log.d(TAG, "CANCEL BUTTON CLICKED")
             cleanupAndGoBack()
         }
+        Log.d(TAG, "Cancel button listener set")
 
         headerMenuButton.setOnClickListener { view ->
+            Log.d(TAG, "HEADER MENU BUTTON CLICKED")
             moreOptionsClick(currentPosition, data)
         }
+        Log.d(TAG, "Header menu button listener set")
 
         mixedFilesCardView.setOnClickListener {
+            Log.d(TAG, " MIXED FILES CLICKED ")
             handleOriginalMediaClick()
         }
+        Log.d(TAG, " Mixed files listener set")
 
         originalFeedImage.setOnClickListener {
+            Log.d(TAG, " ORIGINAL IMAGE CLICKED ")
             handleOriginalFileClick()
         }
+        Log.d(TAG, " Original image listener set")
 
         followButton.setOnClickListener {
+            Log.d(TAG, " FOLLOW BUTTON CLICKED ")
             handleFollowButtonClick()
         }
-
+        Log.d(TAG, " Follow button listener set")
 
         originalPosterProfileImage.setOnClickListener {
+            Log.d(TAG, " PROFILE IMAGE CLICKED ")
             navigateToUserProfile(
                 feedOwnerId = data.author?.account?._id ?: "",
                 feedOwnerName = data.author?.account?.username ?: "",
@@ -742,28 +702,36 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
                 profilePicUrl = data.author?.account?.avatar?.url ?: ""
             )
         }
-        originalPosterName.setOnClickListener {
-            navigateToUserProfile(
-                feedOwnerId = data.author?.account?._id ?: "",
-                feedOwnerName = data.author?.account?.username ?: "",
-                feedOwnerUsername = data.author?.account?.username ?: "",
-                profilePicUrl = data.author?.account?.avatar?.url ?: ""
-            )
-        }
+        Log.d(TAG, " Profile image listener set")
 
-        // Action button click listeners
+        originalPosterName.setOnClickListener {
+            Log.d(TAG, " POSTER NAME CLICKED ")
+            navigateToUserProfile(
+                feedOwnerId = data.author?.account?._id ?: "",
+                feedOwnerName = data.author?.account?.username ?: "",
+                feedOwnerUsername = data.author?.account?.username ?: "",
+                profilePicUrl = data.author?.account?.avatar?.url ?: ""
+            )
+        }
+        Log.d(TAG, " Poster name listener set")
+
         likeSection.setOnClickListener {
+            Log.d(TAG, " LIKE SECTION CLICKED ")
             currentPost?.let { post ->
                 setupLikeButton(post)
             }
         }
+        Log.d(TAG, " Like section listener set")
 
         favoriteSection.setOnClickListener {
+            Log.d(TAG, " FAVORITE SECTION CLICKED ")
             currentPost?.let { post ->
                 setupBookmarkButton(post)
             }
         }
+        Log.d(TAG, " Favorite section listener set")
 
+        Log.d(TAG, "setupClickListeners - COMPLETE - All listeners registered")
     }
 
     private fun initializeViews(view: View) {
@@ -894,7 +862,7 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
                 headerTitle.text = "Post"
             }
 
-            // ✅ SAFE DETECTION: Check for valid data, not just existence
+            //  Check for valid data, not just existence
             val hasValidOriginalPost = try {
                 !post.originalPost.isNullOrEmpty() &&
                         post.originalPost[0]._id?.isNotBlank() == true &&
@@ -3165,10 +3133,10 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
 
                 Log.d("PostMediaHandler", "Setting up RecyclerView with ${files.size} files")
 
-                // ✅ FIX 1: Set visibility FIRST
+                //  FIX 1: Set visibility FIRST
                 recyclerView.visibility = View.VISIBLE
 
-                // ✅ FIX 2: Set layout params with proper dimensions
+                //  FIX 2: Set layout params with proper dimensions
                 val displayMetrics = recyclerView.context.resources.displayMetrics
                 val layoutParams = recyclerView.layoutParams ?: ViewGroup.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
@@ -3179,7 +3147,7 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
                 layoutParams.height = ViewGroup.LayoutParams.WRAP_CONTENT
                 recyclerView.layoutParams = layoutParams
 
-                // ✅ FIX 3: Set layout manager based on file count
+                //  FIX 3: Set layout manager based on file count
                 val fileCount = files.size
                 val layoutManager = when (fileCount) {
                     1 -> GridLayoutManager(recyclerView.context, 1)
@@ -3191,10 +3159,10 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
                 }
                 recyclerView.layoutManager = layoutManager
 
-                // ✅ FIX 4: Disable nested scrolling to ensure proper measurement
+                //  FIX 4: Disable nested scrolling to ensure proper measurement
                 recyclerView.isNestedScrollingEnabled = false
 
-                // ✅ FIX 5: Create MediaItems BEFORE setting adapter
+                //  FIX 5: Create MediaItems BEFORE setting adapter
                 val mediaItems = files.mapIndexed { index, file ->
                     val fileId = fileIds.getOrNull(index) ?: file.fileId
                     MediaItem(
@@ -3209,13 +3177,13 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
 
                 Log.d("PostMediaHandler", "Created ${mediaItems.size} MediaItems")
 
-                // ✅ FIX 6: Submit list to adapter BEFORE setting it on RecyclerView
+                //  FIX 6: Submit list to adapter BEFORE setting it on RecyclerView
                 adapter.submitList(mediaItems)
 
-                // ✅ FIX 7: Set adapter
+                //  FIX 7: Set adapter
                 recyclerView.adapter = adapter
 
-                // ✅ FIX 8: Force layout updates
+                //  FIX 8: Force layout updates
                 recyclerView.post {
                     recyclerView.requestLayout()
 
