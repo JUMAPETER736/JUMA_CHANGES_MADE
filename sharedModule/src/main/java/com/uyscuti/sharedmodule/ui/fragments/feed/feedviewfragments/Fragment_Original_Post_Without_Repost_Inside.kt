@@ -3215,48 +3215,36 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
 
                 Log.d("PostMediaHandler", "Setting up RecyclerView with ${files.size} files")
 
-                //  1: Ensure RecyclerView is properly configured before layout manager
+                // ✅ FIX 1: Set visibility FIRST
                 recyclerView.visibility = View.VISIBLE
 
-                //  2: Set proper layout parameters FIRST
+                // ✅ FIX 2: Set layout params with proper dimensions
                 val displayMetrics = recyclerView.context.resources.displayMetrics
                 val layoutParams = recyclerView.layoutParams ?: ViewGroup.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.WRAP_CONTENT
                 )
 
-                // Ensure minimum dimensions
-                if (layoutParams.width <= 0) {
-                    layoutParams.width = displayMetrics.widthPixels
-                }
-                if (layoutParams.height <= 0) {
-                    layoutParams.height = ViewGroup.LayoutParams.WRAP_CONTENT
-                }
-
+                layoutParams.width = displayMetrics.widthPixels
+                layoutParams.height = ViewGroup.LayoutParams.WRAP_CONTENT
                 recyclerView.layoutParams = layoutParams
 
-                Log.d("PostMediaHandler", "Set layout params - Width: ${layoutParams.width}, Height: ${layoutParams.height}")
-
-                //  3: Set layout manager with proper span count
+                // ✅ FIX 3: Set layout manager based on file count
                 val fileCount = files.size
                 val layoutManager = when (fileCount) {
                     1 -> GridLayoutManager(recyclerView.context, 1)
                     2 -> GridLayoutManager(recyclerView.context, 2)
-                    3 -> {
-                        // For 3 items, use StaggeredGrid but ensure proper setup
-                        val staggered = StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL)
-                        staggered.gapStrategy = StaggeredGridLayoutManager.GAP_HANDLING_MOVE_ITEMS_BETWEEN_SPANS
-                        staggered
+                    3 -> StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL).apply {
+                        gapStrategy = StaggeredGridLayoutManager.GAP_HANDLING_MOVE_ITEMS_BETWEEN_SPANS
                     }
                     else -> GridLayoutManager(recyclerView.context, 2)
                 }
-
                 recyclerView.layoutManager = layoutManager
 
-                //  4: Clear any existing adapter to avoid conflicts
-                recyclerView.adapter = null
+                // ✅ FIX 4: Disable nested scrolling to ensure proper measurement
+                recyclerView.isNestedScrollingEnabled = false
 
-                //  5: Create MediaItems with proper validation
+                // ✅ FIX 5: Create MediaItems BEFORE setting adapter
                 val mediaItems = files.mapIndexed { index, file ->
                     val fileId = fileIds.getOrNull(index) ?: file.fileId
                     MediaItem(
@@ -3271,50 +3259,27 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
 
                 Log.d("PostMediaHandler", "Created ${mediaItems.size} MediaItems")
 
-                //  6: Set adapter and submit list
+                // ✅ FIX 6: Submit list to adapter BEFORE setting it on RecyclerView
                 adapter.submitList(mediaItems)
+
+                // ✅ FIX 7: Set adapter
                 recyclerView.adapter = adapter
 
-                //  7: Force layout with multiple attempts
-                recyclerView.requestLayout()
-
-                // First check after immediate layout
+                // ✅ FIX 8: Force layout updates
                 recyclerView.post {
-                    Log.d("PostMediaHandler", "First check - RecyclerView: ${recyclerView.width}x${recyclerView.height}")
-                    Log.d("PostMediaHandler", "First check - Children: ${recyclerView.childCount}, Items: ${adapter.itemCount}")
+                    recyclerView.requestLayout()
 
-                    if (recyclerView.childCount == 0 && adapter.itemCount > 0) {
-                        Log.w("PostMediaHandler", "No children rendered, forcing layout refresh")
+                    // Verify after layout
+                    recyclerView.postDelayed({
+                        Log.d("PostMediaHandler", "Final check - RecyclerView: ${recyclerView.width}x${recyclerView.height}")
+                        Log.d("PostMediaHandler", "Children: ${recyclerView.childCount}, Adapter items: ${adapter.itemCount}")
 
-                        // Try invalidating the layout manager
-                        recyclerView.layoutManager?.let { lm ->
-                            lm.requestLayout()
+                        if (recyclerView.childCount == 0 && adapter.itemCount > 0) {
+                            Log.e("PostMediaHandler", "Items not rendering! Forcing refresh...")
+                            adapter.notifyDataSetChanged()
+                            recyclerView.invalidate()
                         }
-
-                        // Force measure and layout
-                        recyclerView.measure(
-                            View.MeasureSpec.makeMeasureSpec(recyclerView.width, View.MeasureSpec.EXACTLY),
-                            View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
-                        )
-                        recyclerView.layout(recyclerView.left, recyclerView.top, recyclerView.right, recyclerView.bottom)
-
-                        // Second attempt with delay
-                        recyclerView.postDelayed({
-                            Log.d("PostMediaHandler", "Second check - Children: ${recyclerView.childCount}")
-
-                            if (recyclerView.childCount == 0) {
-                                Log.e("PostMediaHandler", "CRITICAL: RecyclerView still empty after all attempts")
-                                Log.e("PostMediaHandler", "Parent visibility: ${(recyclerView.parent as? View)?.visibility}")
-                                Log.e("PostMediaHandler", "RecyclerView visibility: ${recyclerView.visibility}")
-
-                                // Last resort: try recreating adapter
-                                val newAdapter = MediaOriginalPostAdapter(files, thumbnails, durations, fileTypes, fileIds, recyclerView.context, post)
-                                newAdapter.submitList(mediaItems)
-                                recyclerView.adapter = newAdapter
-                                recyclerView.invalidate()
-                            }
-                        }, 200)
-                    }
+                    }, 100)
                 }
 
                 Log.d("PostMediaHandler", "RecyclerView setup completed")
