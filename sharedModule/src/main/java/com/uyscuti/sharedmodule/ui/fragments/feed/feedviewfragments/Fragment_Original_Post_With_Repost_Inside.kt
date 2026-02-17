@@ -209,7 +209,7 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
     private lateinit var commentCount: TextView
     private lateinit var favoriteCounts: TextView
     private lateinit var shareCount: TextView
-
+    private var isNavigatingToOriginal = false
 
     private val followingUserIds = mutableSetOf<String>()
     private val relationshipsViewModel: UserRelationshipsViewModel by activityViewModels()
@@ -601,28 +601,30 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
             handleFollowButtonClick()
         }
 
-        // MAIN POST CARD CLICK - Navigate to the ORIGINAL post (not the repost container)
+        //  Navigate to the ORIGINAL post (not the repost container)
         quotedPostCard.setOnClickListener { view ->
+            if (isNavigatingToOriginal) return@setOnClickListener
             view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
 
             try {
-                // Extract the ORIGINAL post from the repost container
                 val originalPost = post.originalPost?.firstOrNull()
-
                 if (originalPost != null) {
-                    Log.d(TAG, "Main/Original Post Card clicked! Original Post ID: ${originalPost._id}")
+                    isNavigatingToOriginal = true
+                    Log.d(TAG, "Main Original Post Card clicked! Original Post ID: ${originalPost._id}")
                     navigateToFragment_Original_Post_Without_Repost_Inside(originalPost)
+                    view.postDelayed({ isNavigatingToOriginal = false }, 1000)
                 } else {
                     Log.e(TAG, "No original post found in repost container")
                     Toast.makeText(requireContext(), "Unable to load original post", Toast.LENGTH_SHORT).show()
                 }
             } catch (e: Exception) {
+                isNavigatingToOriginal = false
                 Log.e(TAG, "Error navigating to original post fragment", e)
                 Toast.makeText(requireContext(), "Unable to load post", Toast.LENGTH_SHORT).show()
             }
         }
 
-        // KEEP: Original post media is clickable
+        //  Original post media is clickable
         originalFeedImage.setOnClickListener {
             handleOriginalFileClick()
         }
