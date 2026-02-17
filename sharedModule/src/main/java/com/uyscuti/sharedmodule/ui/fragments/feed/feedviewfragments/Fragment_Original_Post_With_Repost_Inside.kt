@@ -466,11 +466,48 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
                     Log.d(TAG, "onViewCreated: Fetching comments for ORIGINAL POST ID: $originalPostId")
                 }
 
-                setupLikeButton(safePost)
-                setupBookmarkButton(safePost)
-                setupRepostButton(safePost)
-                setupShareButton(safePost)
-                setupCommentButton(safePost)
+                val originalPostData = safePost.originalPost?.firstOrNull()
+
+                if (originalPostData != null) {
+                    // ✅ Convert OriginalPost metrics into a Post-compatible call
+                    // We create a lightweight Post-like object from originalPost fields
+                    // so the existing button setup methods receive correct counts.
+
+                    // Build a synthetic Post from the originalPost fields so all
+                    // existing setupXxx(Post) methods work without any other changes.
+                    val syntheticPostForMetrics = safePost.copy(
+                        _id            = originalPostData._id,          // target the original post ID
+                        likes          = originalPostData.likes ?: 0,
+                        isLiked        = originalPostData.isLiked ?: false,
+                        bookmarkCount  = originalPostData.bookmarkCount ?: 0,
+                        isBookmarked   = originalPostData.isBookmarked ?: false,
+                        repostCount    = originalPostData.repostCount ?: 0,
+                        isReposted     = originalPostData.isReposted ?: false,
+                        shareCount     = originalPostData.shareCount ?: 0,
+                        isShared       = originalPostData.isShared ?: false,
+                        comments       = originalPostData.commentCount ?: 0
+                    )
+
+                    Log.d(TAG, "Using ORIGINAL POST metrics: " +
+                            "likes=${syntheticPostForMetrics.likes}, " +
+                            "bookmarks=${syntheticPostForMetrics.bookmarkCount}, " +
+                            "reposts=${syntheticPostForMetrics.repostCount}, " +
+                            "shares=${syntheticPostForMetrics.shareCount}")
+
+                    setupLikeButton(syntheticPostForMetrics)
+                    setupBookmarkButton(syntheticPostForMetrics)
+                    setupRepostButton(syntheticPostForMetrics)
+                    setupShareButton(syntheticPostForMetrics)
+                    setupCommentButton(safePost)   // comment still uses safePost so navigation goes to right thread
+                } else {
+                    // Fallback: no original post found, use repost wrapper as before
+                    Log.w(TAG, "No originalPost found, falling back to repost wrapper metrics")
+                    setupLikeButton(safePost)
+                    setupBookmarkButton(safePost)
+                    setupRepostButton(safePost)
+                    setupShareButton(safePost)
+                    setupCommentButton(safePost)
+                }
 
                 populatePostData(safePost)
                 Log.d(TAG, "Post data populated successfully")
