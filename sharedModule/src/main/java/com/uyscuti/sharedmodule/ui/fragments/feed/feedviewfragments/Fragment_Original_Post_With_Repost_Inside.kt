@@ -529,6 +529,66 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
         setupCommentButton(commentPost)
     }
 
+
+    private fun populatePostData(post: Post) {
+        try {
+            if (!isViewsInitialized()) {
+                Log.e(TAG, "Views not initialized, cannot populate post data")
+                return
+            }
+
+            if (::headerTitle.isInitialized) {
+                headerTitle.text = "Post"
+            }
+
+            populateReposterInfo(post)
+            populateOriginalAuthorInfo(post)
+            populateRepostContent(post)
+
+            if (::itemView.isInitialized) {
+                handleRepostMediaFiles(
+                    post = post,
+                    itemView = itemView,
+                    ivQuotedPostImage = if (::ivQuotedPostImage.isInitialized) ivQuotedPostImage else null
+                )
+            }
+
+            if (post.originalPost.isNotEmpty()) {
+                val originalPostItem = post.originalPost[0]
+                populateOriginalPostData(originalPostItem)
+                populatePostContent(originalPostItem, post.createdAt)
+
+                // Display ORIGINAL POST metrics
+                Log.d(TAG, "populatePostData: ORIGINAL POST metrics → " +
+                        "likeCount=${originalPostItem.likeCount}, " +
+                        "bookmarkCount=${originalPostItem.bookmarkCount}, " +
+                        "repostCount=${originalPostItem.repostCount}, " +
+                        "shareCount=${originalPostItem.shareCount}, " +
+                        "commentCount=${originalPostItem.commentCount}")
+
+                if (::likesCount.isInitialized)
+                    updateMetricDisplay(likesCount, originalPostItem.likeCount, "like")
+                if (::favoriteCounts.isInitialized)
+                    updateMetricDisplay(favoriteCounts, originalPostItem.bookmarkCount, "bookmark")
+                if (::repostCount.isInitialized)
+                    updateMetricDisplay(repostCount, originalPostItem.repostCount, "repost")
+                if (::shareCount.isInitialized)
+                    updateMetricDisplay(shareCount, originalPostItem.shareCount, "share")
+                if (::commentCount.isInitialized)
+                    updateMetricDisplay(commentCount, originalPostItem.commentCount, "comment")
+
+                // Update button states to match original post
+                updateLikeButtonUI(false)
+                updateBookmarkButtonUI(originalPostItem.isFavorited ?: false)
+                updateRepostButtonAppearance(originalPostItem.isReposted)
+
+                Log.d(TAG, "populatePostData: Post data populated successfully")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error populating post data: ${e.message}", e)
+        }
+    }
+
     // Add this method for proper back navigation (same as your working implementation)
     @OptIn(UnstableApi::class)
     private fun cleanupAndGoBack() {
