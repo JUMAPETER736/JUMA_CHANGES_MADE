@@ -1717,7 +1717,6 @@ class FeedAdapter(
         private var postClicked = false
         private var isFollowingUser = false
 
-
         @OptIn(UnstableApi::class)
         @SuppressLint("SetTextI18n", "SuspiciousIndentation")
         fun render(data: com.uyscuti.social.network.api.response.posts.Post) {
@@ -1727,26 +1726,22 @@ class FeedAdapter(
 
                     Log.d(TAG, "render: feed data $data")
 
-                    // Store current post reference
                     currentPost = data
 
                     val feedOwnerId = data.author?.account?._id ?: "Unknown"
-
-                    // Check if this post has an original post (meaning it's a repost)
                     val originalPost = data.originalPost?.firstOrNull()
-
 
                     isFollowingUser = followingUserIds.contains(feedOwnerId)
                     Log.d(TAG, "render: User ${data.author?.account?.username} following status: $isFollowingUser")
 
-
+                    // ── Set ALL counts here — setup*() methods must NOT overwrite these ──
                     if (originalPost != null) {
-                        // This is a repost - use original post's engagement metrics
-                        totalMixedComments = originalPost.commentCount
-                        totalMixedLikesCounts = originalPost.likeCount
+                        // Repost wrapper: show the original post's live global counts
+                        totalMixedComments       = originalPost.commentCount
+                        totalMixedLikesCounts    = originalPost.likeCount
                         totalMixedBookMarkCounts = originalPost.bookmarkCount
-                        totalMixedShareCounts = originalPost.shareCount
-                        totalMixedRePostCounts = originalPost.repostCount
+                        totalMixedShareCounts    = originalPost.shareCount
+                        totalMixedRePostCounts   = originalPost.repostCount
 
                         Log.d(TAG, "Using original post metrics - " +
                                 "Likes: ${originalPost.likeCount}, " +
@@ -1755,12 +1750,12 @@ class FeedAdapter(
                                 "Reposts: ${originalPost.repostCount}, " +
                                 "Shares: ${originalPost.shareCount}")
                     } else {
-                        // This is a regular post - use its own metrics
-                        totalMixedComments = data.comments
-                        totalMixedLikesCounts = data.likes
+                        // Standalone post: use its own metrics
+                        totalMixedComments       = data.comments
+                        totalMixedLikesCounts    = data.likes
                         totalMixedBookMarkCounts = data.bookmarkCount
-                        totalMixedShareCounts = data.shareCount
-                        totalMixedRePostCounts = data.repostCount
+                        totalMixedShareCounts    = data.shareCount
+                        totalMixedRePostCounts   = data.repostCount
 
                         Log.d(TAG, "Using direct post metrics - " +
                                 "Likes: ${data.likes}, " +
@@ -1774,7 +1769,7 @@ class FeedAdapter(
                     setupPostInfo(data)
                     setupMediaFiles(data)
                     setupContentAndTags(data)
-                    setupEngagementButtons(data)
+                    setupEngagementButtons(data)        // ← reads totalMixed* but never writes them
                     setupProfileClickListeners(data, feedOwnerId)
                     val feedOwnerUsername = data.author?.account?.username ?: "unknown"
                     setupFollowButton(feedOwnerId, feedOwnerUsername)
@@ -1782,9 +1777,6 @@ class FeedAdapter(
                     ensurePostClickability(data)
                 }
             }
-
-
-
         }
 
         private fun navigateToOriginalPostWithoutRepostInside(data: com.uyscuti.social.network.api.response.posts.Post) {
@@ -2448,18 +2440,50 @@ class FeedAdapter(
             }
         }
 
+        private fun setupRepostButton(data: com.uyscuti.social.network.api.response.posts.Post) {
+            val originalPost = data.originalPost?.firstOrNull()
+            val targetPostId = originalPost?._id ?: data._id
+
+
+            updateMetricDisplay(repostCount, totalMixedRePostCounts, "repost")
+            updateRepostButtonAppearance(data.isReposted)
+
+            repostPost.setOnClickListener { view ->
+                if (!repostPost.isEnabled) return@setOnClickListener
+
+                view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+
+                YoYo.with(Techniques.Pulse)
+                    .duration(300)
+                    .playOn(repostPost)
+
+                feedClickListener.feedRepostPost(absoluteAdapterPosition, data)
+            }
+        }
+
+        private fun updateRepostButtonAppearance(isReposted: Boolean) {
+            if (isReposted) {
+                repostPost.setImageResource(R.drawable.repeat_svgrepo_com)
+                repostPost.scaleX = 1.1f
+                repostPost.scaleY = 1.1f
+            } else {
+                repostPost.setImageResource(R.drawable.repeat_svgrepo_com)
+                repostPost.scaleX = 1.0f
+                repostPost.scaleY = 1.0f
+            }
+        }
+
+
         private fun setupShareButton(data: com.uyscuti.social.network.api.response.posts.Post) {
             val originalPost = data.originalPost?.firstOrNull()
-            val targetPostId = originalPost?._id ?: data._id  // Use original post ID for API calls
+            val targetPostId = originalPost?._id ?: data._id
 
-            updateMetricDisplay(shareCountText, 0, "share")
+
+            updateMetricDisplay(shareCountText, totalMixedShareCounts, "share")
 
             feedShare.setOnClickListener {
                 if (!feedShare.isEnabled) return@setOnClickListener
-
                 Log.d(TAG, "Share clicked for post: $targetPostId")
-
-                // Show share bottom sheet
                 showShareBottomSheet(data, targetPostId)
             }
         }
@@ -2652,42 +2676,6 @@ class FeedAdapter(
                 Toast.makeText(context, "$appName not installed", Toast.LENGTH_SHORT).show()
             } catch (e: Exception) {
                 Toast.makeText(context, "$appName not available", Toast.LENGTH_SHORT).show()
-            }
-        }
-
-        private fun setupRepostButton(data: com.uyscuti.social.network.api.response.posts.Post) {
-            val originalPost = data.originalPost?.firstOrNull()
-            val targetPostId = originalPost?._id ?: data._id
-
-            totalMixedRePostCounts = data.safeRepostCount
-            updateMetricDisplay(repostCount, totalMixedRePostCounts, "repost")
-            updateRepostButtonAppearance(data.isReposted)
-
-            repostPost.setOnClickListener { view ->
-                if (!repostPost.isEnabled) return@setOnClickListener
-
-                view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
-
-                // Just show a quick animation
-                YoYo.with(Techniques.Pulse)
-                    .duration(300)
-                    .playOn(repostPost)
-
-                // Navigate to edit fragment WITHOUT changing any state
-                // Pass the complete post data including files
-                feedClickListener.feedRepostPost(absoluteAdapterPosition, data)
-            }
-        }
-
-        private fun updateRepostButtonAppearance(isReposted: Boolean) {
-            if (isReposted) {
-                repostPost.setImageResource(R.drawable.repeat_svgrepo_com)
-                repostPost.scaleX = 1.1f
-                repostPost.scaleY = 1.1f
-            } else {
-                repostPost.setImageResource(R.drawable.repeat_svgrepo_com)
-                repostPost.scaleX = 1.0f
-                repostPost.scaleY = 1.0f
             }
         }
 
