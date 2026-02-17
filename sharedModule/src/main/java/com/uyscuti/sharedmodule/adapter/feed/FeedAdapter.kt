@@ -4705,7 +4705,7 @@ class FeedAdapter(
                 feedClickListener.moreOptionsClick(absoluteAdapterPosition, data)
             }
         }
-        
+
 
         private fun setupQuotedUserFromMainAuthor(data: com.uyscuti.social.network.api.response.posts.Post) {
             try {
