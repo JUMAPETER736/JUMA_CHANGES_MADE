@@ -536,14 +536,7 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
             handleFollowButtonClick()
         }
 
-        repostContainer.setOnClickListener {
-            handleMainPostClick()
-        }
-
-        mixedFilesCardViews.setOnClickListener {
-            handleRepostMediaClick()
-        }
-
+     
         originalFeedImages.setOnClickListener {
             handleRepostFileClick()
         }
@@ -691,6 +684,88 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
                 Log.e(TAG, "Error navigating to original post fragment", e)
                 Toast.makeText(requireContext(), "Unable to load post", Toast.LENGTH_SHORT).show()
             }
+        }
+    }
+
+    private fun isViewsInitialized(): Boolean {
+        return _binding != null &&
+                ::itemView.isInitialized &&
+                ::headerTitle.isInitialized &&
+                ::userReposterProfileImage.isInitialized &&
+                ::reposterFullName.isInitialized
+    }
+
+    private fun initializeViews(view: View) {
+        itemView = view
+        try {
+            _binding?.let { safeBinding ->
+                // Header Section Views
+                cancelButton = safeBinding.cancelButton
+                headerTitle = safeBinding.headerTitle
+                headerMenuButton = safeBinding.headerMenuButton
+
+                // Repost User Section Views
+                userReposterProfileImage = safeBinding.userReposterProfileImage
+                reposterFullName = safeBinding.repostedUserName
+                tvUserHandle = safeBinding.tvUserHandle
+                dateTimeCreate = safeBinding.dateTimeCreate
+                followButton = safeBinding.followButton
+
+                // Repost Content Views
+                repostContainer = safeBinding.repostContainer
+                tvPostTag = safeBinding.tvPostTag
+                userComment = safeBinding.userComment
+                tvHashtags = safeBinding.tvHashtags
+
+                // Repost Media Views
+                mixedFilesCardViews = safeBinding.mixedFilesCardViews
+                originalFeedImages = safeBinding.originalFeedImages
+                multipleMediaContainer = safeBinding.multipleMediaContainer
+                multipleAudiosContainers = safeBinding.multipleAudiosContainers
+                recyclerViews = safeBinding.recyclerViews
+
+                // Quoted Post Section Views
+                quotedPostCard = safeBinding.quotedPostCard
+                originalPostContainer = safeBinding.originalPostContainer
+                originalPosterProfileImage = safeBinding.originalPosterProfileImage
+                originalPosterName = safeBinding.originalPosterName
+                tvQuotedUserHandle = safeBinding.tvQuotedUserHandle
+                dateTime = safeBinding.dateTime
+                originalPostText = safeBinding.originalPostText
+                tvQuotedHashtags = safeBinding.tvQuotedHashtags
+
+                // Quoted Post Media Views
+                mixedFilesCardView = safeBinding.mixedFilesCardView
+                originalFeedImage = safeBinding.originalFeedImage
+                videoContainer = safeBinding.videoContainer
+                multipleAudiosContainer = safeBinding.multipleAudiosContainer
+                recyclerView = safeBinding.recyclerView
+                ivQuotedPostImage = safeBinding.ivQuotedPostImage
+
+                // Action Buttons and Counters
+                likeLayout = safeBinding.likeLayout
+                likeButtonIcon = safeBinding.likeButtonIcon
+                likesCount = safeBinding.likesCount
+                likeCount = safeBinding.likesCount
+                commentLayout = safeBinding.commentLayout
+                commentButtonIcon = safeBinding.commentButtonIcon
+                commentCount = safeBinding.commentCount
+                favoriteLayout = safeBinding.favoriteSection
+                favoritesButton = safeBinding.favoritesButton
+                favoriteCounts = safeBinding.favoriteCounts
+                repostLayout = safeBinding.repostLayout
+                repostPost = safeBinding.repostPost
+                repostCount = safeBinding.repostCount
+                shareLayout = safeBinding.shareLayout
+                shareButtonIcon = safeBinding.shareButtonIcon
+                shareCount = safeBinding.shareCount
+
+                Log.d(TAG, "All views initialized successfully")
+            } ?: run {
+                Log.e(TAG, "Binding is null, cannot initialize views")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error initializing views: ${e.message}", e)
         }
     }
 
@@ -899,7 +974,7 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
         // Show the dialog
         dialog.show()
 
-        // ==================== SHARE ACTION ====================
+        //  SHARE ACTION
         shareAction.setOnClickListener {
             val shareIntent = Intent(Intent.ACTION_SEND)
             shareIntent.type = "text/plain"
@@ -908,7 +983,7 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
             dialog.dismiss()
         }
 
-        // ==================== DOWNLOAD ACTION ====================
+        //  DOWNLOAD ACTION
         downloadFiles.setOnClickListener {
             Log.d("DownloadButton", "Data: $data")
             if (data.files.isNotEmpty()) {
@@ -924,7 +999,7 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
             downloadFiles.visibility = View.GONE
         }
 
-        // ==================== MUTE ACTION ====================
+        //  MUTE ACTION
         muteOptionLayout.setOnClickListener {
             Log.d("MuteButton", "Mute button clicked for user: $authorId")
             dialog.dismiss()
@@ -936,7 +1011,7 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
             }
         }
 
-        // ==================== BLOCK USER ACTION ====================
+        //  BLOCK USER ACTION
         blockUserLayout.setOnClickListener {
             Log.d("BlockButton", "Block button clicked for user: $authorId")
             dialog.dismiss()
@@ -957,7 +1032,7 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
             }
         }
 
-        // ==================== REPOST ACTION ====================
+        //  REPOST ACTION
         quoteFeedLayout.setOnClickListener {
             val fragment = Fragment_Edit_Post_To_Repost(data)
             val transaction = requireActivity().supportFragmentManager.beginTransaction()
@@ -967,7 +1042,7 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
             dialog.dismiss()
         }
 
-        // ==================== COPY LINK ACTION ====================
+        //  COPY LINK ACTION
         copyLink.setOnClickListener {
             val postId = data._id
             val linkToCopy = "https://circuitSocial.app/post/$postId"
@@ -978,20 +1053,20 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
             dialog.dismiss()
         }
 
-        // ==================== NOT INTERESTED ACTION ====================
+        //  NOT INTERESTED ACTION
         notInterested.setOnClickListener {
             handleNotInterested(data)
             dialog.dismiss()
         }
 
-        // ==================== HIDE POST ACTION ====================
+        //  HIDE POST ACTION
         hidePostLayout.setOnClickListener {
             Log.d(TAG, "hidePostLayout: hide post clicked")
             hideSinglePost(position, data)
             dialog.dismiss()
         }
 
-        // ==================== REPORT USER ACTION ====================
+        //  REPORT USER ACTION
         reportUser.setOnClickListener {
             Log.d("reportUser", "Report button clicked")
             val intent = Intent(requireActivity(), ReportNotificationActivity2::class.java)
@@ -1003,7 +1078,7 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
         followUnfollowLayout.visibility = View.GONE
     }
 
-    // ==================== MUTE TOGGLE ====================
+    //  MUTE TOGGLE
     private fun handleMuteToggle(userId: String, position: Int) {
         lifecycleScope.launch {
             try {
@@ -1050,7 +1125,7 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
         }
     }
 
-    // ==================== BLOCK USER CONFIRMATION ====================
+    //  BLOCK USER CONFIRMATION
     private fun showBlockConfirmationDialog(userId: String, username: String, position: Int) {
         AlertDialog.Builder(requireContext())
             .setTitle("Block $username?")
@@ -1065,7 +1140,7 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
             .show()
     }
 
-    // ==================== BLOCK USER ====================
+    //  BLOCK USER
     private fun handleBlockUser(userId: String, position: Int) {
         lifecycleScope.launch {
             try {
@@ -1116,7 +1191,7 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
     }
 
 
-    // ==================== UNBLOCK USER ====================
+    //  UNBLOCK USER
     private fun handleUnblockUser(userId: String, username: String) {
         lifecycleScope.launch {
             try {
@@ -1565,87 +1640,6 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
         }
     }
 
-    private fun isViewsInitialized(): Boolean {
-        return _binding != null &&
-                ::itemView.isInitialized &&
-                ::headerTitle.isInitialized &&
-                ::userReposterProfileImage.isInitialized &&
-                ::reposterFullName.isInitialized
-    }
-
-    private fun initializeViews(view: View) {
-        itemView = view
-        try {
-            _binding?.let { safeBinding ->
-                // Header Section Views
-                cancelButton = safeBinding.cancelButton
-                headerTitle = safeBinding.headerTitle
-                headerMenuButton = safeBinding.headerMenuButton
-
-                // Repost User Section Views
-                userReposterProfileImage = safeBinding.userReposterProfileImage
-                reposterFullName = safeBinding.repostedUserName
-                tvUserHandle = safeBinding.tvUserHandle
-                dateTimeCreate = safeBinding.dateTimeCreate
-                followButton = safeBinding.followButton
-
-                // Repost Content Views
-                repostContainer = safeBinding.repostContainer
-                tvPostTag = safeBinding.tvPostTag
-                userComment = safeBinding.userComment
-                tvHashtags = safeBinding.tvHashtags
-
-                // Repost Media Views
-                mixedFilesCardViews = safeBinding.mixedFilesCardViews
-                originalFeedImages = safeBinding.originalFeedImages
-                multipleMediaContainer = safeBinding.multipleMediaContainer
-                multipleAudiosContainers = safeBinding.multipleAudiosContainers
-                recyclerViews = safeBinding.recyclerViews
-
-                // Quoted Post Section Views
-                quotedPostCard = safeBinding.quotedPostCard
-                originalPostContainer = safeBinding.originalPostContainer
-                originalPosterProfileImage = safeBinding.originalPosterProfileImage
-                originalPosterName = safeBinding.originalPosterName
-                tvQuotedUserHandle = safeBinding.tvQuotedUserHandle
-                dateTime = safeBinding.dateTime
-                originalPostText = safeBinding.originalPostText
-                tvQuotedHashtags = safeBinding.tvQuotedHashtags
-
-                // Quoted Post Media Views
-                mixedFilesCardView = safeBinding.mixedFilesCardView
-                originalFeedImage = safeBinding.originalFeedImage
-                videoContainer = safeBinding.videoContainer
-                multipleAudiosContainer = safeBinding.multipleAudiosContainer
-                recyclerView = safeBinding.recyclerView
-                ivQuotedPostImage = safeBinding.ivQuotedPostImage
-
-                // Action Buttons and Counters
-                likeLayout = safeBinding.likeLayout
-                likeButtonIcon = safeBinding.likeButtonIcon
-                likesCount = safeBinding.likesCount
-                likeCount = safeBinding.likesCount
-                commentLayout = safeBinding.commentLayout
-                commentButtonIcon = safeBinding.commentButtonIcon
-                commentCount = safeBinding.commentCount
-                favoriteLayout = safeBinding.favoriteSection
-                favoritesButton = safeBinding.favoritesButton
-                favoriteCounts = safeBinding.favoriteCounts
-                repostLayout = safeBinding.repostLayout
-                repostPost = safeBinding.repostPost
-                repostCount = safeBinding.repostCount
-                shareLayout = safeBinding.shareLayout
-                shareButtonIcon = safeBinding.shareButtonIcon
-                shareCount = safeBinding.shareCount
-
-                Log.d(TAG, "All views initialized successfully")
-            } ?: run {
-                Log.e(TAG, "Binding is null, cannot initialize views")
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error initializing views: ${e.message}", e)
-        }
-    }
 
     override fun onResume() {
         super.onResume()
