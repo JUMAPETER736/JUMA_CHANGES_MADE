@@ -2530,44 +2530,64 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
     private fun fetchAndUpdateCommentCount(postId: String) {
         Log.d(TAG, "fetchAndUpdateCommentCount: Fetching comment count for post: $postId")
 
-        val originalPostId = post?.originalPost?.firstOrNull()?._id
+        CoroutineScope(Dispatchers.Main).launch {
+            try {
+                val response = withContext(Dispatchers.IO) {
+                    retrofitInterface.apiService.getPostCommentCount(postId)
+                }
 
-        RetrofitClient.commentService.getCommentCount(postId)
-            .enqueue(object : Callback<CommentCountResponse> {
-                override fun onResponse(
-                    call: Call<CommentCountResponse>,
-                    response: Response<CommentCountResponse>
-                ) {
-                    if (!isAdded) return
-
-                    if (response.isSuccessful) {
-                        response.body()?.let { countResponse ->
-                            val serverCount = countResponse.count
-                            Log.d(TAG, "fetchAndUpdateCommentCount: got $serverCount for $postId")
-
-                            // Only update UI for the original post
-                            if (postId == originalPostId) {
-                                totalRepostComments = serverCount
-                                updateMetricDisplay(commentCount, serverCount, "comment")
-                                post?.originalPost?.firstOrNull()?.commentCount = serverCount
-                                Log.d(TAG, "fetchAndUpdateCommentCount: Updated comment count to $serverCount")
+                if (response.isSuccessful) {
+                    response.body()?.let { countResponse ->
+                        val count = when {
+                            countResponse.success -> countResponse.data.commentCount
+                            else -> {
+                                Log.w(TAG, "fetchAndUpdateCommentCount: API returned success=false")
+                                totalRepostComments // Keep current value
                             }
-                        } ?: run {
-                            Log.w(TAG, "fetchAndUpdateCommentCount: null body, falling back")
-                            if (postId == originalPostId) fallbackToCommentsAPI(postId)
                         }
-                    } else {
-                        Log.e(TAG, "fetchAndUpdateCommentCount: HTTP ${response.code()}")
-                        if (postId == originalPostId) fallbackToCommentsAPI(postId)
-                    }
-                }
 
-                override fun onFailure(call: Call<CommentCountResponse>, t: Throwable) {
-                    Log.e(TAG, "fetchAndUpdateCommentCount: failure", t)
-                    val originalId = post?.originalPost?.firstOrNull()?._id
-                    if (postId == originalId) fallbackToCommentsAPI(postId)
+                        totalRepostComments = count
+                        if (::commentCount.isInitialized) {
+                            updateMetricDisplay(commentCount, count, "comment")
+                        }
+                        Log.d(TAG, "fetchAndUpdateCommentCount: Updated to $count comments")
+                    } ?: run {
+                        Log.w(TAG, "fetchAndUpdateCommentCount: Response body is null")
+                        fallbackToCommentsAPI(postId)
+                    }
+                } else {
+                    Log.e(TAG, "fetchAndUpdateCommentCount: API error ${response.code()}")
+                    fallbackToCommentsAPI(postId)
                 }
-            })
+            } catch (e: JsonSyntaxException) {
+                Log.e(TAG, "fetchAndUpdateCommentCount: JSON parse error", e)
+                fallbackToCommentsAPI(postId)
+            } catch (e: Exception) {
+                Log.e(TAG, "fetchAndUpdateCommentCount: failure", e)
+                fallbackToCommentsAPI(postId)
+            }
+        }
+    }
+
+    private fun fallbackToCommentsAPI(postId: String) {
+        Log.d(TAG, "fallbackToCommentsAPI: Using comments API to get accurate count for post: $postId")
+
+        CoroutineScope(Dispatchers.Main).launch {
+            try {
+                // Instead of fetching all comments, just count what we already know
+                // from the originalPost data
+                post?.originalPost?.firstOrNull()?.let { originalPostItem ->
+                    val count = originalPostItem.commentCount
+                    totalRepostComments = count
+                    if (::commentCount.isInitialized) {
+                        updateMetricDisplay(commentCount, count, "comment")
+                    }
+                    Log.d(TAG, "fallbackToCommentsAPI: Used originalPost commentCount = $count")
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "fallbackToCommentsAPI: Error", e)
+            }
+        }
     }
 
 
