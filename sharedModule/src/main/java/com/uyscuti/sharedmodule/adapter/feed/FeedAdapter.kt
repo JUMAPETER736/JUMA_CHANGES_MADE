@@ -4796,14 +4796,14 @@ class FeedAdapter(
                 tvQuotedUserHandle?.text = "@unknown"
                 originalPostText?.visibility = View.GONE
                 tvQuotedHashtags?.text = "#SoftwareAppreciation #GameChanger #MustHave"
-                tvQuotedHashtags?.visibility = View.VISIBLE
+                tvQuotedHashtags?.visibility = View.GONE
             }
         }
 
         private fun setupRepostHashtags(data: com.uyscuti.social.network.api.response.posts.Post) {
             val hashtagText = "#Repost #GreatContent #MustSee"
             tvHashtags.text = hashtagText
-            tvHashtags.visibility = View.VISIBLE
+            tvHashtags.visibility = View.GONE
         }
 
         private fun setupOriginalPostContent(data: com.uyscuti.social.network.api.response.posts.Post) {
