@@ -450,34 +450,34 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
                 Log.d(TAG, "Post type: ${safePost::class.java.simpleName}")
                 Log.d(TAG, "Post ID: ${safePost._id}")
 
-                // Use repost's own comment count (prefer comments if commentCount is null)
-                totalRepostComments = safePost.comments ?: safePost.comments ?: 0
+                // Use original post's comment count as the starting value
+                val originalPostForComment = safePost.originalPost?.firstOrNull()
+                totalRepostComments = originalPostForComment?.commentCount
+                    ?: safePost.comments
+                            ?: 0
                 updateMetricDisplay(commentCount, totalRepostComments, "comment")
-                Log.d(TAG, "onViewCreated: Set repost comment count to $totalRepostComments")
+                Log.d(TAG, "onViewCreated: Set initial comment count to $totalRepostComments (from original post)")
 
-                // Fetch fresh count for the repost container
-                fetchAndUpdateCommentCount(safePost._id)
-                Log.d(TAG, "onViewCreated: Fetching comments for repost ID: ${safePost._id}")
-
-                // Fetch fresh count for the original post (if it exists)
-                val originalPostId = safePost.originalPost?.firstOrNull()?._id
+                // Only fetch count for the ORIGINAL POST (that's what the action bar targets)
+                val originalPostId = originalPostForComment?._id
                 if (originalPostId != null) {
                     fetchAndUpdateCommentCount(originalPostId)
-                    Log.d(TAG, "onViewCreated: Fetching comments for ORIGINAL POST ID: $originalPostId")
+                    Log.d(TAG, "onViewCreated: Fetching comment count for ORIGINAL POST ID: $originalPostId")
+                } else {
+                    // Fallback: fetch for the repost wrapper
+                    fetchAndUpdateCommentCount(safePost._id)
+                    Log.d(TAG, "onViewCreated: No originalPost ID, fetching for repost: ${safePost._id}")
                 }
+
 
                 val originalPostData = safePost.originalPost?.firstOrNull()
 
                 if (originalPostData != null) {
-                    // ✅ Convert OriginalPost metrics into a Post-compatible call
-                    // We create a lightweight Post-like object from originalPost fields
-                    // so the existing button setup methods receive correct counts.
 
-                    // Build a synthetic Post from the originalPost fields so all
                     // existing setupXxx(Post) methods work without any other changes.
                     val syntheticPostForMetrics = safePost.copy(
                         _id            = originalPostData._id,          // target the original post ID
-                        likes          = originalPostData.likes ?: 0,
+                        likes          = originalPostData.likeCount ?: 0,
                         isLiked        = originalPostData.isLiked ?: false,
                         bookmarkCount  = originalPostData.bookmarkCount ?: 0,
                         isBookmarked   = originalPostData.isBookmarked ?: false,
