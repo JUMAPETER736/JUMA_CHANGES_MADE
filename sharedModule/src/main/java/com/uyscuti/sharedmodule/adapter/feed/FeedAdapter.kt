@@ -4786,7 +4786,7 @@ class FeedAdapter(
                 } else {
                     tvQuotedHashtags?.text = "#SoftwareAppreciation #GameChanger #MustHave"
                 }
-                tvQuotedHashtags?.visibility = View.VISIBLE
+                tvQuotedHashtags?.visibility = View.GONE
 
             } catch (e: Exception) {
                 Log.e("QuotedUser", "Error setting up quoted user from main author", e)
@@ -5490,7 +5490,7 @@ class FeedAdapter(
 
             } else {
                 tvQuotedHashtags.text = "#SoftwareAppreciation #GameChanger #MustHave"
-                tvQuotedHashtags.visibility = View.VISIBLE
+                tvQuotedHashtags.visibility = View.GONE
             }
         }
 

@@ -2821,10 +2821,10 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
                 val validTags = originalPost.tags.filterNotNull().map { it.toString() }
                 if (validTags.isNotEmpty()) {
                     tvQuotedHashtags.text = validTags.joinToString(" ") { if (it.startsWith("#")) it else "#$it" }
-                    tvQuotedHashtags.visibility = View.VISIBLE
+                    tvQuotedHashtags.visibility = View.GONE
                 } else {
                     tvQuotedHashtags.text = "#SoftwareAppreciation #GameChanger #MustHave"
-                    tvQuotedHashtags.visibility = View.VISIBLE
+                    tvQuotedHashtags.visibility = View.GONE
                 }
             }
 
@@ -2839,7 +2839,7 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
             }
             if (::tvQuotedHashtags.isInitialized) {
                 tvQuotedHashtags.text = "#SoftwareAppreciation #GameChanger #MustHave"
-                tvQuotedHashtags.visibility = View.VISIBLE
+                tvQuotedHashtags.visibility = View.GONE
             }
         }
     }

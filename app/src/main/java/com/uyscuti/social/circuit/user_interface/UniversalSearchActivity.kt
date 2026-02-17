@@ -6966,7 +6966,7 @@ class SearchUserNameAdapter(
                 } else {
                     tvQuotedHashtags?.text = "#SoftwareAppreciation #GameChanger #MustHave"
                 }
-                tvQuotedHashtags?.visibility = View.VISIBLE
+                tvQuotedHashtags?.visibility = View.GONE
 
             } catch (e: Exception) {
                 Log.e("QuotedUser", "Error setting up quoted user from main author", e)
@@ -6974,16 +6974,16 @@ class SearchUserNameAdapter(
                 originalPosterProfileImage?.setImageResource(com.uyscuti.sharedmodule.R.drawable.flash21)
                 originalPosterName?.text = "Unknown User"
                 tvQuotedUserHandle?.text = "@unknown"
-                originalPostText?.visibility = View.GONE
+                originalPostText?.visibility = View.VISIBLE
                 tvQuotedHashtags?.text = "#SoftwareAppreciation #GameChanger #MustHave"
-                tvQuotedHashtags?.visibility = View.VISIBLE
+                tvQuotedHashtags?.visibility = View.GONE
             }
         }
 
         private fun setupRepostHashtags(data: com.uyscuti.social.network.api.response.posts.Post) {
             val hashtagText = "#Repost #GreatContent #MustSee"
             tvHashtags.text = hashtagText
-            tvHashtags.visibility = View.VISIBLE
+            tvHashtags.visibility = View.GONE
         }
 
         private fun setupOriginalPostContent(data: com.uyscuti.social.network.api.response.posts.Post) {
@@ -7023,7 +7023,7 @@ class SearchUserNameAdapter(
                 tvQuotedHashtags?.visibility = View.VISIBLE
             } else {
                 tvQuotedHashtags?.text = "#SoftwareAppreciation #GameChanger #MustHave"
-                tvQuotedHashtags?.visibility = View.VISIBLE
+                tvQuotedHashtags?.visibility = View.GONE
             }
         }
 
@@ -7670,7 +7670,7 @@ class SearchUserNameAdapter(
 
             } else {
                 tvQuotedHashtags.text = "#SoftwareAppreciation #GameChanger #MustHave"
-                tvQuotedHashtags.visibility = View.VISIBLE
+                tvQuotedHashtags.visibility = View.GONE
             }
         }
 
