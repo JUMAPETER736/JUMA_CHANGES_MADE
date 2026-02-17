@@ -102,7 +102,9 @@ import com.uyscuti.social.network.api.response.allFeedRepostsPost.ShareResponse
 import com.uyscuti.social.network.api.response.comment.allcomments.Comment
 import com.uyscuti.social.network.api.response.post.Thumbnail
 import com.uyscuti.social.network.api.response.posts.Author
+import com.uyscuti.social.network.api.response.posts.RepostedUser
 import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
+import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -118,6 +120,8 @@ private const val TAG = "Fragment_Original_Post_With_Repost_Inside"
 private const val FRAGMENT_ORIGINAL_POST_WITH_REPOST = 1
 
 
+
+@AndroidEntryPoint
 class Fragment_Original_Post_With_Repost_Inside : Fragment() {
 
     companion object {
@@ -447,21 +451,33 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
                 val originalPostItem = safePost.originalPost.firstOrNull()
 
                 if (originalPostItem != null) {
-                    // Use ORIGINAL POST metrics directly - DON'T fetch from API
+                    // ══════════════════════════════════════════════════════════════
+                    // CRITICAL: Use ORIGINAL POST metrics for ALL displays
+                    // ══════════════════════════════════════════════════════════════
+
+                    // 1. Set comment count from original post
                     totalRepostComments = originalPostItem.commentCount
                     updateMetricDisplay(commentCount, totalRepostComments, "comment")
                     Log.d(TAG, "onViewCreated: initial comment count = $totalRepostComments (original post)")
 
-                    // DON'T fetch - comment out this line:
-                    // fetchAndUpdateCommentCount(originalPostItem._id)
-
+                    // 2. Display all original post metrics
                     Log.d(TAG, "Using ORIGINAL POST metrics → " +
-                            "id=${originalPostItem._id}, likes=${originalPostItem.likeCount}, " +
-                            "bookmarks=${originalPostItem.bookmarkCount}, reposts=${originalPostItem.repostCount}, " +
-                            "shares=${originalPostItem.shareCount}, comments=${originalPostItem.commentCount}")
+                            "id=${originalPostItem._id}, " +
+                            "likes=${originalPostItem.likeCount}, " +
+                            "bookmarks=${originalPostItem.bookmarkCount}, " +
+                            "reposts=${originalPostItem.repostCount}, " +
+                            "shares=${originalPostItem.shareCount}, " +
+                            "comments=${originalPostItem.commentCount}")
 
-                    // Setup buttons with ORIGINAL POST data
-                    setupMetricButtons(safePost, originalPostItem)
+                    // Update metric displays BEFORE setting up buttons
+                    updateMetricDisplay(likesCount, originalPostItem.likeCount, "like")
+                    updateMetricDisplay(favoriteCounts, originalPostItem.bookmarkCount, "bookmark")
+                    updateMetricDisplay(repostCount, originalPostItem.repostCount, "repost")
+                    updateMetricDisplay(shareCount, originalPostItem.shareCount, "share")
+                    updateMetricDisplay(commentCount, originalPostItem.commentCount, "comment")
+
+                    // 3. Setup buttons with ORIGINAL POST ID and metrics
+                    setupButtonsWithOriginalPostMetrics(safePost, originalPostItem)
 
                 } else {
                     // No originalPost - use repost wrapper values
@@ -491,44 +507,75 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
         }
     }
 
-    // New helper method to setup metric buttons
-    private fun setupMetricButtons(safePost: Post, originalPostItem: OriginalPost) {
-        // Create a temporary post object with original post's ID and metrics
-        val tempPost = Post(
-            _id = originalPostItem._id,
-            author = safePost.author,
-            content = safePost.content,
-            contentType = safePost.contentType,
-            createdAt = safePost.createdAt,
-            updatedAt = safePost.updatedAt,
-            likes = originalPostItem.likeCount,
-            isLiked = false, // Original post doesn't track individual user likes in this view
+
+    private fun setupButtonsWithOriginalPostMetrics(repostWrapper: Post, originalPost: OriginalPost) {
+
+
+        val tempPostForButtons = Post(
+            __v = repostWrapper.__v,
+            _id = originalPost._id,  // ← CRITICAL: Use original post ID for API calls
+            author = repostWrapper.author,
+            content = repostWrapper.content,
+            contentType = repostWrapper.contentType,
+            createdAt = repostWrapper.createdAt,
+            updatedAt = repostWrapper.updatedAt,
+
+            // Use ORIGINAL POST metrics
+            likes = originalPost.likeCount,
+            isLiked = false,  // Original post doesn't track per-user likes in this context
             likedByUserIds = emptyList(),
-            bookmarkCount = originalPostItem.bookmarkCount,
-            isBookmarked = originalPostItem.isFavorited ?: false,
-            repostCount = originalPostItem.repostCount,
-            isReposted = originalPostItem.isReposted,
-            shareCount = originalPostItem.shareCount,
+
+            bookmarkCount = originalPost.bookmarkCount,
+            isBookmarked = originalPost.isFavorited ?: false,
+
+            repostCount = originalPost.repostCount,
+            isReposted = originalPost.isReposted,
+
+            shareCount = originalPost.shareCount,
             isShared = false,
-            comments = originalPostItem.commentCount,
-            files = safePost.files,
-            tags = safePost.tags,
-            originalPost = safePost.originalPost,
-            repostedUser = safePost.repostedUser,
-            isBusinessPost = safePost.isBusinessPost,
-            feedShortsBusinessId = safePost.feedShortsBusinessId
+
+            comments = originalPost.commentCount,
+
+            // Keep other fields from repost wrapper
+            files = repostWrapper.files,
+            tags = repostWrapper.tags,
+            originalPost = repostWrapper.originalPost,
+            repostedUser = repostWrapper.repostedUser,
+            isBusinessPost = repostWrapper.isBusinessPost,
+            feedShortsBusinessId = repostWrapper.feedShortsBusinessId,
+            duration = repostWrapper.duration,
+            fileIds = repostWrapper.fileIds,
+            fileNames = repostWrapper.fileNames,
+            fileSizes = repostWrapper.fileSizes,
+            fileTypes = repostWrapper.fileTypes,
+            isExpanded = repostWrapper.isExpanded,
+            isFollowing = repostWrapper.isFollowing,
+            isLocal = repostWrapper.isLocal,
+            numberOfPages = repostWrapper.numberOfPages
         )
 
-        setupLikeButton(tempPost)
-        setupBookmarkButton(tempPost)
-        setupRepostButton(tempPost)
-        setupShareButton(tempPost)
+        Log.d(TAG, "setupButtonsWithOriginalPostMetrics: Created temp post with:")
+        Log.d(TAG, "  - ID: ${tempPostForButtons._id} (original post)")
+        Log.d(TAG, "  - Likes: ${tempPostForButtons.likes}")
+        Log.d(TAG, "  - Bookmarks: ${tempPostForButtons.bookmarkCount}")
+        Log.d(TAG, "  - Reposts: ${tempPostForButtons.repostCount}")
+        Log.d(TAG, "  - Shares: ${tempPostForButtons.shareCount}")
+        Log.d(TAG, "  - Comments: ${tempPostForButtons.comments}")
 
-        // For comment button, use the repost wrapper's ID to navigate to correct comment thread
-        val commentPost = tempPost.copy(_id = safePost._id)
+        // Setup all metric buttons with the temp post
+        setupLikeButton(tempPostForButtons)
+        setupBookmarkButton(tempPostForButtons)
+        setupRepostButton(tempPostForButtons)
+        setupShareButton(tempPostForButtons)
+
+        // For comment button, use REPOST WRAPPER ID so comments go to the repost thread
+        val commentPost = tempPostForButtons.copy(
+            _id = repostWrapper._id  // ← Use repost wrapper ID for comments
+        )
         setupCommentButton(commentPost)
-    }
 
+        Log.d(TAG, "setupButtonsWithOriginalPostMetrics: All buttons configured")
+    }
 
     private fun populatePostData(post: Post) {
         try {
@@ -558,7 +605,7 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
                 populateOriginalPostData(originalPostItem)
                 populatePostContent(originalPostItem, post.createdAt)
 
-                // Display ORIGINAL POST metrics
+
                 Log.d(TAG, "populatePostData: ORIGINAL POST metrics → " +
                         "likeCount=${originalPostItem.likeCount}, " +
                         "bookmarkCount=${originalPostItem.bookmarkCount}, " +
@@ -566,6 +613,7 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
                         "shareCount=${originalPostItem.shareCount}, " +
                         "commentCount=${originalPostItem.commentCount}")
 
+                // These should already be set in onViewCreated, but we ensure consistency here
                 if (::likesCount.isInitialized)
                     updateMetricDisplay(likesCount, originalPostItem.likeCount, "like")
                 if (::favoriteCounts.isInitialized)
@@ -577,8 +625,8 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
                 if (::commentCount.isInitialized)
                     updateMetricDisplay(commentCount, originalPostItem.commentCount, "comment")
 
-                // Update button states to match original post
-                updateLikeButtonUI(false)
+                // Update button states
+                updateLikeButtonUI(false)  // Original post doesn't track per-user likes
                 updateBookmarkButtonUI(originalPostItem.isFavorited ?: false)
                 updateRepostButtonAppearance(originalPostItem.isReposted)
 
@@ -1777,13 +1825,10 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
         updateMetricDisplay(commentCount, totalRepostComments, "comment")
         Log.d(TAG, "setupInitialMetrics: Set repost comment count to $totalRepostComments")
 
-        // Fetch fresh count for the repost
-        fetchAndUpdateCommentCount(post._id)
-
         // Fetch fresh count for the original post (if needed for quoted post UI)
         val originalPostId = post.originalPost?.firstOrNull()?._id
         if (originalPostId != null) {
-            fetchAndUpdateCommentCount(originalPostId)
+
         }
     }
 
@@ -2565,71 +2610,7 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
         // Handle comment event
         currentPost?.let { post ->
             if (post._id == event.data?._id) {
-                // Refresh comment count for this post
-                fetchAndUpdateCommentCount(post._id)
-            }
-        }
-    }
 
-    private fun fetchAndUpdateCommentCount(postId: String) {
-        Log.d(TAG, "fetchAndUpdateCommentCount: Fetching comment count for post: $postId")
-
-        CoroutineScope(Dispatchers.Main).launch {
-            try {
-                val response = withContext(Dispatchers.IO) {
-                    retrofitInterface.apiService.getPostCommentCount(postId)
-                }
-
-                if (response.isSuccessful) {
-                    response.body()?.let { countResponse ->
-                        val count = when {
-                            countResponse.success -> countResponse.data.commentCount
-                            else -> {
-                                Log.w(TAG, "fetchAndUpdateCommentCount: API returned success=false")
-                                totalRepostComments // Keep current value
-                            }
-                        }
-
-                        totalRepostComments = count
-                        if (::commentCount.isInitialized) {
-                            updateMetricDisplay(commentCount, count, "comment")
-                        }
-                        Log.d(TAG, "fetchAndUpdateCommentCount: Updated to $count comments")
-                    } ?: run {
-                        Log.w(TAG, "fetchAndUpdateCommentCount: Response body is null")
-                        fallbackToCommentsAPI(postId)
-                    }
-                } else {
-                    Log.e(TAG, "fetchAndUpdateCommentCount: API error ${response.code()}")
-                    fallbackToCommentsAPI(postId)
-                }
-            } catch (e: JsonSyntaxException) {
-                Log.e(TAG, "fetchAndUpdateCommentCount: JSON parse error", e)
-                fallbackToCommentsAPI(postId)
-            } catch (e: Exception) {
-                Log.e(TAG, "fetchAndUpdateCommentCount: failure", e)
-                fallbackToCommentsAPI(postId)
-            }
-        }
-    }
-
-    private fun fallbackToCommentsAPI(postId: String) {
-        Log.d(TAG, "fallbackToCommentsAPI: Using comments API to get accurate count for post: $postId")
-
-        CoroutineScope(Dispatchers.Main).launch {
-            try {
-                // Instead of fetching all comments, just count what we already know
-                // from the originalPost data
-                post?.originalPost?.firstOrNull()?.let { originalPostItem ->
-                    val count = originalPostItem.commentCount
-                    totalRepostComments = count
-                    if (::commentCount.isInitialized) {
-                        updateMetricDisplay(commentCount, count, "comment")
-                    }
-                    Log.d(TAG, "fallbackToCommentsAPI: Used originalPost commentCount = $count")
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "fallbackToCommentsAPI: Error", e)
             }
         }
     }
@@ -2948,65 +2929,6 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
                 tvQuotedHashtags.text = "#SoftwareAppreciation #GameChanger #MustHave"
                 tvQuotedHashtags.visibility = View.GONE
             }
-        }
-    }
-
-    private fun populatePostData(post: Post) {
-        try {
-            if (!isViewsInitialized()) {
-                Log.e(TAG, "Views not initialized, cannot populate post data")
-                return
-            }
-
-            if (::headerTitle.isInitialized) {
-                headerTitle.text = "Post"
-            }
-
-            populateReposterInfo(post)
-            populateOriginalAuthorInfo(originalPost)
-            populateRepostContent(post)
-
-            if (::itemView.isInitialized) {
-                handleRepostMediaFiles(
-                    post = post,
-                    itemView = itemView,
-                    ivQuotedPostImage = if (::ivQuotedPostImage.isInitialized) ivQuotedPostImage else null
-                )
-            }
-
-            if (post.originalPost.isNotEmpty()) {
-                val originalPostItem = post.originalPost[0]
-                populateOriginalPostData(originalPostItem)
-                populatePostContent(originalPostItem, post.createdAt)
-
-                // Overwrite whatever populateReposterInfo() set with the ORIGINAL POST values
-                Log.d(TAG, "populatePostData: ORIGINAL POST metrics → " +
-                        "likeCount=${originalPostItem.likeCount}, " +
-                        "bookmarkCount=${originalPostItem.bookmarkCount}, " +
-                        "repostCount=${originalPostItem.repostCount}, " +
-                        "shareCount=${originalPostItem.shareCount}, " +
-                        "commentCount=${originalPostItem.commentCount}")
-
-                if (::likesCount.isInitialized)
-                    updateMetricDisplay(likesCount,     originalPostItem.likeCount,    "like")
-                if (::favoriteCounts.isInitialized)
-                    updateMetricDisplay(favoriteCounts, originalPostItem.bookmarkCount, "bookmark")
-                if (::repostCount.isInitialized)
-                    updateMetricDisplay(repostCount,    originalPostItem.repostCount,   "repost")
-                if (::shareCount.isInitialized)
-                    updateMetricDisplay(shareCount,     originalPostItem.shareCount,    "share")
-                if (::commentCount.isInitialized)
-                    updateMetricDisplay(commentCount,   originalPostItem.commentCount,  "comment")
-
-                // Sync icon states to original post values
-                updateLikeButtonUI(false)                              // OriginalPost has no isLiked
-                updateBookmarkButtonUI(originalPostItem.isFavorited ?: false)
-                updateRepostButtonAppearance(originalPostItem.isReposted)
-
-                Log.d(TAG, "populatePostData: Post data populated successfully")
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error populating post data: ${e.message}", e)
         }
     }
 
