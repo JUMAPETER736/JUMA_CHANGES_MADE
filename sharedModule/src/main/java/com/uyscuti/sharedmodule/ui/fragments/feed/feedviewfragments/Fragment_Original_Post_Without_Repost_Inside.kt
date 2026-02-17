@@ -483,7 +483,6 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
             // Initialize views first
             initializeViews(view)
             initializeRecyclerView()
-            setupInteractionButtonsClickPrevention()
             setupBackPressHandler()
 
             if (!isViewsInitialized()) {
@@ -2072,17 +2071,7 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
     }
 
 
-    private fun hideAllMediaViews() {
-        Log.d(TAG, "hideAllMediaViews: Hiding all media containers")
-        try {
-            mixedFilesCardView?.visibility = View.GONE
-            originalFeedImage?.visibility = View.GONE
-            multipleAudiosContainer?.visibility = View.GONE
-            recyclerViews?.visibility = View.GONE
-        } catch (e: Exception) {
-            Log.e(TAG, "Error hiding media views: ${e.message}", e)
-        }
-    }
+
 
     // Fixed setupLikeButton - Replace in your FeedAdapter.kt
 
@@ -2584,41 +2573,7 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
     }
 
 
-    private fun handleLikeClick() {
-        currentPost?.let { post ->
-            Log.d(tag, "Like clicked for post: ${post._id}")
-        }
-    }
 
-    private fun handleCommentClick() {
-        currentPost?.let { post ->
-            Log.d(tag, "Comment clicked for post: ${post._id}")
-        }
-    }
-
-    private fun handleFavoriteClick() {
-        currentPost?.let { post ->
-            Log.d(tag, "Favorite clicked for post: ${post._id}")
-        }
-    }
-
-    private fun handleRepostClick() {
-        currentPost?.let { post ->
-            Log.d(tag, "Retweet clicked for post: ${post._id}")
-        }
-    }
-
-    private fun handleShareClick() {
-        currentPost?.let { post ->
-            Log.d(tag, "Share clicked for post: ${post._id}")
-        }
-    }
-
-    private fun handleFollowClick() {
-        currentPost?.let { post ->
-            Log.d(tag, "Follow clicked for post: ${post._id}")
-        }
-    }
 
     @SuppressLint("DefaultLocale")
     private fun formatCount(count: Int): String {
@@ -2688,53 +2643,7 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
         }
     }
 
-    private fun setupInteractionButtonsClickPrevention() {
-        val interactionButtons = listOf(
-            likeButtonIcon,
-            commentButtonIcon,
-            favoritesButton,
-            repostPost,
-            shareButtonIcon,
-            // followButton,
-            headerMenuButton
-        )
 
-        interactionButtons.forEach { button ->
-            button.setOnClickListener { view ->
-                view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
-                when (view.id) {
-                    R.id.likeButtonIcon -> {
-                        handleLikeClick()
-                        consumeClickEvent(view)
-                    }
-                    R.id.commentButtonIcon -> {
-                        handleCommentClick()
-                        consumeClickEvent(view)
-                    }
-                    R.id.favoriteSection -> {
-                        handleFavoriteClick()
-                        consumeClickEvent(view)
-                    }
-                    R.id.repostPost -> {
-                        handleRepostClick()
-                        consumeClickEvent(view)
-                    }
-                    R.id.shareButtonIcon -> {
-                        handleShareClick()
-                        consumeClickEvent(view)
-                    }
-                    R.id.followButton -> {
-                        handleFollowClick()
-                        consumeClickEvent(view)
-                    }
-                    R.id.moreOptions -> {
-                        handleMoreOptionsClick()
-                        consumeClickEvent(view)
-                    }
-                }
-            }
-        }
-    }
 
     private fun updateFavoriteUI(isFavorited: Boolean) {
         Log.d(TAG, "Updating bookmark button UI: isBookmarked=$isFavorited")
