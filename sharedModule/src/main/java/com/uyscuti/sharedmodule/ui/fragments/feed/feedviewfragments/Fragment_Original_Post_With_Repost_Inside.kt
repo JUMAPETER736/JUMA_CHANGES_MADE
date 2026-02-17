@@ -451,16 +451,14 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
                 val originalPostItem = safePost.originalPost.firstOrNull()
 
                 if (originalPostItem != null) {
-                    // ══════════════════════════════════════════════════════════════
-                    // CRITICAL: Use ORIGINAL POST metrics for ALL displays
-                    // ══════════════════════════════════════════════════════════════
 
-                    // 1. Set comment count from original post
+
+                    // Set comment count from original post
                     totalRepostComments = originalPostItem.commentCount
                     updateMetricDisplay(commentCount, totalRepostComments, "comment")
                     Log.d(TAG, "onViewCreated: initial comment count = $totalRepostComments (original post)")
 
-                    // 2. Display all original post metrics
+                    // Display all original post metrics
                     Log.d(TAG, "Using ORIGINAL POST metrics → " +
                             "id=${originalPostItem._id}, " +
                             "likes=${originalPostItem.likeCount}, " +
@@ -476,7 +474,7 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
                     updateMetricDisplay(shareCount, originalPostItem.shareCount, "share")
                     updateMetricDisplay(commentCount, originalPostItem.commentCount, "comment")
 
-                    // 3. Setup buttons with ORIGINAL POST ID and metrics
+                    //  Setup buttons with ORIGINAL POST ID and metrics
                     setupButtonsWithOriginalPostMetrics(safePost, originalPostItem)
 
                 } else {
@@ -507,74 +505,69 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
         }
     }
 
-
     private fun setupButtonsWithOriginalPostMetrics(repostWrapper: Post, originalPost: OriginalPost) {
 
 
-        val tempPostForButtons = Post(
-            __v = repostWrapper.__v,
-            _id = originalPost._id,  // ← CRITICAL: Use original post ID for API calls
-            author = repostWrapper.author,
-            content = repostWrapper.content,
-            contentType = repostWrapper.contentType,
-            createdAt = repostWrapper.createdAt,
-            updatedAt = repostWrapper.updatedAt,
+        //  Save original repost wrapper values
+        val savedId = repostWrapper._id
+        val savedLikes = repostWrapper.likes
+        val savedIsLiked = repostWrapper.isLiked
+        val savedBookmarks = repostWrapper.bookmarkCount
+        val savedIsBookmarked = repostWrapper.isBookmarked
+        val savedReposts = repostWrapper.repostCount
+        val savedIsReposted = repostWrapper.isReposted
+        val savedShares = repostWrapper.shareCount
+        val savedIsShared = repostWrapper.isShared
+        val savedComments = repostWrapper.comments
 
-            // Use ORIGINAL POST metrics
-            likes = originalPost.likeCount,
-            isLiked = false,  // Original post doesn't track per-user likes in this context
-            likedByUserIds = emptyList(),
+        Log.d(TAG, "setupButtonsWithOriginalPostMetrics: Saved repost wrapper values")
+        Log.d(TAG, "  - Wrapper ID: $savedId")
+        Log.d(TAG, "  - Wrapper metrics: likes=$savedLikes, bookmarks=$savedBookmarks, reposts=$savedReposts")
 
-            bookmarkCount = originalPost.bookmarkCount,
-            isBookmarked = originalPost.isFavorited ?: false,
+        // Temporarily replace with original post values
+        repostWrapper._id = originalPost._id
+        repostWrapper.likes = originalPost.likeCount
+        repostWrapper.isLiked = false
+        repostWrapper.bookmarkCount = originalPost.bookmarkCount
+        repostWrapper.isBookmarked = originalPost.isFavorited ?: false
+        repostWrapper.repostCount = originalPost.repostCount
+        repostWrapper.isReposted = originalPost.isReposted
+        repostWrapper.shareCount = originalPost.shareCount
+        repostWrapper.isShared = false
+        repostWrapper.comments = originalPost.commentCount
 
-            repostCount = originalPost.repostCount,
-            isReposted = originalPost.isReposted,
+        Log.d(TAG, "setupButtonsWithOriginalPostMetrics: Using ORIGINAL POST values:")
+        Log.d(TAG, "  - Original ID: ${repostWrapper._id}")
+        Log.d(TAG, "  - Likes: ${repostWrapper.likes}")
+        Log.d(TAG, "  - Bookmarks: ${repostWrapper.bookmarkCount}")
+        Log.d(TAG, "  - Reposts: ${repostWrapper.repostCount}")
+        Log.d(TAG, "  - Shares: ${repostWrapper.shareCount}")
+        Log.d(TAG, "  - Comments: ${repostWrapper.comments}")
 
-            shareCount = originalPost.shareCount,
-            isShared = false,
+        // Setup buttons (they'll use the original post values)
+        setupLikeButton(repostWrapper)
+        setupBookmarkButton(repostWrapper)
+        setupRepostButton(repostWrapper)
+        setupShareButton(repostWrapper)
 
-            comments = originalPost.commentCount,
+        // Restore wrapper ID for comment button (comments go to repost thread)
+        repostWrapper._id = savedId
+        Log.d(TAG, "setupButtonsWithOriginalPostMetrics: Restored wrapper ID for comments: ${repostWrapper._id}")
+        setupCommentButton(repostWrapper)
 
-            // Keep other fields from repost wrapper
-            files = repostWrapper.files,
-            tags = repostWrapper.tags,
-            originalPost = repostWrapper.originalPost,
-            repostedUser = repostWrapper.repostedUser,
-            isBusinessPost = repostWrapper.isBusinessPost,
-            feedShortsBusinessId = repostWrapper.feedShortsBusinessId,
-            duration = repostWrapper.duration,
-            fileIds = repostWrapper.fileIds,
-            fileNames = repostWrapper.fileNames,
-            fileSizes = repostWrapper.fileSizes,
-            fileTypes = repostWrapper.fileTypes,
-            isExpanded = repostWrapper.isExpanded,
-            isFollowing = repostWrapper.isFollowing,
-            isLocal = repostWrapper.isLocal,
-            numberOfPages = repostWrapper.numberOfPages
-        )
+        // Restore all other original wrapper values
+        repostWrapper.likes = savedLikes
+        repostWrapper.isLiked = savedIsLiked
+        repostWrapper.bookmarkCount = savedBookmarks
+        repostWrapper.isBookmarked = savedIsBookmarked
+        repostWrapper.repostCount = savedReposts
+        repostWrapper.isReposted = savedIsReposted
+        repostWrapper.shareCount = savedShares
+        repostWrapper.isShared = savedIsShared
+        repostWrapper.comments = savedComments
 
-        Log.d(TAG, "setupButtonsWithOriginalPostMetrics: Created temp post with:")
-        Log.d(TAG, "  - ID: ${tempPostForButtons._id} (original post)")
-        Log.d(TAG, "  - Likes: ${tempPostForButtons.likes}")
-        Log.d(TAG, "  - Bookmarks: ${tempPostForButtons.bookmarkCount}")
-        Log.d(TAG, "  - Reposts: ${tempPostForButtons.repostCount}")
-        Log.d(TAG, "  - Shares: ${tempPostForButtons.shareCount}")
-        Log.d(TAG, "  - Comments: ${tempPostForButtons.comments}")
-
-        // Setup all metric buttons with the temp post
-        setupLikeButton(tempPostForButtons)
-        setupBookmarkButton(tempPostForButtons)
-        setupRepostButton(tempPostForButtons)
-        setupShareButton(tempPostForButtons)
-
-        // For comment button, use REPOST WRAPPER ID so comments go to the repost thread
-        val commentPost = tempPostForButtons.copy(
-            _id = repostWrapper._id  // ← Use repost wrapper ID for comments
-        )
-        setupCommentButton(commentPost)
-
-        Log.d(TAG, "setupButtonsWithOriginalPostMetrics: All buttons configured")
+        Log.d(TAG, "setupButtonsWithOriginalPostMetrics: Restored all wrapper values")
+        Log.d(TAG, "setupButtonsWithOriginalPostMetrics: All buttons configured successfully")
     }
 
     private fun populatePostData(post: Post) {
