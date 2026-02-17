@@ -6,18 +6,21 @@
     android:layout_height="match_parent"
     android:background="@android:color/white"
     android:windowSoftInputMode="adjustResize"
-    tools:context=".User_Interface.fragments.feed.UploadFeedActivity">
+    >
 
     <!-- App Bar / Toolbar -->
     <androidx.appcompat.widget.Toolbar
         android:id="@+id/toolbar"
-        android:layout_width="0dp"
+        android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
-        android:background="@color/bluejeans"
+        android:background="@color/blueJeans"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:titleTextColor="@android:color/white">
+        app:titleTextColor="@android:color/white"
+        android:paddingBottom="12dp"
+        android:paddingTop="12dp"
+        >
 
         <ImageView
             android:id="@+id/cancelButton"
@@ -28,7 +31,9 @@
             android:paddingStart="8dp"
             android:paddingEnd="8dp"
             android:src="@drawable/cancel_svgrepo_com"
-            app:tint="@color/white" />
+            app:tint="@color/white"
+            tools:tint="@color/white"
+            />
 
         <TextView
             android:id="@+id/titleTextView"
@@ -158,18 +163,18 @@
                             android:layout_height="32dp"
                             android:layout_gravity="top|end"
                             android:layout_margin="8dp"
-                            android:src="@drawable/ic_delete_"
+                            android:src="@drawable/ic_delete_24"
                             android:backgroundTint="#80000000"
                             android:clickable="true"
                             android:focusable="true"
-                            app:tint="@color/black" />
+                            app:tint="@color/error_color" />
 
                         <ImageView
                             android:id="@+id/playButton"
                             android:layout_width="120dp"
                             android:layout_height="120dp"
                             android:layout_gravity="center"
-                            android:contentDescription="Play video or audio"
+                            android:contentDescription="@string/play_video_or_audio"
                             android:padding="20dp"
                             android:clickable="true"
                             android:focusable="true"
@@ -182,7 +187,7 @@
                             android:layout_width="120dp"
                             android:layout_height="120dp"
                             android:layout_gravity="center"
-                            android:contentDescription="Pause video or audio"
+                            android:contentDescription="@string/pause_video_or_audio"
                             android:padding="20dp"
                             android:src="@drawable/baseline_pause_white_24"
                             android:clickable="true"
@@ -208,7 +213,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="@dimen/section_margin_top"
-                    android:text="Select cover"
+                    android:text="@string/select_cover"
                     android:textColor="@color/blueJeanse"
                     android:textSize="@dimen/section_text_size"
                     android:textStyle="bold"
@@ -269,7 +274,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginHorizontal="@dimen/dimen_4"
                     android:layout_marginTop="8dp"
-                    android:background="@drawable/edit_text_top_bottom_border"
+                    android:background="@drawable/edit_text_top_bottom"
                     android:ems="10"
                     android:gravity="top"
                     android:hint="Caption your content to make it interesting up to 4000 words..."

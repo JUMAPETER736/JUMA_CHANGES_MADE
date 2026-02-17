@@ -81,6 +81,7 @@ import com.uyscuti.social.network.api.response.allFeedRepostsPost.BookmarkReques
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.CommentCountResponse
 import android.net.Uri
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.RetrofitClient
+import com.uyscuti.social.network.api.response.allFeedRepostsPost.ShareResponse
 import com.uyscuti.social.network.api.response.getrepostsPostsoriginal.File
 import com.uyscuti.social.network.api.response.posts.Author
 import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
@@ -102,6 +103,7 @@ import java.util.Collections.addAll
 import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
+import kotlin.math.abs
 
 
 private const val VIEW_TYPE_TEXT_FEED = 0
