@@ -812,7 +812,7 @@ class FeedAdapter(
                                     // Sync with server data
                                     data.isLiked = likeResponse.data.isLiked
 
-                                    // ✅ FIX: Handle potential null likeCount from server
+                                    //  FIX: Handle potential null likeCount from server
                                     // Since your server only returns { isLiked: true/false }
                                     // We keep our optimistic count
                                     // data.likes stays as is (our optimistic update)
@@ -820,7 +820,7 @@ class FeedAdapter(
                                     updateLikeButtonUI(data.isLiked)
                                     updateMetricDisplay(likesCount, data.likes, "like")
 
-                                    // ✅ FIX: Safely access likedByUserIds (it might be null)
+                                    //  FIX: Safely access likedByUserIds (it might be null)
                                     val likedByCount = likeResponse.data.likedByUserIds?.size ?: 0
                                     Log.d(com.uyscuti.sharedmodule.adapter.feed.TAG, "Like synced - isLiked=${data.isLiked}, count=${data.likes}, likedBy=$likedByCount users")
 
@@ -1795,7 +1795,7 @@ class FeedAdapter(
         private fun setupPostInfo(data: com.uyscuti.social.network.api.response.posts.Post) {
             dateTime.text = formattedMongoDateTime(data.createdAt)
 
-            // ✅ Just log — totalMixedComments already set correctly in render()
+            //  Just log — totalMixedComments already set correctly in render()
             Log.d(TAG, "Initialized comment counts - Server: $serverCommentCount, Total: $totalMixedComments")
             updateCommentCountDisplay()
 
@@ -1813,7 +1813,7 @@ class FeedAdapter(
         // ENGAGEMENT COUNTS DISPLAY — reads totalMixed*, never writes them
         // ─────────────────────────────────────────────────────────────────────────
         private fun updateEngagementCounts() {
-            // ✅ All use totalMixed* set by render()
+            //  All use totalMixed* set by render()
             updateMetricDisplay(likesCount,     totalMixedLikesCounts,    "like")
             updateMetricDisplay(commentCount,   totalMixedComments,       "comment")
             updateMetricDisplay(favoriteCounts, totalMixedBookMarkCounts, "bookmark")
@@ -1836,7 +1836,7 @@ class FeedAdapter(
 
         // ── LIKE ─────────────────────────────────────────────────────────────────
         private fun setupLikeButton(data: com.uyscuti.social.network.api.response.posts.Post) {
-            // ✅ Use totalMixedLikesCounts set by render() — NOT data.likes directly
+            //  Use totalMixedLikesCounts set by render() — NOT data.likes directly
             updateLikeButtonUI(data.isLiked)
             updateMetricDisplay(likesCount, totalMixedLikesCounts, "like")
 
@@ -1917,7 +1917,7 @@ class FeedAdapter(
 
         // ── COMMENT ──────────────────────────────────────────────────────────────
         private fun setupCommentButton(data: com.uyscuti.social.network.api.response.posts.Post) {
-            // ✅ totalMixedComments already set in render() — just wire up click
+            //  totalMixedComments already set in render() — just wire up click
             commentButton.setOnClickListener {
                 if (!commentButton.isEnabled) return@setOnClickListener
                 Log.d(TAG, "Comment button clicked for post ${data._id}")
@@ -1945,7 +1945,7 @@ class FeedAdapter(
         private fun setupBookmarkButton(data: com.uyscuti.social.network.api.response.posts.Post) {
             Log.d(TAG, "Setting up bookmark button - postId=${data._id}, isBookmarked=${data.isBookmarked}, count=$totalMixedBookMarkCounts")
 
-            // ✅ Use totalMixedBookMarkCounts set by render() — NOT data.bookmarkCount directly
+            //  Use totalMixedBookMarkCounts set by render() — NOT data.bookmarkCount directly
             updateBookmarkButtonUI(data.isBookmarked)
             updateMetricDisplay(favoriteCounts, totalMixedBookMarkCounts, "bookmark")
 
@@ -2037,7 +2037,7 @@ class FeedAdapter(
             val originalPost = data.originalPost?.firstOrNull()
             val targetPostId = originalPost?._id ?: data._id
 
-            // ✅ Use totalMixedRePostCounts set by render() — never overwrite here
+            //  Use totalMixedRePostCounts set by render() — never overwrite here
             updateMetricDisplay(repostCount, totalMixedRePostCounts, "repost")
             updateRepostButtonAppearance(data.isReposted)
 
@@ -2065,7 +2065,7 @@ class FeedAdapter(
             val originalPost = data.originalPost?.firstOrNull()
             val targetPostId = originalPost?._id ?: data._id
 
-            // ✅ Use totalMixedShareCounts set by render() — NOT hardcoded 0
+            //  Use totalMixedShareCounts set by render() — NOT hardcoded 0
             updateMetricDisplay(shareCountText, totalMixedShareCounts, "share")
 
             feedShare.setOnClickListener {
@@ -2146,7 +2146,7 @@ class FeedAdapter(
                         feedShare.alpha = 1f
                         feedShare.isEnabled = true
                         if (response.isSuccessful) {
-                            // ✅ Optimistically increment live counter on success
+                            //  Optimistically increment live counter on success
                             totalMixedShareCounts++
                             updateMetricDisplay(shareCountText, totalMixedShareCounts, "share")
                         }
@@ -5739,7 +5739,7 @@ class FeedAdapter(
                                     // Sync with server data
                                     data.isLiked = likeResponse.data.isLiked
 
-                                    // ✅ FIX: Handle potential null likeCount from server
+                                    //  FIX: Handle potential null likeCount from server
                                     // Since your server only returns { isLiked: true/false }
                                     // We keep our optimistic count
                                     // data.likes stays as is (our optimistic update)
@@ -5747,7 +5747,7 @@ class FeedAdapter(
                                     updateLikeButtonUI(data.isLiked)
                                     updateMetricDisplay(likesCount, data.likes, "like")
 
-                                    // ✅ FIX: Safely access likedByUserIds (it might be null)
+                                    //  FIX: Safely access likedByUserIds (it might be null)
                                     val likedByCount = likeResponse.data.likedByUserIds?.size ?: 0
                                     Log.d(com.uyscuti.sharedmodule.adapter.feed.TAG, "Like synced - isLiked=${data.isLiked}, count=${data.likes}, likedBy=$likedByCount users")
 
@@ -7155,38 +7155,34 @@ class FeedAdapter(
         val item = getItem(position)
         val contentType = item.contentType
 
-        if (item.isReposted) {
-            Log.d(tag, "getItemViewType: reposted")
+        // ✅ FIXED: Check structural repost fields in addition to isReposted flag.
+        // The server sets isReposted=false meaning "current user hasn't reposted this"
+        // — not that the post itself isn't a repost. We must also check the structural
+        // fields (repostedUser, originalPost) to catch this case.
+        val isStructurallyARepost = item.isReposted
+                || item.repostedUser != null
+                || (!item.originalPost.isNullOrEmpty())
+
+        if (isStructurallyARepost) {
+            Log.d(tag, "getItemViewType: repost (isReposted=${item.isReposted}, " +
+                    "hasRepostedUser=${item.repostedUser != null}, " +
+                    "hasOriginalPost=${!item.originalPost.isNullOrEmpty()})")
             return VIEW_TPE_REPOST_POST
         } else {
-            if(contentType.isNullOrEmpty()) {
-                if (item.isBusinessPost == true){
+            if (contentType.isNullOrEmpty()) {
+                if (item.isBusinessPost == true) {
                     return BUSINESS_POST_VIEW
                 } else {
                     return VIEW_TYPE_TEXT_FEED
                 }
-
             } else {
                 return when (item.contentType) {
-                    "text" -> {
-                        VIEW_TYPE_TEXT_FEED
-                    }
-                    "mixed_files" -> {
-                        VIEW_TYPE_MIXED_FEED_FILES
-                    }
-                    "videos" -> {
-                        VIEW_TRENDING_SHORTS
-                    }
-
-                    "vn" ->  {
-                        VIEW_TYPE_VOICE_NOTE
-                    }
-
-                    else -> {
-                        VIEW_TYPE_TEXT_FEED
-                    }
+                    "text" -> VIEW_TYPE_TEXT_FEED
+                    "mixed_files" -> VIEW_TYPE_MIXED_FEED_FILES
+                    "videos" -> VIEW_TRENDING_SHORTS
+                    "vn" -> VIEW_TYPE_VOICE_NOTE
+                    else -> VIEW_TYPE_TEXT_FEED
                 }
-
             }
         }
     }
