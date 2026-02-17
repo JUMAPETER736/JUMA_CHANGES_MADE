@@ -441,80 +441,77 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
                 setupClickListeners(safePost)
                 setupRecyclerViews()
 
-                // Hide UI elements
-                // Hide UI elements
                 EventBus.getDefault().post(HideAppBar(true))
                 EventBus.getDefault().post(HideBottomNav(true))
 
-                // Populate data
                 Log.d(TAG, "Post type: ${safePost::class.java.simpleName}")
                 Log.d(TAG, "Post ID: ${safePost._id}")
-
-                // Use original post's comment count as the starting value
-                val originalPostForComment = safePost.originalPost?.firstOrNull()
-                totalRepostComments = originalPostForComment?.commentCount
-                    ?: safePost.comments
-                            ?: 0
-                updateMetricDisplay(commentCount, totalRepostComments, "comment")
-                Log.d(TAG, "onViewCreated: Set initial comment count to $totalRepostComments (from original post)")
-
-                // Only fetch count for the ORIGINAL POST (that's what the action bar targets)
-                val originalPostId = originalPostForComment?._id
-                if (originalPostId != null) {
-                    fetchAndUpdateCommentCount(originalPostId)
-                    Log.d(TAG, "onViewCreated: Fetching comment count for ORIGINAL POST ID: $originalPostId")
-                } else {
-                    // Fallback: fetch for the repost wrapper
-                    fetchAndUpdateCommentCount(safePost._id)
-                    Log.d(TAG, "onViewCreated: No originalPost ID, fetching for repost: ${safePost._id}")
-                }
-
 
                 val originalPostItem = safePost.originalPost.firstOrNull()
 
                 if (originalPostItem != null) {
 
-                    // Use ORIGINAL POST metrics for all action buttons
-
-                    val postWithOriginalMetrics = safePost.copy(
-                        _id           = originalPostItem._id,
-                        likes         = originalPostItem.likeCount,
-                        isLiked       = false,
-                        bookmarkCount = originalPostItem.bookmarkCount,
-                        isBookmarked  = originalPostItem.isFavorited ?: false,
-                        repostCount   = originalPostItem.repostCount,
-                        isReposted    = originalPostItem.isReposted,
-                        shareCount    = originalPostItem.shareCount,
-                        isShared      = false,                            // OriginalPost has no isShared; default false
-                        comments      = originalPostItem.commentCount
-                    )
-
-                    Log.d(TAG, "Using ORIGINAL POST metrics → " +
-                            "id=${postWithOriginalMetrics._id}, " +
-                            "likes=${postWithOriginalMetrics.likes}, " +
-                            "bookmarks=${postWithOriginalMetrics.bookmarkCount}, " +
-                            "reposts=${postWithOriginalMetrics.repostCount}, " +
-                            "shares=${postWithOriginalMetrics.shareCount}, " +
-                            "comments=${postWithOriginalMetrics.comments}")
-
-                    // Set initial comment count from original post
+                    // ── 1. Comment count display ──────────────────────────────
                     totalRepostComments = originalPostItem.commentCount
                     updateMetricDisplay(commentCount, totalRepostComments, "comment")
-                    Log.d(TAG, "onViewCreated: Set initial comment count to $totalRepostComments (original post)")
+                    Log.d(TAG, "onViewCreated: initial comment count = $totalRepostComments (original post)")
 
-                    // Only fetch fresh comment count for the ORIGINAL POST
+                    // ── 2. Fetch fresh comment count — ONCE, for original post only ──
                     fetchAndUpdateCommentCount(originalPostItem._id)
-                    Log.d(TAG, "onViewCreated: Fetching comment count for ORIGINAL POST: ${originalPostItem._id}")
+                    Log.d(TAG, "onViewCreated: fetching comment count for original post ${originalPostItem._id}")
 
-                    // Pass the metric-corrected post to all button setup methods
-                    setupLikeButton(postWithOriginalMetrics)
-                    setupBookmarkButton(postWithOriginalMetrics)
-                    setupRepostButton(postWithOriginalMetrics)
-                    setupShareButton(postWithOriginalMetrics)
-                    setupCommentButton(safePost)   // keep safePost here so comment navigation targets the repost thread
+                    // ── 3. Setup metric action buttons using original post values ──
+                    //    NO .copy() — mutate safePost's var fields, then restore.
+                    //    All Post metric fields are `var` so this is safe.
+                    val savedId           = safePost._id
+                    val savedLikes        = safePost.likes
+                    val savedIsLiked      = safePost.isLiked
+                    val savedBookmarks    = safePost.bookmarkCount
+                    val savedIsBookmarked = safePost.isBookmarked
+                    val savedReposts      = safePost.repostCount
+                    val savedIsReposted   = safePost.isReposted
+                    val savedShares       = safePost.shareCount
+                    val savedIsShared     = safePost.isShared
+                    val savedComments     = safePost.comments
+
+                    safePost._id           = originalPostItem._id
+                    safePost.likes         = originalPostItem.likeCount
+                    safePost.isLiked       = false
+                    safePost.bookmarkCount = originalPostItem.bookmarkCount
+                    safePost.isBookmarked  = originalPostItem.isFavorited ?: false
+                    safePost.repostCount   = originalPostItem.repostCount
+                    safePost.isReposted    = originalPostItem.isReposted
+                    safePost.shareCount    = originalPostItem.shareCount
+                    safePost.isShared      = false
+                    safePost.comments      = originalPostItem.commentCount
+
+                    Log.d(TAG, "Using ORIGINAL POST metrics → " +
+                            "id=${safePost._id}, likes=${safePost.likes}, " +
+                            "bookmarks=${safePost.bookmarkCount}, reposts=${safePost.repostCount}, " +
+                            "shares=${safePost.shareCount}, comments=${safePost.comments}")
+
+                    setupLikeButton(safePost)
+                    setupBookmarkButton(safePost)
+                    setupRepostButton(safePost)
+                    setupShareButton(safePost)
+
+                    // Restore repost-wrapper values before setupCommentButton
+                    // so comment navigation targets the correct repost thread
+                    safePost._id           = savedId
+                    safePost.likes         = savedLikes
+                    safePost.isLiked       = savedIsLiked
+                    safePost.bookmarkCount = savedBookmarks
+                    safePost.isBookmarked  = savedIsBookmarked
+                    safePost.repostCount   = savedReposts
+                    safePost.isReposted    = savedIsReposted
+                    safePost.shareCount    = savedShares
+                    safePost.isShared      = savedIsShared
+                    safePost.comments      = savedComments
+
+                    setupCommentButton(safePost)
 
                 } else {
-                    // No original post — fall back to repost wrapper metrics
+                    // No originalPost — use repost wrapper values as fallback
                     Log.w(TAG, "No originalPost found, falling back to repost wrapper metrics")
                     totalRepostComments = safePost.comments
                     updateMetricDisplay(commentCount, totalRepostComments, "comment")
@@ -525,7 +522,6 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
                     setupShareButton(safePost)
                     setupCommentButton(safePost)
                 }
-
 
                 populatePostData(safePost)
                 Log.d(TAG, "Post data populated successfully")
@@ -759,7 +755,7 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
         }
         _binding = null
     }
-    
+
     private fun populateReposterInfo(post: Post) {
         try {
             var profilePicUrl: String? = null
