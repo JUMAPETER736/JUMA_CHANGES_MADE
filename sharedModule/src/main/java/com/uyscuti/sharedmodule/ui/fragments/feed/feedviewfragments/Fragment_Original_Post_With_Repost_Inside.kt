@@ -2883,13 +2883,11 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
 
     private fun populatePostData(post: Post) {
         try {
-            // Ensure views are initialized before using them
             if (!isViewsInitialized()) {
                 Log.e(TAG, "Views not initialized, cannot populate post data")
                 return
             }
 
-            // Use safe access for lateinit properties
             if (::headerTitle.isInitialized) {
                 headerTitle.text = "Post"
             }
@@ -2898,7 +2896,6 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
             populateOriginalAuthorInfo(originalPost)
             populateRepostContent(post)
 
-            // Safe call for itemView and null check
             if (::itemView.isInitialized) {
                 handleRepostMediaFiles(
                     post = post,
@@ -2907,16 +2904,36 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
                 )
             }
 
-            // Handle original post safely
             if (post.originalPost?.isNotEmpty() == true) {
-                val originalPost = post.originalPost[0]
-                populateOriginalPostData(originalPost)
-                populatePostContent(originalPost, post.createdAt)
+                val originalPostItem = post.originalPost[0]
+                populateOriginalPostData(originalPostItem)
+                populatePostContent(originalPostItem, post.createdAt)
+
+                //overwrite metric displays with ORIGINAL POST values
+                Log.d(TAG, "populatePostData: Applying ORIGINAL POST metrics to UI")
+                updateMetricDisplay(likesCount,    originalPostItem.likeCount        ?: 0, "like")
+                updateMetricDisplay(favoriteCounts, originalPostItem.bookmarkCount ?: 0, "bookmark")
+                updateMetricDisplay(repostCount,   originalPostItem.repostCount   ?: 0, "repost")
+                updateMetricDisplay(shareCount,    originalPostItem.shareCount    ?: 0, "share")
+                updateMetricDisplay(commentCount,  originalPostItem.commentCount  ?: 0, "comment")
+
+                // Also sync like/bookmark icon states to the original post
+               // updateLikeButtonUI(originalPostItem.is?: false)
+               // updateBookmarkButtonUI(originalPostItem.isBookmarked ?: false)
+                updateRepostButtonAppearance(originalPostItem.isReposted ?: false)
+
+                Log.d(TAG, "populatePostData: Original post metrics applied - " +
+                        "likes=${originalPostItem.likeCount}, " +
+                        "bookmarks=${originalPostItem.bookmarkCount}, " +
+                        "reposts=${originalPostItem.repostCount}, " +
+                        "shares=${originalPostItem.shareCount}, " +
+                        "comments=${originalPostItem.commentCount}")
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error populating post data: ${e.message}", e)
         }
     }
+
 
     private fun populateRepostContent(post: Post) {
         try {
