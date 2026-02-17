@@ -470,44 +470,62 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
                 }
 
 
-                val originalPostData = safePost.originalPost?.firstOrNull()
+                val originalPostItem = safePost.originalPost.firstOrNull()
 
-                if (originalPostData != null) {
+                if (originalPostItem != null) {
 
-                    // existing setupXxx(Post) methods work without any other changes.
-                    val syntheticPostForMetrics = safePost.copy(
-                        _id            = originalPostData._id,          // target the original post ID
-                        likes          = originalPostData.likeCount ?: 0,
-                        isLiked        = originalPostData.isLiked ?: false,
-                        bookmarkCount  = originalPostData.bookmarkCount ?: 0,
-                        isBookmarked   = originalPostData.isBookmarked ?: false,
-                        repostCount    = originalPostData.repostCount ?: 0,
-                        isReposted     = originalPostData.isReposted ?: false,
-                        shareCount     = originalPostData.shareCount ?: 0,
-                        isShared       = originalPostData.isShared ?: false,
-                        comments       = originalPostData.commentCount ?: 0
+                    // Use ORIGINAL POST metrics for all action buttons
+
+                    val postWithOriginalMetrics = safePost.copy(
+                        _id           = originalPostItem._id,
+                        likes         = originalPostItem.likeCount,
+                        isLiked       = false,
+                        bookmarkCount = originalPostItem.bookmarkCount,
+                        isBookmarked  = originalPostItem.isFavorited ?: false,
+                        repostCount   = originalPostItem.repostCount,
+                        isReposted    = originalPostItem.isReposted,
+                        shareCount    = originalPostItem.shareCount,
+                        isShared      = false,                            // OriginalPost has no isShared; default false
+                        comments      = originalPostItem.commentCount
                     )
 
-                    Log.d(TAG, "Using ORIGINAL POST metrics: " +
-                            "likes=${syntheticPostForMetrics.likes}, " +
-                            "bookmarks=${syntheticPostForMetrics.bookmarkCount}, " +
-                            "reposts=${syntheticPostForMetrics.repostCount}, " +
-                            "shares=${syntheticPostForMetrics.shareCount}")
+                    Log.d(TAG, "Using ORIGINAL POST metrics → " +
+                            "id=${postWithOriginalMetrics._id}, " +
+                            "likes=${postWithOriginalMetrics.likes}, " +
+                            "bookmarks=${postWithOriginalMetrics.bookmarkCount}, " +
+                            "reposts=${postWithOriginalMetrics.repostCount}, " +
+                            "shares=${postWithOriginalMetrics.shareCount}, " +
+                            "comments=${postWithOriginalMetrics.comments}")
 
-                    setupLikeButton(syntheticPostForMetrics)
-                    setupBookmarkButton(syntheticPostForMetrics)
-                    setupRepostButton(syntheticPostForMetrics)
-                    setupShareButton(syntheticPostForMetrics)
-                    setupCommentButton(safePost)   // comment still uses safePost so navigation goes to right thread
+                    // Set initial comment count from original post
+                    totalRepostComments = originalPostItem.commentCount
+                    updateMetricDisplay(commentCount, totalRepostComments, "comment")
+                    Log.d(TAG, "onViewCreated: Set initial comment count to $totalRepostComments (original post)")
+
+                    // Only fetch fresh comment count for the ORIGINAL POST
+                    fetchAndUpdateCommentCount(originalPostItem._id)
+                    Log.d(TAG, "onViewCreated: Fetching comment count for ORIGINAL POST: ${originalPostItem._id}")
+
+                    // Pass the metric-corrected post to all button setup methods
+                    setupLikeButton(postWithOriginalMetrics)
+                    setupBookmarkButton(postWithOriginalMetrics)
+                    setupRepostButton(postWithOriginalMetrics)
+                    setupShareButton(postWithOriginalMetrics)
+                    setupCommentButton(safePost)   // keep safePost here so comment navigation targets the repost thread
+
                 } else {
-                    // Fallback: no original post found, use repost wrapper as before
+                    // No original post — fall back to repost wrapper metrics
                     Log.w(TAG, "No originalPost found, falling back to repost wrapper metrics")
+                    totalRepostComments = safePost.comments
+                    updateMetricDisplay(commentCount, totalRepostComments, "comment")
+                    fetchAndUpdateCommentCount(safePost._id)
                     setupLikeButton(safePost)
                     setupBookmarkButton(safePost)
                     setupRepostButton(safePost)
                     setupShareButton(safePost)
                     setupCommentButton(safePost)
                 }
+
 
                 populatePostData(safePost)
                 Log.d(TAG, "Post data populated successfully")
@@ -742,6 +760,54 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
         _binding = null
     }
 
+    private fun fetchAndUpdateCommentCount(postId: String) {
+        Log.d(TAG, "fetchAndUpdateCommentCount: Fetching comment count for post: $postId")
+
+        // The original post ID is the one whose count drives the UI
+        val originalPostId = post?.originalPost?.firstOrNull()?._id
+
+        RetrofitClient.commentService.getCommentCount(postId)
+            .enqueue(object : Callback<CommentCountResponse> {
+                override fun onResponse(
+                    call: Call<CommentCountResponse>,
+                    response: Response<CommentCountResponse>
+                ) {
+                    if (!isAdded) return
+
+                    if (response.isSuccessful) {
+                        response.body()?.let { countResponse ->
+                            val serverCount = countResponse.count
+                            Log.d(TAG, "fetchAndUpdateCommentCount: got $serverCount for $postId")
+
+                            // ✅ Only update the UI when the response is for the ORIGINAL POST
+                            if (postId == originalPostId) {
+                                totalRepostComments = serverCount
+                                updateMetricDisplay(commentCount, serverCount, "comment")
+                                post?.originalPost?.firstOrNull()?.commentCount = serverCount
+                                Log.d(TAG, "fetchAndUpdateCommentCount: Updated UI comment count to $serverCount")
+                            }
+                            // Ignore responses for the repost wrapper — we don't show those counts
+                        } ?: run {
+                            Log.w(TAG, "fetchAndUpdateCommentCount: null body, falling back")
+                            fallbackToCommentsAPI(postId)
+                        }
+                    } else {
+                        Log.e(TAG, "fetchAndUpdateCommentCount: HTTP ${response.code()}, falling back")
+                        fallbackToCommentsAPI(postId)
+                    }
+                }
+
+                override fun onFailure(call: Call<CommentCountResponse>, t: Throwable) {
+                    Log.e(TAG, "fetchAndUpdateCommentCount: failure", t)
+
+                    // Only fall back for the original post since that drives the UI
+                    val originalId = post?.originalPost?.firstOrNull()?._id
+                    if (postId == originalId) {
+                        fallbackToCommentsAPI(postId)
+                    }
+                }
+            })
+    }
 
     private fun populateReposterInfo(post: Post) {
         try {
@@ -1906,59 +1972,6 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
         return post.originalPost?.firstOrNull()?.commentCount ?: post.originalPost?.firstOrNull()?.commentCount ?: 0
     }
 
-    private fun fetchAndUpdateCommentCount(postId: String) {
-        Log.d(TAG, "fetchAndUpdateCommentCount: Fetching current comment count for post: $postId")
-
-        RetrofitClient.commentService.getCommentCount(postId)
-            .enqueue(object : Callback<CommentCountResponse> {
-                override fun onResponse(call: Call<CommentCountResponse>, response: Response<CommentCountResponse>) {
-                    if (response.isSuccessful && isAdded) {
-                        response.body()?.let { countResponse ->
-                            val serverCount = countResponse.count
-                            Log.d(TAG, "fetchAndUpdateCommentCount: API returned count: $serverCount")
-
-                            if (postId == post?._id) {
-                                // Update repost comment count
-                                updateCommentCount(serverCount)
-                                currentPost?.comments = serverCount
-                                Log.d(TAG, "fetchAndUpdateCommentCount: Updated repost count to $serverCount")
-                            } else if (postId == post?.originalPost?.firstOrNull()?._id) {
-                                // Update original post comment count
-                                post?.originalPost?.firstOrNull()?.commentCount = serverCount
-                                updateMetricDisplay(commentCount, serverCount, "original_comment")
-                                Log.d(TAG, "fetchAndUpdateCommentCount: Updated original post count to $serverCount")
-                            }
-                        } ?: run {
-                            Log.w(TAG, "fetchAndUpdateCommentCount: Response body is null, falling back to comments API")
-                            fallbackToCommentsAPI(postId)
-                        }
-                    } else {
-                        Log.e(TAG, "fetchAndUpdateCommentCount: Failed with code: ${response.code()}, falling back to comments API")
-                        fallbackToCommentsAPI(postId)
-                    }
-                }
-
-                override fun onFailure(call: Call<CommentCountResponse>, t: Throwable) {
-                    when (t) {
-                        is JsonSyntaxException, is JsonSyntaxException -> {
-                            Log.e(TAG, "fetchAndUpdateCommentCount: JSON parsing error - malformed response from server", t)
-                        }
-                        is MalformedJsonException -> {
-                            Log.e(TAG, "fetchAndUpdateCommentCount: Malformed JSON response from server", t)
-                        }
-                        else -> {
-                            Log.e(TAG, "fetchAndUpdateCommentCount: Network error", t)
-                        }
-                    }
-
-                    // Keep existing count
-                    currentPost?.let { post ->
-                        Log.d(TAG, "fetchAndUpdateCommentCount: Keeping existing count: ${post.comments}")
-                    }
-                    fallbackToCommentsAPI(postId)
-                }
-            })
-    }
 
     private fun fallbackToCommentsAPI(postId: String) {
         Log.d(TAG, "fallbackToCommentsAPI: Using comments API to get accurate count for post: $postId")
@@ -2904,30 +2917,36 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
                 )
             }
 
-            if (post.originalPost?.isNotEmpty() == true) {
+            if (post.originalPost.isNotEmpty()) {
                 val originalPostItem = post.originalPost[0]
                 populateOriginalPostData(originalPostItem)
                 populatePostContent(originalPostItem, post.createdAt)
 
-                //overwrite metric displays with ORIGINAL POST values
-                Log.d(TAG, "populatePostData: Applying ORIGINAL POST metrics to UI")
-                updateMetricDisplay(likesCount,    originalPostItem.likeCount        ?: 0, "like")
-                updateMetricDisplay(favoriteCounts, originalPostItem.bookmarkCount ?: 0, "bookmark")
-                updateMetricDisplay(repostCount,   originalPostItem.repostCount   ?: 0, "repost")
-                updateMetricDisplay(shareCount,    originalPostItem.shareCount    ?: 0, "share")
-                updateMetricDisplay(commentCount,  originalPostItem.commentCount  ?: 0, "comment")
+                // Overwrite whatever populateReposterInfo() set with the ORIGINAL POST values
+                Log.d(TAG, "populatePostData: ORIGINAL POST metrics → " +
+                        "likeCount=${originalPostItem.likeCount}, " +
+                        "bookmarkCount=${originalPostItem.bookmarkCount}, " +
+                        "repostCount=${originalPostItem.repostCount}, " +
+                        "shareCount=${originalPostItem.shareCount}, " +
+                        "commentCount=${originalPostItem.commentCount}")
 
-                // Also sync like/bookmark icon states to the original post
-               // updateLikeButtonUI(originalPostItem.is?: false)
-               // updateBookmarkButtonUI(originalPostItem.isBookmarked ?: false)
-                updateRepostButtonAppearance(originalPostItem.isReposted ?: false)
+                if (::likesCount.isInitialized)
+                    updateMetricDisplay(likesCount,     originalPostItem.likeCount,    "like")
+                if (::favoriteCounts.isInitialized)
+                    updateMetricDisplay(favoriteCounts, originalPostItem.bookmarkCount, "bookmark")
+                if (::repostCount.isInitialized)
+                    updateMetricDisplay(repostCount,    originalPostItem.repostCount,   "repost")
+                if (::shareCount.isInitialized)
+                    updateMetricDisplay(shareCount,     originalPostItem.shareCount,    "share")
+                if (::commentCount.isInitialized)
+                    updateMetricDisplay(commentCount,   originalPostItem.commentCount,  "comment")
 
-                Log.d(TAG, "populatePostData: Original post metrics applied - " +
-                        "likes=${originalPostItem.likeCount}, " +
-                        "bookmarks=${originalPostItem.bookmarkCount}, " +
-                        "reposts=${originalPostItem.repostCount}, " +
-                        "shares=${originalPostItem.shareCount}, " +
-                        "comments=${originalPostItem.commentCount}")
+                // Sync icon states to original post values
+                updateLikeButtonUI(false)                              // OriginalPost has no isLiked
+                updateBookmarkButtonUI(originalPostItem.isFavorited ?: false)
+                updateRepostButtonAppearance(originalPostItem.isReposted)
+
+                Log.d(TAG, "populatePostData: Post data populated successfully")
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error populating post data: ${e.message}", e)
