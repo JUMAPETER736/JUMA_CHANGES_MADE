@@ -221,7 +221,7 @@
                                     android:minWidth="100dp"
                                     android:paddingStart="20dp"
                                     android:paddingEnd="20dp"
-                                    android:background="@drawable/follow_button_background"
+                                    android:background="@drawable/fill_button_color"
                                     android:text="Follow"
                                     android:textAlignment="center"
                                     android:textAllCaps="false"
