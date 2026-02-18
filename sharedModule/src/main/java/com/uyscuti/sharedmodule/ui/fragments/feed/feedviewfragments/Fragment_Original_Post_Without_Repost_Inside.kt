@@ -105,8 +105,11 @@ import kotlin.math.abs
 import com.uyscuti.social.core.common.data.room.entity.FollowUnFollowEntity
 import com.uyscuti.social.network.api.response.posts.Avatar
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.BookmarkRequest
+import com.uyscuti.social.network.api.response.allFeedRepostsPost.BookmarkResponse
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.CommentCountResponse
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.CommentsResponse
+import com.uyscuti.social.network.api.response.allFeedRepostsPost.LikeRequest
+import com.uyscuti.social.network.api.response.allFeedRepostsPost.LikeResponse
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.RepostResponse
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.RetrofitClient
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.ShareResponse
@@ -2069,6 +2072,18 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
     }
 
 
+    private fun hideAllMediaViews() {
+        Log.d(TAG, "hideAllMediaViews: Hiding all media containers")
+        try {
+            mixedFilesCardView?.visibility = View.GONE
+            originalFeedImage?.visibility = View.GONE
+            multipleAudiosContainer?.visibility = View.GONE
+            recyclerViews?.visibility = View.GONE
+        } catch (e: Exception) {
+            Log.e(TAG, "Error hiding media views: ${e.message}", e)
+        }
+    }
+
     // Fixed setupLikeButton - Replace in your FeedAdapter.kt
 
     private fun setupLikeButton(data: com.uyscuti.social.network.api.response.posts.Post) {
@@ -2176,8 +2191,8 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
         updateBookmarkButtonUI(data.isBookmarked)
         updateMetricDisplay(favoriteCounts, totalMixedBookMarkCounts, "bookmark")
 
-        favoriteButton.setOnClickListener {
-            if (!favoriteButton.isEnabled) return@setOnClickListener
+        favoritesButton.setOnClickListener {
+            if (!favoritesButton.isEnabled) return@setOnClickListener
 
             it.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
 
@@ -2194,18 +2209,18 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
             YoYo.with(if (data.isBookmarked) Techniques.Tada else Techniques.Pulse)
                 .duration(500)
                 .repeat(1)
-                .playOn(favoriteButton)
+                .playOn(favoritesButton)
 
-            favoriteButton.isEnabled = false
-            favoriteButton.alpha = 0.8f
+            favoritesButton.isEnabled = false
+            favoritesButton.alpha = 0.8f
 
             CoroutineScope(Dispatchers.Main).launch {
                 try {
                     val bookmarkRequest = BookmarkRequest(data.isBookmarked)
-                    val response = retrofitInterface.apiService.toggleBookmark(data._id, bookmarkRequest)
+                    val response = retrofitInstance.apiService.toggleBookmark(data._id, bookmarkRequest)
 
-                    favoriteButton.alpha = 1f
-                    favoriteButton.isEnabled = true
+                    favoritesButton.alpha = 1f
+                    favoritesButton.isEnabled = true
 
                     if (response.isSuccessful) {
                         response.body()?.let { bookmarkResponse ->
@@ -2220,28 +2235,28 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
                                 updateBookmarkButtonUI(data.isBookmarked)
                                 updateMetricDisplay(favoriteCounts, totalMixedBookMarkCounts, "bookmark")
 
-                                feedClickListener.feedFavoriteClick(absoluteAdapterPosition, data)
-                                Toast.makeText(favoriteButton.context, bookmarkResponse.message, Toast.LENGTH_SHORT).show()
+                                feedClickListener.feedFavoriteClick(0, data)
+                                Toast.makeText(favoritesButton.context, bookmarkResponse.message, Toast.LENGTH_SHORT).show()
                             } else {
                                 Log.e(TAG, "Bookmark failed - success=false")
                                 revertBookmarkState(data, previousStatus, previousCount)
-                                Toast.makeText(favoriteButton.context, "Failed to update bookmark", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(favoritesButton.context, "Failed to update bookmark", Toast.LENGTH_SHORT).show()
                             }
                         } ?: run {
                             revertBookmarkState(data, previousStatus, previousCount)
-                            Toast.makeText(favoriteButton.context, "Failed to update bookmark", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(favoritesButton.context, "Failed to update bookmark", Toast.LENGTH_SHORT).show()
                         }
                     } else {
                         Log.e(TAG, "Bookmark API error: ${response.code()} - ${response.message()}")
                         revertBookmarkState(data, previousStatus, previousCount)
-                        Toast.makeText(favoriteButton.context, "Failed to update bookmark", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(favoritesButton.context, "Failed to update bookmark", Toast.LENGTH_SHORT).show()
                     }
                 } catch (e: Exception) {
-                    favoriteButton.alpha = 1f
-                    favoriteButton.isEnabled = true
+                    favoritesButton.alpha = 1f
+                    favoritesButton.isEnabled = true
                     Log.e(TAG, "Bookmark network error", e)
                     revertBookmarkState(data, previousStatus, previousCount)
-                    Toast.makeText(favoriteButton.context, "Network error. Please check your connection.", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(favoritesButton.context, "Network error. Please check your connection.", Toast.LENGTH_SHORT).show()
                 }
             }
         }
