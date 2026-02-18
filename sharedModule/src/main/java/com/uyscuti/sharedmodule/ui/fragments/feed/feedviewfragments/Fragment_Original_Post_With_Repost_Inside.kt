@@ -1,7 +1,6 @@
 package com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments
 
 import android.Manifest
-import android.R.attr.data
 import android.annotation.SuppressLint
 import android.annotation.TargetApi
 import android.content.ClipData
@@ -16,7 +15,6 @@ import android.graphics.drawable.GradientDrawable
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import android.view.Gravity
@@ -70,7 +68,6 @@ import com.uyscuti.sharedmodule.User_Interfaces.OtherUserProfile.OtherUserProfil
 import com.uyscuti.sharedmodule.adapter.feed.FeedAdapter
 import com.uyscuti.sharedmodule.data.model.shortsmodels.OtherUsersProfile
 import com.uyscuti.sharedmodule.databinding.FragmentOriginalPostWithRepostInsideBinding
-import com.uyscuti.sharedmodule.model.FeedCommentClicked
 import com.uyscuti.sharedmodule.model.GoToUserProfileFragment
 import com.uyscuti.sharedmodule.model.HideAppBar
 import com.uyscuti.sharedmodule.model.HideBottomNav
@@ -86,7 +83,6 @@ import com.uyscuti.sharedmodule.viewmodels.feed.GetFeedViewModel
 import com.uyscuti.sharedmodule.viewmodels.feed.UserRelationshipsViewModel
 import com.uyscuti.social.network.api.response.posts.OriginalPost
 import com.uyscuti.social.network.api.response.posts.Post
-import com.uyscuti.social.network.api.response.posts.Duration
 import com.uyscuti.social.network.api.response.posts.ThumbnailX
 import com.uyscuti.social.network.api.response.posts.File
 import com.uyscuti.social.network.api.response.posts.FileType
@@ -99,11 +95,8 @@ import kotlin.math.abs
 import com.uyscuti.social.core.common.data.room.entity.FollowUnFollowEntity
 import com.uyscuti.social.network.api.response.posts.Avatar
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.BookmarkRequest
-import com.uyscuti.social.network.api.response.allFeedRepostsPost.BookmarkResponse
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.CommentCountResponse
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.CommentsResponse
-import com.uyscuti.social.network.api.response.allFeedRepostsPost.LikeRequest
-import com.uyscuti.social.network.api.response.allFeedRepostsPost.LikeResponse
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.RepostResponse
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.RetrofitClient
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.ShareResponse
@@ -3948,57 +3941,6 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
         }
     }
 
-    private fun bindOriginalViewHolder(
-        mediaType: MediaType,
-        itemView: View,
-        item: OriginalPost,
-        file: File
-
-    ) {
-        try {
-            Log.d(TAG, "Binding original view holder for media type: $mediaType")
-
-            when (mediaType) {
-                MediaType.Image -> bindRepostedOriginalImagesOnlyViewHolder(item,  item.files)
-                MediaType.Video -> bindRepostedOriginalVideosOnlyViewHolder(item,  item.files)
-                MediaType.Audio -> bindRepostedOriginalAudiosOnlyViewHolder(item, item.files)
-                MediaType.Document -> bindRepostedOriginalDocumentsOnlyViewHolder(item, item.files)
-                MediaType.CombinationOfMultipleFiles -> bindRepostedOriginalCombinationOfMultipleFilesViewHolder(
-                    item,
-                    item.files
-                )
-
-                MediaType.Unknown -> Log.d(TAG, "Unknown media type for original post")
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error binding original view holder: ${e.message}", e)
-        }
-    }
-
-    private fun populateInteractionData(post: OriginalPost) {
-        try {
-            if (::likesCount.isInitialized) {
-                likesCount.text = formatCount(post.likeCount)
-            }
-            if (::commentCount.isInitialized) {
-                commentCount.text = formatCount(post.commentCount)
-            }
-            if (::repostCount.isInitialized) {
-                repostCount.text = formatCount(post.repostCount)
-            }
-            if (::favoriteCounts.isInitialized) {
-                favoriteCounts.text = formatCount(post.bookmarkCount)
-            }
-            if (::shareCount.isInitialized) {
-                shareCount.text = "0"
-            }
-
-            updateInteractionStates(post)
-        } catch (e: Exception) {
-            Log.e(TAG, "Error populating interaction data: ${e.message}", e)
-        }
-    }
-
     private fun handleThumbnails(thumbnails: List<Thumbnail>?, imageView: ImageView) {
         try {
             thumbnails?.firstOrNull()?.thumbnailUrl?.takeIf { it.isNotEmpty() }
@@ -4034,111 +3976,6 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
         object Document : MediaType()
         object CombinationOfMultipleFiles : MediaType()
         object Unknown : MediaType()
-    }
-
-    private fun getMediaType(
-        file: File?,
-        fileTypes: List<FileType> = emptyList()
-    ): MediaType {
-        if (file == null) {
-            Log.d(TAG, "File is null, returning MediaType Unknown")
-            return MediaType.Unknown
-        }
-
-        Log.d(
-            TAG,
-            "File details: fileId=${file.fileId}, mimeType=${file.mimeType}, url=${file.url}"
-        )
-
-        // First check if we have fileTypes list and find matching fileType for this file
-        val matchingFileType = fileTypes.find { it.fileId == file.fileId }
-        matchingFileType?.let { fileTypeObj ->
-            when (fileTypeObj.fileType?.lowercase()) {
-                "video" -> {
-                    Log.d(TAG, "Detected video via fileTypes")
-                    return MediaType.Video
-                }
-
-                "pdf" -> {
-                    Log.d(TAG, "Detected pdf via fileTypes")
-                    return MediaType.Document
-                }
-
-                "image" -> {
-                    Log.d(TAG, "Detected image via fileTypes")
-                    return MediaType.Image
-                }
-
-                "audio" -> {
-                    Log.d(TAG, "Detected audio via fileTypes")
-                    return MediaType.Audio
-                }
-
-                "mixed_files" -> {
-                    Log.d(TAG, "Detected mixed_files via fileTypes")
-                    return MediaType.CombinationOfMultipleFiles
-                }
-            }
-        }
-
-        // Check file extension from fileId or URL
-        val extension = file.fileId.substringAfterLast(".").lowercase()
-            .takeIf { it != file.fileId } // Only use if there was actually a dot
-            ?: file.url.substringAfterLast(".").substringBefore("?").lowercase()
-                .takeIf { it != file.url.substringBefore("?") } // Only use if there was actually a dot
-
-        when (extension) {
-            "mp4", "mpeg", "mpe", "mpg", "avi", "mov", "wmv", "flv", "webm", "mkv" -> {
-                Log.d(TAG, "Detected video via extension: $extension")
-                return MediaType.Video
-            }
-
-            "pdf", "pdg", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "txt", "rtf", "odt", "csv" -> {
-                Log.d(TAG, "Detected document via extension: $extension")
-                return MediaType.Document
-            }
-
-            "jpg", "jpeg", "png", "gif", "bmp", "webp" -> {
-                Log.d(TAG, "Detected image via extension: $extension")
-                return MediaType.Image
-            }
-
-            "mp3", "wav", "ogg", "m4a", "aac", "flac" -> {
-                Log.d(TAG, "Detected audio via extension: $extension")
-                return MediaType.Audio
-            }
-        }
-
-        // Check MIME type
-        when {
-            file.mimeType?.startsWith("image/", ignoreCase = true) == true -> {
-                Log.d(TAG, "Detected image via mimeType: ${file.mimeType}")
-                return MediaType.Image
-            }
-
-            file.mimeType?.startsWith("video/", ignoreCase = true) == true -> {
-                Log.d(TAG, "Detected video via mimeType: ${file.mimeType}")
-                return MediaType.Video
-            }
-
-            file.mimeType?.startsWith("audio/", ignoreCase = true) == true -> {
-                Log.d(TAG, "Detected audio via mimeType: ${file.mimeType}")
-                return MediaType.Audio
-            }
-
-            file.mimeType?.startsWith("application/", ignoreCase = true) == true -> {
-                Log.d(TAG, "Detected document via mimeType: ${file.mimeType}")
-                return MediaType.Document
-            }
-
-            file.mimeType == "mixed_files" -> {
-                Log.d(TAG, "Detected mixed_files via mimeType")
-                return MediaType.CombinationOfMultipleFiles
-            }
-        }
-
-        Log.d(TAG, "No type detected, returning MediaType.Unknown")
-        return MediaType.Unknown
     }
 
 

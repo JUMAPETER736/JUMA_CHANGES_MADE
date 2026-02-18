@@ -1705,9 +1705,9 @@ class FeedAdapter(
         // Container Elements
         private val feedMixedFilesContainer: ConstraintLayout = itemView.findViewById(R.id.feedMixedFilesContainer)
 
-        // ─────────────────────────────────────────────────────────────────────────
+        //
         // STATE — set ONCE in render(), never overwritten in any setup*() method
-        // ─────────────────────────────────────────────────────────────────────────
+        //
         private var isFollowed = false
         private var totalMixedComments = 0
         private var serverCommentCount = 0
@@ -1720,9 +1720,9 @@ class FeedAdapter(
         private var postClicked = false
         private var isFollowingUser = false
 
-        // ─────────────────────────────────────────────────────────────────────────
+        //
         // RENDER — single source of truth for ALL counts
-        // ─────────────────────────────────────────────────────────────────────────
+        //
         @OptIn(UnstableApi::class)
         @SuppressLint("SetTextI18n", "SuspiciousIndentation")
         fun render(data: com.uyscuti.social.network.api.response.posts.Post) {
@@ -1740,7 +1740,7 @@ class FeedAdapter(
                     isFollowingUser = followingUserIds.contains(feedOwnerId)
                     Log.d(TAG, "render: User ${data.author?.account?.username} following status: $isFollowingUser")
 
-                    // ── Set ALL counts here — NO setup*() method may reassign these ──────
+                    //  Set ALL counts here — NO setup*() method may reassign these
                     if (originalPost != null) {
                         // Repost wrapper: show the original post's live global counts
                         totalMixedComments       = originalPost.commentCount
@@ -1789,9 +1789,9 @@ class FeedAdapter(
             }
         }
 
-        // ─────────────────────────────────────────────────────────────────────────
+        //
         // POST INFO — only sets date and triggers display; does NOT reset counts
-        // ─────────────────────────────────────────────────────────────────────────
+        //
         private fun setupPostInfo(data: com.uyscuti.social.network.api.response.posts.Post) {
             dateTime.text = formattedMongoDateTime(data.createdAt)
 
@@ -1809,9 +1809,9 @@ class FeedAdapter(
             Log.d(TAG, "Updated comment count display: $totalMixedComments")
         }
 
-        // ─────────────────────────────────────────────────────────────────────────
+        //
         // ENGAGEMENT COUNTS DISPLAY — reads totalMixed*, never writes them
-        // ─────────────────────────────────────────────────────────────────────────
+        //
         private fun updateEngagementCounts() {
             //  All use totalMixed* set by render()
             updateMetricDisplay(likesCount,     totalMixedLikesCounts,    "like")
@@ -1822,9 +1822,9 @@ class FeedAdapter(
             Log.d(TAG, "Updated all engagement counts")
         }
 
-        // ─────────────────────────────────────────────────────────────────────────
+        //
         // ENGAGEMENT BUTTONS — each reads totalMixed* but never reassigns them
-        // ─────────────────────────────────────────────────────────────────────────
+        //
         private fun setupEngagementButtons(data: com.uyscuti.social.network.api.response.posts.Post) {
             setupLikeButton(data)
             setupCommentButton(data)
@@ -1834,7 +1834,7 @@ class FeedAdapter(
             setupMoreOptionsButton(data)
         }
 
-        // ── LIKE ─────────────────────────────────────────────────────────────────
+        //  LIKE
         private fun setupLikeButton(data: com.uyscuti.social.network.api.response.posts.Post) {
             //  Use totalMixedLikesCounts set by render() — NOT data.likes directly
             updateLikeButtonUI(data.isLiked)
@@ -1915,7 +1915,7 @@ class FeedAdapter(
             Log.d(TAG, "Reverted like to: isLiked=$previousStatus, count=$previousCount")
         }
 
-        // ── COMMENT ──────────────────────────────────────────────────────────────
+        //  COMMENT
         private fun setupCommentButton(data: com.uyscuti.social.network.api.response.posts.Post) {
             //  totalMixedComments already set in render() — just wire up click
             commentButton.setOnClickListener {
@@ -1941,7 +1941,7 @@ class FeedAdapter(
             }
         }
 
-        // ── BOOKMARK ─────────────────────────────────────────────────────────────
+        //  BOOKMARK
         private fun setupBookmarkButton(data: com.uyscuti.social.network.api.response.posts.Post) {
             Log.d(TAG, "Setting up bookmark button - postId=${data._id}, isBookmarked=${data.isBookmarked}, count=$totalMixedBookMarkCounts")
 
@@ -2032,7 +2032,7 @@ class FeedAdapter(
             Log.d(TAG, "Reverted bookmark to: isBookmarked=$previousStatus, count=$previousCount")
         }
 
-        // ── REPOST ───────────────────────────────────────────────────────────────
+        //  REPOST
         private fun setupRepostButton(data: com.uyscuti.social.network.api.response.posts.Post) {
             val originalPost = data.originalPost?.firstOrNull()
             val targetPostId = originalPost?._id ?: data._id
@@ -2060,7 +2060,7 @@ class FeedAdapter(
             repostPost.scaleY = if (isReposted) 1.1f else 1.0f
         }
 
-        // ── SHARE ────────────────────────────────────────────────────────────────
+        //  SHARE
         private fun setupShareButton(data: com.uyscuti.social.network.api.response.posts.Post) {
             val originalPost = data.originalPost?.firstOrNull()
             val targetPostId = originalPost?._id ?: data._id
@@ -2161,7 +2161,7 @@ class FeedAdapter(
             feedClickListener.feedShareClicked(absoluteAdapterPosition, data)
         }
 
-        // ── UI HELPERS ───────────────────────────────────────────────────────────
+        //  UI HELPERS
         private fun updateLikeButtonUI(isLiked: Boolean) {
             Log.d(TAG, "Updating like button UI: isLiked=$isLiked")
             try {
@@ -2205,14 +2205,14 @@ class FeedAdapter(
             }
         }
 
-        // ── MORE OPTIONS ─────────────────────────────────────────────────────────
+        //  MORE OPTIONS
         private fun setupMoreOptionsButton(data: com.uyscuti.social.network.api.response.posts.Post) {
             moreOptionsButton.setOnClickListener {
                 feedClickListener.moreOptionsClick(absoluteAdapterPosition, data)
             }
         }
 
-        // ── COMMENT COUNT PUBLIC API ─────────────────────────────────────────────
+        //  COMMENT COUNT PUBLIC API
         fun updateCommentCount(newCount: Int) {
             Log.d(TAG, "updateCommentCount: Updating comment count from $totalMixedComments to $newCount")
             totalMixedComments = if (newCount < 0) {
@@ -2260,7 +2260,7 @@ class FeedAdapter(
                 })
         }
 
-        // ── NAVIGATION ───────────────────────────────────────────────────────────
+        //  NAVIGATION
         private fun navigateToOriginalPostWithoutRepostInside(data: com.uyscuti.social.network.api.response.posts.Post) {
             try {
                 Log.d(TAG, "Navigating to original Post for Post ID: ${data._id}")
@@ -2351,7 +2351,7 @@ class FeedAdapter(
             }
         }
 
-        // ── FOLLOW BUTTON ────────────────────────────────────────────────────────
+        //  FOLLOW BUTTON
         private fun setupFollowButton(feedOwnerId: String, feedOwnerUsername: String) {
             val currentUserId = LocalStorage.getInstance(itemView.context).getUserId()
             val cachedFollowingList = getCachedFollowingList()
@@ -2415,7 +2415,7 @@ class FeedAdapter(
             EventBus.getDefault().post(ShortsFollowButtonClicked(followEntity))
         }
 
-        // ── POST CLICK LISTENERS ─────────────────────────────────────────────────
+        //  POST CLICK LISTENERS
         private fun setupPostClickListeners(data: com.uyscuti.social.network.api.response.posts.Post) {
             feedMixedFilesContainer.setOnClickListener(null)
             mixedFilesCardView.setOnClickListener(null)
@@ -2471,7 +2471,7 @@ class FeedAdapter(
             Log.d(TAG, "Post clickability ensured for post: ${data._id}")
         }
 
-        // ── PROFILE CLICK LISTENERS ──────────────────────────────────────────────
+        //  PROFILE CLICK LISTENERS
         private fun setupProfileClickListeners(data: com.uyscuti.social.network.api.response.posts.Post, feedOwnerId: String) {
             val feedOwnerName = "${data.author?.firstName} ${data.author?.lastName}"
             val profilePicUrl = data.author?.account?.avatar?.url
@@ -2506,7 +2506,7 @@ class FeedAdapter(
             }
         }
 
-        // ── USER INFO ────────────────────────────────────────────────────────────
+        //  USER INFO
         private fun setupUserInfo(data: com.uyscuti.social.network.api.response.posts.Post, feedOwnerId: String) {
             loadImageWithGlide(data.author?.account?.avatar?.url, profileImageView, itemView.context)
             val fullName = listOfNotNull(
@@ -2517,7 +2517,7 @@ class FeedAdapter(
             handerText.text = "@${data.author?.account?.username ?: "unknown"}"
         }
 
-        // ── CONTENT & TAGS ───────────────────────────────────────────────────────
+        //  CONTENT & TAGS
         private fun setupContentAndTags(data: com.uyscuti.social.network.api.response.posts.Post) {
             if (data.content.isNotEmpty()) {
                 caption.text = data.content
@@ -2537,7 +2537,7 @@ class FeedAdapter(
             }
         }
 
-        // ── MEDIA FILES ──────────────────────────────────────────────────────────
+        //  MEDIA FILES
         private fun setupMediaFiles(data: com.uyscuti.social.network.api.response.posts.Post) {
             if (data.files.isEmpty()) {
                 Log.d(TAG, "No files in post")
@@ -2568,7 +2568,7 @@ class FeedAdapter(
             })
         }
 
-        // ── UTILITIES ────────────────────────────────────────────────────────────
+        //  UTILITIES
         @SuppressLint("DefaultLocale")
         private fun formatCount(count: Int): String {
             return when {
@@ -2637,6 +2637,7 @@ class FeedAdapter(
 
         // Share helpers
         private fun shareToWhatsApp(context: Context, text: String) = shareToApp(context, text, listOf("com.whatsapp", "com.whatsapp.w4b"), "WhatsApp")
+
         private fun shareViaSMS(context: Context, text: String) {
             try {
                 context.startActivity(Intent(Intent.ACTION_SENDTO).apply { data = "smsto:".toUri(); putExtra("sms_body", text) })
@@ -2839,12 +2840,12 @@ class FeedAdapter(
 
                 val author = originalPostData.author
 
-                // ── NULL-SAFE avatar ──────────────────────────────────
+                //  NULL-SAFE avatar
                 // account, avatar, or url can all be null when the API
                 // returns  "account": {}  for a deleted / private post.
                 val avatarUrl: String? = author?.account?.avatar?.url   // safe call chain
 
-                // ── Display name ─────────────────────────────────────
+                //  Display name
                 val displayName = when {
                     !author?.firstName.isNullOrBlank() && !author?.lastName.isNullOrBlank() ->
                         "${author!!.firstName} ${author.lastName}"
@@ -2854,7 +2855,7 @@ class FeedAdapter(
                     else -> "Unknown User"
                 }
 
-                // ── Handle ────────────────────────────────────────────
+                //  Handle
                 val userHandle = if (!author?.account?.username.isNullOrBlank())
                     "@${author!!.account.username}"
                 else
@@ -2862,7 +2863,7 @@ class FeedAdapter(
 
                 Log.d(tag, "Using author data: $displayName ($userHandle)")
 
-                // ── Profile image ─────────────────────────────────────
+                //  Profile image
                 originalPosterProfileImage?.let { imageView ->
                     if (!avatarUrl.isNullOrBlank()) {
                         Glide.with(itemView.context)
@@ -2907,7 +2908,7 @@ class FeedAdapter(
             }
 
             try {
-                // ── NULL-SAFE file list ───────────────────────────────
+                //  NULL-SAFE file list
                 val files = originalPostData.files ?: emptyList()   // <-- THE KEY FIX
 
                 if (files.isEmpty()) {
@@ -7155,10 +7156,6 @@ class FeedAdapter(
         val item = getItem(position)
         val contentType = item.contentType
 
-        // ✅ FIXED: Check structural repost fields in addition to isReposted flag.
-        // The server sets isReposted=false meaning "current user hasn't reposted this"
-        // — not that the post itself isn't a repost. We must also check the structural
-        // fields (repostedUser, originalPost) to catch this case.
         val isStructurallyARepost = item.isReposted
                 || item.repostedUser != null
                 || (!item.originalPost.isNullOrEmpty())
