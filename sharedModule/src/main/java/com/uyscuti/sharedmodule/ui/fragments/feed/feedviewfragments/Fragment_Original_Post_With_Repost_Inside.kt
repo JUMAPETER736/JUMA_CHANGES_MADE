@@ -536,7 +536,7 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
             handleFollowButtonClick()
         }
 
-     
+
         originalFeedImages.setOnClickListener {
             handleRepostFileClick()
         }
