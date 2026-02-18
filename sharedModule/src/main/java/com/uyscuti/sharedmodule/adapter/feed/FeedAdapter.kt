@@ -4423,51 +4423,6 @@ class FeedAdapter(
             bottomSheetDialog.show()
         }
 
-        private fun setupRepostButton(data: Post) {
-            updateRepostButtonUI(data.isReposted)
-            updateMetricDisplay(repostCounts, data.repostCount, "repost")
-
-            repostButton.setOnClickListener { view ->
-                if (!repostButton.isEnabled) return@setOnClickListener
-
-                view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
-
-                // Just show a quick animation - DON'T change state yet
-                YoYo.with(Techniques.Pulse)
-                    .duration(300)
-                    .playOn(repostButton)
-
-                // Navigate to edit fragment WITHOUT changing any state
-                // The actual repost happens when user confirms in the fragment
-                feedClickListener.feedRepostPost(absoluteAdapterPosition, data)
-            }
-        }
-
-
-        private fun updateRepostButtonUI(isReposted: Boolean) {
-            Log.d(TAG, "Updating repost button UI: isReposted=$isReposted")
-            try {
-                if (isReposted) {
-                    repostButton.setImageResource(R.drawable.repeat_svgrepo_com)
-                    repostButton.setColorFilter(
-                        ContextCompat.getColor(itemView.context, R.color.bluejeans),
-                        PorterDuff.Mode.SRC_IN
-                    )
-                    repostButton.scaleX = 1.1f
-                    repostButton.scaleY = 1.1f
-                } else {
-                    repostButton.setImageResource(R.drawable.repeat_svgrepo_com)
-                    repostButton.clearColorFilter()
-                    repostButton.scaleX = 1.0f
-                    repostButton.scaleY = 1.0f
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Error updating repost button UI", e)
-            }
-        }
-
-
-
         // Share helper functions with multiple package name variants
         private fun shareToWhatsApp(context: Context, text: String) {
             val packages = listOf(
@@ -4602,7 +4557,47 @@ class FeedAdapter(
             }
         }
 
+        private fun setupRepostButton(data: Post) {
+            updateRepostButtonUI(data.isReposted)
+            updateMetricDisplay(repostCounts, data.repostCount, "repost")
 
+            repostButton.setOnClickListener { view ->
+                if (!repostButton.isEnabled) return@setOnClickListener
+
+                view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+
+                // Just show a quick animation - DON'T change state yet
+                YoYo.with(Techniques.Pulse)
+                    .duration(300)
+                    .playOn(repostButton)
+
+                // Navigate to edit fragment WITHOUT changing any state
+                // The actual repost happens when user confirms in the fragment
+                feedClickListener.feedRepostPost(absoluteAdapterPosition, data)
+            }
+        }
+
+        private fun updateRepostButtonUI(isReposted: Boolean) {
+            Log.d(TAG, "Updating repost button UI: isReposted=$isReposted")
+            try {
+                if (isReposted) {
+                    repostButton.setImageResource(R.drawable.repeat_svgrepo_com)
+                    repostButton.setColorFilter(
+                        ContextCompat.getColor(itemView.context, R.color.bluejeans),
+                        PorterDuff.Mode.SRC_IN
+                    )
+                    repostButton.scaleX = 1.1f
+                    repostButton.scaleY = 1.1f
+                } else {
+                    repostButton.setImageResource(R.drawable.repeat_svgrepo_com)
+                    repostButton.clearColorFilter()
+                    repostButton.scaleX = 1.0f
+                    repostButton.scaleY = 1.0f
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error updating repost button UI", e)
+            }
+        }
 
         private fun updateMetricDisplay(textView: TextView, count: Int, metricType: String) {
             Log.d(TAG, "updateMetricDisplay: Updating $metricType with count: $count")

@@ -105,11 +105,8 @@ import kotlin.math.abs
 import com.uyscuti.social.core.common.data.room.entity.FollowUnFollowEntity
 import com.uyscuti.social.network.api.response.posts.Avatar
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.BookmarkRequest
-import com.uyscuti.social.network.api.response.allFeedRepostsPost.BookmarkResponse
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.CommentCountResponse
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.CommentsResponse
-import com.uyscuti.social.network.api.response.allFeedRepostsPost.LikeRequest
-import com.uyscuti.social.network.api.response.allFeedRepostsPost.LikeResponse
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.RepostResponse
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.RetrofitClient
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.ShareResponse
@@ -1488,7 +1485,7 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
             val feedOwnerId: String?
             val feedOwnerUsername: String?
 
-            // ✅ SAFE: Check if original post has valid data
+            //  SAFE: Check if original post has valid data
             val hasValidOriginalPost = try {
                 !data.originalPost.isNullOrEmpty() &&
                         data.originalPost[0]._id?.isNotBlank() == true &&
@@ -1536,7 +1533,7 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
             } else {
                 followButton.visibility = View.VISIBLE
 
-                // ✅ Check if this user follows YOU back
+                //  Check if this user follows YOU back
                 val theyFollowMe = FeedAdapter.isUserInMyFollowersList(feedOwnerId)
 
                 Log.d(TAG, "  - They follow me: $theyFollowMe")
@@ -2071,18 +2068,6 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
             })
     }
 
-
-    private fun hideAllMediaViews() {
-        Log.d(TAG, "hideAllMediaViews: Hiding all media containers")
-        try {
-            mixedFilesCardView?.visibility = View.GONE
-            originalFeedImage?.visibility = View.GONE
-            multipleAudiosContainer?.visibility = View.GONE
-            recyclerViews?.visibility = View.GONE
-        } catch (e: Exception) {
-            Log.e(TAG, "Error hiding media views: ${e.message}", e)
-        }
-    }
 
     // Fixed setupLikeButton - Replace in your FeedAdapter.kt
 

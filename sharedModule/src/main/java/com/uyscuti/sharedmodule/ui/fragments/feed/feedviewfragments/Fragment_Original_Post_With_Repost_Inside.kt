@@ -11,6 +11,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.graphics.Outline
+import android.graphics.PorterDuff
 import android.graphics.drawable.GradientDrawable
 import android.net.Uri
 import android.os.Build
@@ -152,7 +153,7 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
 
     private var currentPost: Post? = null
     private var currentPosition: Int = 0
-    private var likes: Int = 0
+    private var totalMixedLikesCounts: Int = 0
 
     private var totalRepostComments = 0
     private var totalMixedShareCounts = 0
@@ -201,7 +202,7 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
     private lateinit var favoriteLayout: LinearLayout
     private lateinit var favoritesButton: ImageView
     private lateinit var repostLayout: LinearLayout
-    private lateinit var repostPost: ImageView
+    private lateinit var repostButton: ImageView
     private lateinit var repostCount: TextView
     private lateinit var shareLayout: LinearLayout
     private lateinit var shareButtonIcon: ImageView
@@ -265,7 +266,7 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
         get() = repostCount ?: 0
 
     private val OriginalPost.safeLikes: Int
-        get() = likes ?: 0
+        get() = totalMixedLikesCounts ?: 0
 
     private val OriginalPost.safeCommentCount: Int
         get() = commentCount ?: 0
@@ -747,7 +748,7 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
                 favoritesButton = safeBinding.favoritesButton
                 favoriteCounts = safeBinding.favoriteCounts
                 repostLayout = safeBinding.repostLayout
-                repostPost = safeBinding.repostPost
+                repostButton = safeBinding.repostButton
                 repostCount = safeBinding.repostCount
                 shareLayout = safeBinding.shareLayout
                 shareButtonIcon = safeBinding.shareButtonIcon
@@ -1847,10 +1848,6 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
         return post.originalPost?.firstOrNull()?.commentCount ?: post.originalPost?.firstOrNull()?.commentCount ?: 0
     }
 
-    private fun getOriginalPostId(post: Post): String {
-        return post.originalPost?.firstOrNull()?._id ?: post._id
-    }
-
     private fun fetchAndUpdateCommentCount(postId: String) {
         Log.d(TAG, "fetchAndUpdateCommentCount: Fetching current comment count for post: $postId")
 
@@ -2050,9 +2047,21 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
         Log.d(TAG, "updateCommentCount: Successfully updated to $totalRepostComments")
     }
 
-    // Fixed setupLikeButton - Replace in your FeedAdapter.kt
+    // Fixed setupLikeButton - Replace in your Feed Repost View Holder FeedAdapter.kt
 
     private fun setupLikeButton(data: com.uyscuti.social.network.api.response.posts.Post) {
+
+        val currentUserId = LocalStorage.getInstance(itemView.context).getUserId()
+        val actualIsLiked = data.likedByUserIds.contains(currentUserId)
+
+        if (data.isLiked != actualIsLiked) {
+            Log.w(com.uyscuti.sharedmodule.adapter.feed.TAG, "isLiked mismatch! Server said ${data.isLiked}, but likedByUserIds says $actualIsLiked")
+            data.isLiked = actualIsLiked
+            data.likes = data.likedByUserIds.size
+        }
+
+        Log.d(com.uyscuti.sharedmodule.adapter.feed.TAG, "FeedRepostViewHolder Set Up Like Button - PostId: ${data._id}, isLiked: ${data.isLiked}, likes: ${data.likes}")
+
         updateLikeButtonUI(data.isLiked)
         updateMetricDisplay(likesCount, data.likes, "like")
 
@@ -2061,15 +2070,20 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
 
             it.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
 
+            Log.d(com.uyscuti.sharedmodule.adapter.feed.TAG, "Like button clicked - PostId: ${data._id}, current isLiked: ${data.isLiked}, current likes: ${data.likes}")
+
             val previousLikeStatus = data.isLiked
             val previousLikeCount = data.likes
 
             // Optimistic UI update
             data.isLiked = !previousLikeStatus
             data.likes = if (data.isLiked) previousLikeCount + 1 else maxOf(0, previousLikeCount - 1)
+            totalMixedLikesCounts = data.likes
 
             updateLikeButtonUI(data.isLiked)
             updateMetricDisplay(likesCount, data.likes, "like")
+
+            Log.d(com.uyscuti.sharedmodule.adapter.feed.TAG, "Optimistic update - PostId: ${data._id}, new isLiked: ${data.isLiked}, new likes: ${data.likes}")
 
             YoYo.with(if (data.isLiked) Techniques.Tada else Techniques.Pulse)
                 .duration(500)
@@ -2081,6 +2095,7 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
 
             CoroutineScope(Dispatchers.Main).launch {
                 try {
+                    Log.d(com.uyscuti.sharedmodule.adapter.feed.TAG, "Making API call for post: ${data._id}")
                     val response = retrofitInstance.apiService.likeUnLikeFeed(data._id)
 
                     likeButtonIcon.alpha = 1f
@@ -2091,21 +2106,20 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
                             if (likeResponse.success) {
                                 // Sync with server data
                                 data.isLiked = likeResponse.data.isLiked
-
-                                // Handle potential null likeCount from server
-                                // Since your server only returns { isLiked: true/false }
-                                // We keep our optimistic count
-                                // data.likes stays as is (our optimistic update)
+                                data.likes = likeResponse.data.likeCount
+                                totalMixedLikesCounts = data.likes
 
                                 updateLikeButtonUI(data.isLiked)
                                 updateMetricDisplay(likesCount, data.likes, "like")
 
-                                // Safely access likedByUserIds (it might be null)
-                                val likedByCount = likeResponse.data.likedByUserIds?.size ?: 0
-                                Log.d(com.uyscuti.sharedmodule.adapter.feed.TAG, "Like synced - isLiked=${data.isLiked}, count=${data.likes}, likedBy=$likedByCount users")
+                                val likedByCount = likeResponse.data.likedByUserIds.size
+                                Log.d(com.uyscuti.sharedmodule.adapter.feed.TAG, "API Response Success - PostId: ${data._id}, isLiked: ${data.isLiked}, likes: ${data.likes}, likedBy: $likedByCount users")
 
-                                // Notify adapter
-                                feedClickListener.likeUnLikeFeed(0, data)
+                                try {
+                                    feedClickListener.likeUnLikeFeed(0, data)
+                                } catch (e: Exception) {
+                                    Log.e(com.uyscuti.sharedmodule.adapter.feed.TAG, "Error notifying adapter", e)
+                                }
                             } else {
                                 Log.e(com.uyscuti.sharedmodule.adapter.feed.TAG, "Like failed - success=false")
                                 revertLikeState(data, previousLikeStatus, previousLikeCount)
@@ -2141,12 +2155,14 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
         }
     }
 
-    private fun revertLikeState(data: com.uyscuti.social.network.api.response.posts.Post, previousStatus: Boolean, previousCount: Int) {
+    private fun revertLikeState(data: Post, previousStatus: Boolean, previousCount: Int) {
         data.isLiked = previousStatus
         data.likes = previousCount
+        totalMixedLikesCounts = previousCount
+
         updateLikeButtonUI(data.isLiked)
         updateMetricDisplay(likesCount, data.likes, "like")
-        Log.d(com.uyscuti.sharedmodule.adapter.feed.TAG, "Reverted to previous state: isLiked=$previousStatus, likes=$previousCount")
+        Log.d(com.uyscuti.sharedmodule.adapter.feed.TAG, "Reverted like state - PostId: ${data._id}, isLiked: $previousStatus, likes: $previousCount")
     }
 
     private fun setupBookmarkButton(data: com.uyscuti.social.network.api.response.posts.Post) {
@@ -2155,8 +2171,8 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
         updateBookmarkButtonUI(data.isBookmarked)
         updateMetricDisplay(favoriteCounts, data.bookmarkCount, "bookmark")
 
-        favoriteCounts.setOnClickListener {
-            if (!favoriteCounts.isEnabled) return@setOnClickListener
+        favoritesButton.setOnClickListener {
+            if (!favoritesButton.isEnabled) return@setOnClickListener
 
             it.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
 
@@ -2166,7 +2182,6 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
 
             Log.d(com.uyscuti.sharedmodule.adapter.feed.TAG, "Bookmark clicked - Post: ${data._id}, Current: $previousBookmarkStatus → New: $newBookmarkStatus")
 
-            // Optimistic UI update
             data.isBookmarked = newBookmarkStatus
             data.bookmarkCount = if (newBookmarkStatus) previousBookmarkCount + 1 else maxOf(0, previousBookmarkCount - 1)
 
@@ -2176,20 +2191,20 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
             YoYo.with(if (newBookmarkStatus) Techniques.Tada else Techniques.Pulse)
                 .duration(500)
                 .repeat(1)
-                .playOn(favoriteCounts)
+                .playOn(favoritesButton)
 
-            favoriteCounts.isEnabled = false
-            favoriteCounts.alpha = 0.8f
+            favoritesButton.isEnabled = false
+            favoritesButton.alpha = 0.8f
 
             CoroutineScope(Dispatchers.Main).launch {
                 try {
                     val bookmarkRequest = BookmarkRequest(newBookmarkStatus)
 
-                    //  Use retrofitInstance.apiService instead of retrofitInterface.apiService
+                    // Use the apiService from your injected RetrofitInstance
                     val response = retrofitInstance.apiService.toggleBookmark(data._id, bookmarkRequest)
 
-                    favoriteCounts.alpha = 1f
-                    favoriteCounts.isEnabled = true
+                    favoritesButton.alpha = 1f
+                    favoritesButton.isEnabled = true
 
                     if (response.isSuccessful) {
                         response.body()?.let { bookmarkResponse ->
@@ -2206,9 +2221,8 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
 
                                 feedClickListener.feedFavoriteClick(0, data)
 
-                                //Use requireContext() or context
                                 Toast.makeText(
-                                    requireContext(),
+                                    favoritesButton.context,
                                     bookmarkResponse.message,
                                     Toast.LENGTH_SHORT
                                 ).show()
@@ -2216,7 +2230,7 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
                                 Log.e(com.uyscuti.sharedmodule.adapter.feed.TAG, "Bookmark failed - success=false")
                                 revertBookmarkState(data, previousBookmarkStatus, previousBookmarkCount)
                                 Toast.makeText(
-                                    requireContext(),
+                                    favoritesButton.context,
                                     "Failed to update bookmark",
                                     Toast.LENGTH_SHORT
                                 ).show()
@@ -2225,7 +2239,7 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
                             Log.e(com.uyscuti.sharedmodule.adapter.feed.TAG, "Bookmark response body is null")
                             revertBookmarkState(data, previousBookmarkStatus, previousBookmarkCount)
                             Toast.makeText(
-                                requireContext(),
+                                favoritesButton.context,
                                 "Failed to update bookmark",
                                 Toast.LENGTH_SHORT
                             ).show()
@@ -2234,20 +2248,20 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
                         Log.e(com.uyscuti.sharedmodule.adapter.feed.TAG, "Bookmark API error: ${response.code()} - ${response.message()}")
                         revertBookmarkState(data, previousBookmarkStatus, previousBookmarkCount)
                         Toast.makeText(
-                            requireContext(),
+                            favoritesButton.context,
                             "Failed to update bookmark",
                             Toast.LENGTH_SHORT
                         ).show()
                     }
                 } catch (e: Exception) {
-                    favoriteCounts.alpha = 1f
-                    favoriteCounts.isEnabled = true
+                    favoritesButton.alpha = 1f
+                    favoritesButton.isEnabled = true
 
                     Log.e(com.uyscuti.sharedmodule.adapter.feed.TAG, "Bookmark network error", e)
                     revertBookmarkState(data, previousBookmarkStatus, previousBookmarkCount)
 
                     Toast.makeText(
-                        requireContext(),
+                        favoritesButton.context,
                         "Network error. Please check your connection.",
                         Toast.LENGTH_SHORT
                     ).show()
@@ -2343,6 +2357,48 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
         }
     }
 
+    private fun setupRepostButton(data: Post) {
+        updateRepostButtonUI(data.isReposted)
+        updateMetricDisplay(repostCount, data.repostCount, "repost")
+
+        repostButton.setOnClickListener { view ->
+            if (!repostButton.isEnabled) return@setOnClickListener
+
+            view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+
+            // Just show a quick animation - DON'T change state yet
+            YoYo.with(Techniques.Pulse)
+                .duration(300)
+                .playOn(repostButton)
+
+            // Navigate to edit fragment WITHOUT changing any state
+            // The actual repost happens when user confirms in the fragment
+            feedClickListener.feedRepostPost(0, data)
+        }
+    }
+
+    private fun updateRepostButtonUI(isReposted: Boolean) {
+        Log.d(com.uyscuti.sharedmodule.adapter.feed.TAG, "Updating repost button UI: isReposted=$isReposted")
+        try {
+            if (isReposted) {
+                repostButton.setImageResource(R.drawable.repeat_svgrepo_com)
+                repostButton.setColorFilter(
+                    ContextCompat.getColor(itemView.context, R.color.bluejeans),
+                    PorterDuff.Mode.SRC_IN
+                )
+                repostButton.scaleX = 1.1f
+                repostButton.scaleY = 1.1f
+            } else {
+                repostButton.setImageResource(R.drawable.repeat_svgrepo_com)
+                repostButton.clearColorFilter()
+                repostButton.scaleX = 1.0f
+                repostButton.scaleY = 1.0f
+            }
+        } catch (e: Exception) {
+            Log.e(com.uyscuti.sharedmodule.adapter.feed.TAG, "Error updating repost button UI", e)
+        }
+    }
+
     @SuppressLint("MissingInflatedId")
     fun feedShareClicked(
         position: Int,
@@ -2434,63 +2490,6 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
         }
     }
 
-
-    private fun setupRepostButton(data: Post) {
-        totalMixedRePostCounts = data.repostCount
-        updateMetricDisplay(repostCount, totalMixedRePostCounts, "repost")
-        updateRepostButtonAppearance(data.isReposted)
-        repostPost.setOnClickListener { view ->
-            if (! repostPost.isEnabled) return@setOnClickListener
-            repostPost.isEnabled = false
-            try {
-                val wasReposted = data.isReposted
-                data.isReposted = !wasReposted
-                totalMixedRePostCounts = if (data.isReposted) totalMixedRePostCounts + 1 else maxOf(0, totalMixedRePostCounts - 1)
-                data.repostCount = totalMixedRePostCounts
-                updateMetricDisplay(repostCount, totalMixedRePostCounts, "repost")
-                updateRepostButtonAppearance(data.isReposted)
-                YoYo.with(if (data.isReposted) Techniques.Tada else Techniques.Pulse)
-                    .duration(700)
-                    .playOn( repostPost)
-                repostPost.alpha = 0.8f
-                val apiCall = if (data.isReposted) {
-                    RetrofitClient.repostService.incrementRepost(data._id)
-                } else {
-                    RetrofitClient.repostService.decrementRepost(data._id)
-                }
-                apiCall.enqueue(object : Callback<RepostResponse> {
-                    override fun onResponse(call: Call<RepostResponse>, response: Response<RepostResponse>) {
-                        repostPost.isEnabled = true
-                        repostPost.alpha = 1f
-                        if (response.isSuccessful) {
-                            response.body()?.let { repostResponse ->
-                                if (abs(repostResponse.repostCount - totalMixedRePostCounts) > 1) {
-                                    data.repostCount = repostResponse.repostCount
-                                    totalMixedRePostCounts = repostResponse.repostCount
-                                    updateMetricDisplay(repostCount, totalMixedRePostCounts, "repost")
-                                }
-                            }
-                        } else {
-                            Log.e(TAG, "Repost API failed: ${response.code()}")
-                        }
-                    }
-                    override fun onFailure(call: Call<RepostResponse>, t: Throwable) {
-                        repostPost.isEnabled = true
-                        repostPost.alpha = 1f
-                        Log.e(TAG, "Repost network error - will sync later", t)
-                    }
-                })
-                if (data.isReposted) {
-                    navigateToEditPostToRepost(data)
-                }
-                feedClickListener.feedRepostPost(0, data)
-            } catch (e: Exception) {
-                repostPost.isEnabled = true
-                repostPost.alpha = 1f
-                Log.e(TAG, "Exception in repost click listener", e)
-            }
-        }
-    }
 
     fun decrementCommentCount() {
         val newCount = maxOf(0, totalRepostComments - 1)
@@ -2615,13 +2614,13 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
 
     private fun updateRepostButtonAppearance(isReposted: Boolean) {
         if (isReposted) {
-            repostPost.setImageResource(R.drawable.repeat_svgrepo_com)
-            repostPost.scaleX = 1.1f
-            repostPost.scaleY = 1.1f
+            repostButton.setImageResource(R.drawable.repeat_svgrepo_com)
+            repostButton.scaleX = 1.1f
+            repostButton.scaleY = 1.1f
         } else {
-            repostPost.setImageResource(R.drawable.repeat_svgrepo_com)
-            repostPost.scaleX = 1.0f
-            repostPost.scaleY = 1.0f
+            repostButton.setImageResource(R.drawable.repeat_svgrepo_com)
+            repostButton.scaleX = 1.0f
+            repostButton.scaleY = 1.0f
         }
     }
 
@@ -6964,7 +6963,7 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
         // updateLikeUI(post.isLikedCount)
         updateFavoriteUI(post.bookmarks.isNotEmpty())
         updateFollowButtonUI()
-        repostPost.setImageResource(R.drawable.retweet)
+        repostButton.setImageResource(R.drawable.retweet)
     }
 
     private fun formattedMongoDateTime(dateTimeString: String?): String {
