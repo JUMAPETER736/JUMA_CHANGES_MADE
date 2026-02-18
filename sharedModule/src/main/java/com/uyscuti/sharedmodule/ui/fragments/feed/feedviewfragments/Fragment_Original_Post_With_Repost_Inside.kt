@@ -105,6 +105,7 @@ import com.uyscuti.social.network.api.response.comment.allcomments.Comment
 import com.uyscuti.social.network.api.response.post.Thumbnail
 import com.uyscuti.social.network.api.response.posts.Author
 import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
+import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -119,7 +120,7 @@ import kotlin.getValue
 private const val TAG = "Fragment_Original_Post_With_Repost_Inside"
 private const val FRAGMENT_ORIGINAL_POST_WITH_REPOST = 1
 
-
+@AndroidEntryPoint
 class Fragment_Original_Post_With_Repost_Inside : Fragment() {
 
     companion object {
@@ -202,7 +203,7 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
     private lateinit var favoriteLayout: LinearLayout
     private lateinit var favoritesButton: ImageView
     private lateinit var repostLayout: LinearLayout
-    private lateinit var repostButton: ImageView
+    private lateinit var repostPost: ImageView
     private lateinit var repostCount: TextView
     private lateinit var shareLayout: LinearLayout
     private lateinit var shareButtonIcon: ImageView
@@ -748,7 +749,7 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
                 favoritesButton = safeBinding.favoritesButton
                 favoriteCounts = safeBinding.favoriteCounts
                 repostLayout = safeBinding.repostLayout
-                repostButton = safeBinding.repostButton
+                repostPost = safeBinding.repostPost
                 repostCount = safeBinding.repostCount
                 shareLayout = safeBinding.shareLayout
                 shareButtonIcon = safeBinding.shareButtonIcon
@@ -2361,15 +2362,15 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
         updateRepostButtonUI(data.isReposted)
         updateMetricDisplay(repostCount, data.repostCount, "repost")
 
-        repostButton.setOnClickListener { view ->
-            if (!repostButton.isEnabled) return@setOnClickListener
+        repostPost.setOnClickListener { view ->
+            if (!repostPost.isEnabled) return@setOnClickListener
 
             view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
 
             // Just show a quick animation - DON'T change state yet
             YoYo.with(Techniques.Pulse)
                 .duration(300)
-                .playOn(repostButton)
+                .playOn(repostPost)
 
             // Navigate to edit fragment WITHOUT changing any state
             // The actual repost happens when user confirms in the fragment
@@ -2381,18 +2382,18 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
         Log.d(com.uyscuti.sharedmodule.adapter.feed.TAG, "Updating repost button UI: isReposted=$isReposted")
         try {
             if (isReposted) {
-                repostButton.setImageResource(R.drawable.repeat_svgrepo_com)
-                repostButton.setColorFilter(
+                repostPost.setImageResource(R.drawable.repeat_svgrepo_com)
+                repostPost.setColorFilter(
                     ContextCompat.getColor(itemView.context, R.color.bluejeans),
                     PorterDuff.Mode.SRC_IN
                 )
-                repostButton.scaleX = 1.1f
-                repostButton.scaleY = 1.1f
+                repostPost.scaleX = 1.1f
+                repostPost.scaleY = 1.1f
             } else {
-                repostButton.setImageResource(R.drawable.repeat_svgrepo_com)
-                repostButton.clearColorFilter()
-                repostButton.scaleX = 1.0f
-                repostButton.scaleY = 1.0f
+                repostPost.setImageResource(R.drawable.repeat_svgrepo_com)
+                repostPost.clearColorFilter()
+                repostPost.scaleX = 1.0f
+                repostPost.scaleY = 1.0f
             }
         } catch (e: Exception) {
             Log.e(com.uyscuti.sharedmodule.adapter.feed.TAG, "Error updating repost button UI", e)
@@ -2614,13 +2615,13 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
 
     private fun updateRepostButtonAppearance(isReposted: Boolean) {
         if (isReposted) {
-            repostButton.setImageResource(R.drawable.repeat_svgrepo_com)
-            repostButton.scaleX = 1.1f
-            repostButton.scaleY = 1.1f
+            repostPost.setImageResource(R.drawable.repeat_svgrepo_com)
+            repostPost.scaleX = 1.1f
+            repostPost.scaleY = 1.1f
         } else {
-            repostButton.setImageResource(R.drawable.repeat_svgrepo_com)
-            repostButton.scaleX = 1.0f
-            repostButton.scaleY = 1.0f
+            repostPost.setImageResource(R.drawable.repeat_svgrepo_com)
+            repostPost.scaleX = 1.0f
+            repostPost.scaleY = 1.0f
         }
     }
 
@@ -6963,7 +6964,7 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
         // updateLikeUI(post.isLikedCount)
         updateFavoriteUI(post.bookmarks.isNotEmpty())
         updateFollowButtonUI()
-        repostButton.setImageResource(R.drawable.retweet)
+        repostPost.setImageResource(R.drawable.retweet)
     }
 
     private fun formattedMongoDateTime(dateTimeString: String?): String {

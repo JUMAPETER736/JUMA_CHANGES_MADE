@@ -106,7 +106,7 @@ import retrofit2.Response
 
 
 
-
+@AndroidEntryPoint
 class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFilesClickListener {
 
     companion object {

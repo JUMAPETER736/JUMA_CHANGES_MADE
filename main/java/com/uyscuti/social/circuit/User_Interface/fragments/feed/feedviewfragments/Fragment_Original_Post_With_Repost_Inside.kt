@@ -99,7 +99,7 @@ import org.greenrobot.eventbus.ThreadMode
 
 private const val TAG = "Fragment_Original_Post_With_Repost_Inside"
 
-
+@AndroidEntryPoint
 class Fragment_Original_Post_With_Repost_Inside : Fragment() {
 
     companion object {

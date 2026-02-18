@@ -607,7 +607,7 @@
                             android:padding="@dimen/action_item_padding">
 
                             <ImageView
-                                android:id="@+id/repostButton"
+                                android:id="@+id/repostPost"
                                 android:layout_width="@dimen/action_icon_size"
                                 android:layout_height="@dimen/action_icon_size"
                                 android:contentDescription="Repost"
