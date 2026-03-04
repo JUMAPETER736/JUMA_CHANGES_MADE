@@ -621,7 +621,7 @@ class GroupProfileActivity : AppCompatActivity() {
         })
     }
 
-    
+
 
 
 }
