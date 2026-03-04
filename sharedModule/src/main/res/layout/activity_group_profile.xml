@@ -71,7 +71,6 @@
 
             </LinearLayout>
 
-
             <!-- ═══ Stats row ══════════════════════════════════════════════════ -->
             <androidx.cardview.widget.CardView
                 android:id="@+id/userRepoBox"
@@ -296,224 +295,279 @@
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
 
-            app:cardUseCompatPadding="true"
-            tools:visibility="visible">
-
-            <LinearLayout
+            <!-- ═══ Invite link card (admin + moderator only) ══════════════════ -->
+            <androidx.cardview.widget.CardView
+                android:id="@+id/inviteLinkCard"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:background="@android:color/white"
-                android:orientation="vertical"
-                android:paddingStart="16dp"
-                android:paddingTop="14dp"
-                android:paddingEnd="16dp"
-                android:paddingBottom="14dp">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Invite Link"
-                    android:textColor="@color/bluejeans"
-                    android:textSize="13sp"
-                    android:textStyle="bold" />
+                android:layout_marginBottom="8dp"
+                android:visibility="gone"
+                app:cardCornerRadius="0dp"
+                app:cardElevation="2dp"
+                app:cardUseCompatPadding="true"
+                tools:visibility="visible">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:background="#F0F8FF"
-                    android:orientation="horizontal"
-                    android:padding="10dp">
+                    android:background="@android:color/white"
+                    android:orientation="vertical"
+                    android:paddingStart="16dp"
+                    android:paddingTop="14dp"
+                    android:paddingEnd="16dp"
+                    android:paddingBottom="14dp">
 
                     <TextView
-                        android:id="@+id/inviteLinkText"
-                        android:layout_width="0dp"
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:ellipsize="end"
-                        android:maxLines="1"
-                        android:text="Generating link…"
+                        android:text="Invite Link"
                         android:textColor="@color/bluejeans"
-                        android:textSize="12sp" />
+                        android:textSize="13sp"
+                        android:textStyle="bold" />
 
-                    <ImageView
-                        android:id="@+id/copyLinkBtn"
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:padding="2dp"
-                        android:src="@drawable/copy"
-                        app:tint="@color/bluejeans"
-                        tools:ignore="ContentDescription" />
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:background="#F0F8FF"
+                        android:orientation="horizontal"
+                        android:padding="10dp">
+
+                        <TextView
+                            android:id="@+id/inviteLinkText"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:ellipsize="end"
+                            android:maxLines="1"
+                            android:text="Generating link…"
+                            android:textColor="@color/bluejeans"
+                            android:textSize="12sp" />
+
+                        <ImageView
+                            android:id="@+id/copyLinkBtn"
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:padding="2dp"
+                            android:src="@drawable/copy"
+                            app:tint="@color/bluejeans"
+                            tools:ignore="ContentDescription" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:orientation="horizontal">
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/generateLinkBtn"
+                            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                            android:layout_width="0dp"
+                            android:layout_height="36dp"
+                            android:layout_marginEnd="8dp"
+                            android:layout_weight="1"
+                            android:text="Regenerate"
+                            android:textSize="12sp" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/revokeLinkBtn"
+                            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                            android:layout_width="0dp"
+                            android:layout_height="36dp"
+                            android:layout_weight="1"
+                            android:text="Revoke"
+                            android:textColor="#E53935"
+                            android:textSize="12sp"
+                            android:visibility="gone"
+                            app:strokeColor="#E53935"
+                            tools:visibility="visible" />
+                    </LinearLayout>
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/shareLinkBtn"
+                        android:layout_width="match_parent"
+                        android:layout_height="40dp"
+                        android:layout_marginTop="6dp"
+                        android:backgroundTint="@color/bluejeans"
+                        android:text="Share Invite Link"
+                        android:textColor="@android:color/white"
+                        android:textSize="13sp" />
+
                 </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <!-- ═══ Add Members card (admin + moderator only) ═════════════════ -->
+            <androidx.cardview.widget.CardView
+                android:id="@+id/addMembersCard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                android:visibility="gone"
+                app:cardCornerRadius="0dp"
+                app:cardElevation="2dp"
+                app:cardUseCompatPadding="true">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:orientation="horizontal">
+                    android:background="@android:color/white"
+                    android:orientation="vertical"
+                    android:paddingStart="16dp"
+                    android:paddingTop="14dp"
+                    android:paddingEnd="16dp"
+                    android:paddingBottom="14dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Members"
+                        android:textColor="@color/bluejeans"
+                        android:textSize="13sp"
+                        android:textStyle="bold" />
 
                     <com.google.android.material.button.MaterialButton
-                        android:id="@+id/generateLinkBtn"
-                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                        android:layout_width="0dp"
-                        android:layout_height="36dp"
-                        android:layout_marginEnd="8dp"
-                        android:layout_weight="1"
-                        android:text="Regenerate"
-                        android:textSize="12sp" />
+                        android:id="@+id/addMembersBtn"
+                        android:layout_width="match_parent"
+                        android:layout_height="48dp"
+                        android:layout_marginTop="10dp"
+                        android:backgroundTint="@color/bluejeans"
+                        android:text="+ Add Members"
+                        android:textColor="@android:color/white"
+                        android:textSize="15sp" />
 
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/revokeLinkBtn"
-                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                        android:layout_width="0dp"
-                        android:layout_height="36dp"
-                        android:layout_weight="1"
-                        android:text="Revoke"
-                        android:textColor="#E53935"
-                        android:textSize="12sp"
-                        android:visibility="gone"
-                        app:strokeColor="#E53935"
-                        tools:visibility="visible" />
                 </LinearLayout>
+            </androidx.cardview.widget.CardView>
 
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/shareLinkBtn"
-                    android:layout_width="match_parent"
-                    android:layout_height="40dp"
-                    android:layout_marginTop="6dp"
-                    android:backgroundTint="@color/bluejeans"
-                    android:text="Share Invite Link"
-                    android:textColor="@android:color/white"
-                    android:textSize="13sp" />
-
-            </LinearLayout>
-        </androidx.cardview.widget.CardView>
-
-        <!-- ═══ Add Members card (admin + moderator only) ═════════════════ -->
-        <androidx.cardview.widget.CardView
-            android:id="@+id/addMembersCard"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="8dp"
-            android:visibility="gone"
-            app:cardCornerRadius="0dp"
-            app:cardElevation="2dp"
-            app:cardUseCompatPadding="true">
-
-            <LinearLayout
+            <!-- ═══ Danger zone card (admin only) ════════════════════════════ -->
+            <!--
+                Contains three actions in one card:
+                  1. 🔒 Lock / Unlock Group  — admin only
+                  2. Leave Group             — everyone
+                  3. Delete Group            — admin only
+            -->
+            <androidx.cardview.widget.CardView
+                android:id="@+id/dangerZoneCard"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:background="@android:color/white"
-                android:orientation="vertical"
-                android:paddingStart="16dp"
-                android:paddingTop="14dp"
-                android:paddingEnd="16dp"
-                android:paddingBottom="14dp">
+                android:layout_marginBottom="8dp"
+                app:cardCornerRadius="0dp"
+                app:cardElevation="2dp"
+                app:cardUseCompatPadding="true">
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Members"
-                    android:textColor="@color/bluejeans"
-                    android:textSize="13sp"
-                    android:textStyle="bold" />
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/addMembersBtn"
+                <LinearLayout
                     android:layout_width="match_parent"
-                    android:layout_height="48dp"
-                    android:layout_marginTop="10dp"
-                    android:backgroundTint="@color/bluejeans"
-                    android:text="+ Add Members"
-                    android:textColor="@android:color/white"
-                    android:textSize="15sp" />
+                    android:layout_height="wrap_content"
+                    android:background="@android:color/white"
+                    android:orientation="vertical"
+                    android:paddingStart="16dp"
+                    android:paddingTop="14dp"
+                    android:paddingEnd="16dp"
+                    android:paddingBottom="14dp">
 
-            </LinearLayout>
-        </androidx.cardview.widget.CardView>
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Group Actions"
+                        android:textColor="#E53935"
+                        android:textSize="13sp"
+                        android:textStyle="bold" />
 
-        <!-- ═══ Danger zone card (admin only) ════════════════════════════ -->
-        <!--
-            Contains three actions in one card:
-              1. 🔒 Lock / Unlock Group  — admin only
-              2. Leave Group             — everyone
-              3. Delete Group            — admin only
-        -->
-        <androidx.cardview.widget.CardView
-            android:id="@+id/dangerZoneCard"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="8dp"
-            app:cardCornerRadius="0dp"
-            app:cardElevation="2dp"
-            app:cardUseCompatPadding="true">
+                    <!--
+                        lockGroupBtn — admin only (hidden by default, shown in code).
+                        Text is toggled between "🔒 Lock Group" and "🔓 Unlock Group".
+                    -->
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/lockGroupBtn"
+                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="48dp"
+                        android:layout_marginTop="10dp"
+                        android:text="🔒 Lock Group"
+                        android:textColor="#F57C00"
+                        android:textSize="15sp"
+                        android:visibility="gone"
+                        app:strokeColor="#F57C00"
+                        tools:visibility="visible" />
 
-            <LinearLayout
+                    <!--
+                        leaveGroupBtn — visible to ALL roles (member, moderator, admin).
+                        Admin sees a warning that auto-promotion may occur.
+                    -->
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/leaveGroupBtn"
+                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="48dp"
+                        android:layout_marginTop="8dp"
+                        android:text="Leave Group"
+                        android:textColor="#E53935"
+                        android:textSize="15sp"
+                        app:strokeColor="#E53935" />
+
+                    <!--
+                        deleteGroupBtn — admin only (hidden by default, shown in code).
+                        Permanently deletes the group and removes all members.
+                    -->
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/deleteGroupBtn"
+                        android:layout_width="match_parent"
+                        android:layout_height="48dp"
+                        android:layout_marginTop="8dp"
+                        android:backgroundTint="#E53935"
+                        android:text="Delete Group"
+                        android:textColor="@android:color/white"
+                        android:textSize="15sp"
+                        android:visibility="gone"
+                        tools:visibility="visible" />
+
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <!-- ═══ Tabs + ViewPager ═══════════════════════════════════════════ -->
+            <androidx.cardview.widget.CardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:background="@android:color/white"
-                android:orientation="vertical"
-                android:paddingStart="16dp"
-                android:paddingTop="14dp"
-                android:paddingEnd="16dp"
-                android:paddingBottom="14dp">
+                app:cardCornerRadius="0dp"
+                app:cardElevation="2dp">
 
-                <TextView
-                    android:layout_width="wrap_content"
+                <LinearLayout
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Group Actions"
-                    android:textColor="#E53935"
-                    android:textSize="13sp"
-                    android:textStyle="bold" />
+                    android:background="@android:color/white"
+                    android:orientation="vertical">
 
-                <!--
-                    lockGroupBtn — admin only (hidden by default, shown in code).
-                    Text is toggled between "🔒 Lock Group" and "🔓 Unlock Group".
-                -->
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/lockGroupBtn"
-                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                    android:layout_width="match_parent"
-                    android:layout_height="48dp"
-                    android:layout_marginTop="10dp"
-                    android:text="🔒 Lock Group"
-                    android:textColor="#F57C00"
-                    android:textSize="15sp"
-                    android:visibility="gone"
-                    app:strokeColor="#F57C00"
-                    tools:visibility="visible" />
+                    <!--
+                        ID must be "tabLayout" (camelCase) — ViewBinding generates
+                        binding.tabLayout from android:id="@+id/tabLayout".
+                        Your old XML used "tab_layout" which generates binding.tabLayout
+                        in snake_case builds but is inconsistent; using camelCase is safer.
+                    -->
+                    <com.google.android.material.tabs.TabLayout
+                        android:id="@+id/tabLayout"
+                        android:layout_width="match_parent"
+                        android:layout_height="40dp"
+                        app:tabGravity="fill"
+                        app:tabIndicatorColor="@color/bluejeans"
+                        app:tabIndicatorFullWidth="true"
+                        app:tabIndicatorHeight="2dp"
+                        app:tabMode="fixed"
+                        app:tabSelectedTextColor="@color/bluejeans"
+                        app:tabTextColor="#888888" />
 
-                <!--
-                    leaveGroupBtn — visible to ALL roles (member, moderator, admin).
-                    Admin sees a warning that auto-promotion may occur.
-                -->
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/leaveGroupBtn"
-                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                    android:layout_width="match_parent"
-                    android:layout_height="48dp"
-                    android:layout_marginTop="8dp"
-                    android:text="Leave Group"
-                    android:textColor="#E53935"
-                    android:textSize="15sp"
-                    app:strokeColor="#E53935" />
+                    <!--
+                        ID must be "viewPager" — ViewBinding generates binding.viewPager.
+                        Your old XML used "view_pager".
+                    -->
+                    <androidx.viewpager.widget.ViewPager
+                        android:id="@+id/viewPager"
+                        android:layout_width="match_parent"
+                        android:layout_height="500dp" />
 
-                <!--
-                    deleteGroupBtn — admin only (hidden by default, shown in code).
-                    Permanently deletes the group and removes all members.
-                -->
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/deleteGroupBtn"
-                    android:layout_width="match_parent"
-                    android:layout_height="48dp"
-                    android:layout_marginTop="8dp"
-                    android:backgroundTint="#E53935"
-                    android:text="Delete Group"
-                    android:textColor="@android:color/white"
-                    android:textSize="15sp"
-                    android:visibility="gone"
-                    tools:visibility="visible" />
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
 
-            </LinearLayout>
-        </androidx.cardview.widget.CardView>
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
 
-        
+</androidx.coordinatorlayout.widget.CoordinatorLayout>
