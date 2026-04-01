@@ -2059,18 +2059,6 @@ class MainActivity : AppCompatActivity(),
         )
     }
 
-//    @Subscribe(threadMode = ThreadMode.MAIN)
-//    fun onDirectReplyEvent(event: DirectReplyEvent) {
-//        // Handle the direct reply in your activity
-//        // Update UI, perform actions, etc.
-////        Toast.makeText(this, "Direct Reply: ${event.message}", Toast.LENGTH_SHORT).show()
-//
-//        val message = createMessage(event.message,event.chatId)
-//        CoroutineScope(Dispatchers.IO).launch {
-//            messageViewModel.insertMessage(message)
-//            dialogViewModel.updateLastMessageForThisChat(event.chatId,message)
-//        }
-//    }
 
 
     private fun observerAction() {
