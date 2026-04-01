@@ -32,6 +32,7 @@ import com.uyscuti.social.network.api.models.Message
 import com.uyscuti.social.network.api.models.Notification
 import com.uyscuti.social.network.api.models.Sender
 import com.uyscuti.social.network.api.models.User
+import com.uyscuti.social.network.api.request.group.GroupMemberUser
 import com.uyscuti.social.network.api.response.chats.Participant
 
 
@@ -1307,9 +1308,6 @@ class CoreChatSocketClient @Inject constructor(
             }
 
 
-//            updateLastMessage(dialogToUpdate, messageEntity)
-//            dialogRepository.incrementUnreadCount(dialogToUpdate)
-//            dialogRepository.updateLastMessage(dialog, messageEntity)
         }
     }
 
@@ -1334,7 +1332,7 @@ class CoreChatSocketClient @Inject constructor(
                         var senderName = ""
 
                         if (!chat.isGroupChat) {
-//                                    firstUser = users.firstOrNull { it.id != userId }
+
                             chatName = firstUser.name
                                 ?: "" // Set dialogName to the name of the first user or an empty string if there are no users.
                             Log.d(TAG, "CHAT USERS $users")
@@ -1574,13 +1572,7 @@ class CoreChatSocketClient @Inject constructor(
         fun onMessageOpenedReport()
     }
 
-    // OLD Example listener for the NEW_CHAT_EVENT
-//    private val onNewChat = Emitter.Listener { args ->
-//        // Handle the new chat event
-//        val chatData = args[0] as JSONObject
-//        Log.d("Socket", "New Chat Event: $chatData")
-//        // Add your logic to process the new chat event
-//    }
+
 
 
     private val onNewChat = Emitter.Listener { args ->
@@ -1725,7 +1717,7 @@ class CoreChatSocketClient @Inject constructor(
                 // Add your logic to process the String payload
                 chatListener?.onDeliveryReport()
 
-//                handleChange(arg,"Delivered")
+
 
             }
         }
@@ -1764,11 +1756,7 @@ class CoreChatSocketClient @Inject constructor(
         CoroutineScope(Dispatchers.IO).launch {
             messageRepository.processPendingMessages(chatId)
 
-//            Log.d("Socket", "Loaded Messages Size : ${messages.size}")
-//
-//            if (messages.isNotEmpty()){
-//                updateMessageStatus(status,messages)
-//            }
+
         }
     }
 
