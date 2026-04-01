@@ -201,8 +201,6 @@ interface IFlashapi {
     @POST("chat-app/chats/c/{receiverId}")
     suspend fun createUserChat(@Path("receiverId") receiverId: String): Response<CreateChatResponse>
 
-    @POST("chat-app/chats/group")
-    suspend fun createGroupChat(@Body groupChatRequest: RequestGroupChat): Response<ResponseGroupChat>
 
     @GET("chat-app/messages/{chatId}")
     suspend fun getMessages(@Path("chatId") chatId: String): Response<GetMessagesResponse>
