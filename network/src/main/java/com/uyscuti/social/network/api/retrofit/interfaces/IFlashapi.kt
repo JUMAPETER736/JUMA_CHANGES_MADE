@@ -24,6 +24,7 @@ import com.uyscuti.social.network.api.request.group.BulkKeysRequest
 import com.uyscuti.social.network.api.request.group.BulkKeysResponse
 import com.uyscuti.social.network.api.request.group.ChangeRoleRequest
 import com.uyscuti.social.network.api.request.group.ChangeRoleResponse
+import com.uyscuti.social.network.api.request.group.GroupChatsResponse
 import com.uyscuti.social.network.api.request.group.GroupKeyResponse
 import com.uyscuti.social.network.api.request.group.GroupLinkResponse
 import com.uyscuti.social.network.api.request.group.GroupMembersResponse
@@ -34,6 +35,7 @@ import com.uyscuti.social.network.api.request.group.ResponseGroupChat
 import com.uyscuti.social.network.api.request.group.SingleGroupChatResponse
 import com.uyscuti.social.network.api.request.group.StoreGroupKeysRequest
 import com.uyscuti.social.network.api.request.group.UpdateGroupAvatarResponse
+import com.uyscuti.social.network.api.request.group.UploadKeysRequest
 import com.uyscuti.social.network.api.request.login.LoginRequest
 import com.uyscuti.social.network.api.request.messages.SendMessageRequest
 import com.uyscuti.social.network.api.request.profile.UpdateSocialProfileRequest
