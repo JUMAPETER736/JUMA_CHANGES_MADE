@@ -20,6 +20,8 @@ import com.uyscuti.social.network.api.request.feed.FeedTextUploadRequestBody
 import com.uyscuti.social.network.api.request.googlelogin.GoogleLoginRequest
 import com.uyscuti.social.network.api.request.group.AddMembersRequest
 import com.uyscuti.social.network.api.request.group.BaseGroupResponse
+import com.uyscuti.social.network.api.request.group.GroupLinkResponse
+import com.uyscuti.social.network.api.request.group.JoinViaLinkResponse
 import com.uyscuti.social.network.api.request.group.RequestGroupChat
 import com.uyscuti.social.network.api.request.group.ResponseGroupChat
 import com.uyscuti.social.network.api.request.group.SingleGroupChatResponse
