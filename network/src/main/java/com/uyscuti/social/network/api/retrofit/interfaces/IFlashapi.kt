@@ -1018,6 +1018,161 @@ interface IFlashapi {
     @PUT("notifications/read/{notificationId}")
     suspend fun markNotificationRead(@Path("notificationId") notificationId: String): Response<ReadNotificationResponse>
 
+    //  Existing — signature UNCHANGED so nothing else breaks
+    @POST("chat-app/chats/group")
+    suspend fun createGroupChat(
+        @Body body: RequestGroupChat
+    ): Response<MainResponse>
+
+    @GET("chat-app/chats/groups")
+    suspend fun getAllGroupChats(): Response<GroupChatsResponse>
+
+    //  E2EE key management
+
+    @POST("chat-app/keys")
+    suspend fun uploadPublicKeys(
+        @Body body: UploadKeysRequest
+    ): Response<MainResponse>
+
+    @GET("chat-app/keys/{userId}")
+    suspend fun getRecipientKeys(
+        @Path("userId") userId: String
+    ): Response<RecipientKeysResponse>
+
+    @POST("chat-app/keys/bulk")
+    suspend fun getBulkKeys(
+        @Body body: BulkKeysRequest
+    ): Response<BulkKeysResponse>
+
+    @POST("chat-app/chats/group/{chatId}/keys")
+    suspend fun storeGroupKeys(
+        @Path("chatId") chatId: String,
+        @Body body: StoreGroupKeysRequest
+    ): Response<MainResponse>
+
+    @GET("chat-app/chats/group/{chatId}/keys")
+    suspend fun getMyGroupKey(
+        @Path("chatId") chatId: String
+    ): Response<GroupKeyResponse>
+
+    //  Group members & roles
+
+    @GET("chat-app/chats/group/{chatId}/members")
+    suspend fun getGroupMembers(
+        @Path("chatId") chatId: String
+    ): Response<GroupMembersResponse>
+
+    @PATCH("chat-app/chats/group/{chatId}/members/{userId}/role")
+    suspend fun changeMemberRole(
+        @Path("chatId") chatId: String,
+        @Path("userId") userId: String,
+        @Body request: ChangeRoleRequest
+    ): Response<ChangeRoleResponse>
+
+    //  Group invite link
+
+    @POST("chat-app/chats/group/{chatId}/link")
+    suspend fun generateGroupLink(
+        @Path("chatId") chatId: String
+    ): Response<GroupLinkResponse>
+
+    @DELETE("chat-app/chats/group/{chatId}/link")
+    suspend fun revokeGroupLink(
+        @Path("chatId") chatId: String
+    ): Response<BaseGroupResponse>
+
+    @POST("chat-app/chats/group/join/{inviteToken}")
+    suspend fun joinGroupViaLink(
+        @Path("inviteToken") inviteToken: String
+    ): Response<JoinViaLinkResponse>
+
+
+    // Rename group (admin or moderator)
+    @PATCH("chat-app/chats/group/{chatId}")
+    suspend fun renameGroupChat(
+        @Path("chatId") chatId: String,
+        @Body body: Map<String, String>       // { "name": "New Name" }
+    ): Response<BaseGroupResponse>
+
+
+    // DELETE GROUP
+
+    @DELETE("chat-app/chats/group/{chatId}")
+    suspend fun deleteGroup(
+        @Path("chatId") chatId: String
+    ): Response<okhttp3.ResponseBody>
+
+
+    // REMOVE MEMBER
+
+    @DELETE("chat-app/chats/group/{chatId}/{userId}")
+    suspend fun removeMember(
+        @Path("chatId") chatId: String,
+        @Path("userId") userId: String
+    ): Response<BaseGroupResponse>
+
+
+    // LEAVE GROUP
+
+    @DELETE("chat-app/chats/leave/group/{chatId}")
+    suspend fun leaveGroup(
+        @Path("chatId") chatId: String
+    ): Response<BaseGroupResponse>
+
+
+    //  Group avatar
+    @Multipart
+    @PATCH("chat-app/chats/group/{chatId}/avatar")
+    suspend fun updateGroupAvatar(
+        @Path("chatId") chatId: String,
+        @Part avatar: MultipartBody.Part
+    ): Response<UpdateGroupAvatarResponse>
+
+    // Update Group Description
+    @PATCH("chat-app/chats/group/{chatId}/description")
+    suspend fun updateGroupDescription(
+        @Path("chatId") chatId: String,
+        @Body body: Map<String, String>
+    ): Response<okhttp3.ResponseBody>
+
+
+    // AFTER — uses a concrete data class, Retrofit is happy
+    @POST("chat-app/chats/group/{chatId}/participants")
+    suspend fun addMembersToGroup(
+        @Path("chatId") chatId: String,
+        @Body body: AddMembersRequest
+    ): Response<BaseGroupResponse>
+
+    @GET("chat-app/chats/group/{chatId}")
+    suspend fun getGroupChatDetails(
+        @Path("chatId") chatId: String
+    ): Response<SingleGroupChatResponse>
+
+
+
+    // Mute or unmute a single member.
+    // Body: { "isMuted": true | false }
+
+    @PATCH("chat-app/chats/group/{chatId}/members/{userId}/mute")
+    suspend fun setMemberMuteStatus(
+        @Path("chatId") chatId: String,
+        @Path("userId") userId: String,
+        @Body body: Map<String, Boolean>   // { "isMuted": true }
+    ): Response<BaseGroupResponse>
+
+    // Group permissions — admin only
+    // Body: { "editInfoLocked": true | false }
+    @PATCH("chat-app/chats/group/{chatId}/permissions")
+    suspend fun updateGroupPermissions(
+        @Path("chatId") chatId: String,
+        @Body body: Map<String, Boolean>
+    ): Response<BaseGroupResponse>
+
+    @POST("group/{chatId}/report")
+    suspend fun reportGroup(
+        @Path("chatId") chatId: String,
+        @Body body: Map<String, String>
+    ): Response<BaseGroupResponse>
 
 
 
