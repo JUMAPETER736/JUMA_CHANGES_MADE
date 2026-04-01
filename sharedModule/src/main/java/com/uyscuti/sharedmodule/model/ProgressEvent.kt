@@ -7,9 +7,8 @@ import android.widget.ImageView
 import android.widget.SeekBar
 import android.widget.TextView
 import androidx.appcompat.widget.AppCompatButton
-import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.RecyclerView
-import com.uyscuti.sharedmodule.data.model.Comment
+import com.uyscuti.social.network.api.models.Comment
 import com.uyscuti.sharedmodule.utils.waveformseekbar.WaveformSeekBar
 import com.uyscuti.social.core.common.data.room.entity.FollowUnFollowEntity
 import com.uyscuti.social.core.common.data.room.entity.ShortsEntity
@@ -95,8 +94,7 @@ data class ShortsFollowButtonClicked(
 )
 
 data class ShortsLikeUnLike(
-    val userId: String,
-    val isLiked: Boolean
+    val postId: String
 )
 
 data class ShortsLikeUnLike2(
