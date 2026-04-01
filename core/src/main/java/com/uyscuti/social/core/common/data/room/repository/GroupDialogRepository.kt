@@ -12,6 +12,8 @@ import com.uyscuti.social.core.common.data.room.entity.UserEntity
 import com.uyscuti.social.core.local.utils.FileType
 import com.uyscuti.social.network.api.models.Message
 import com.uyscuti.social.network.api.models.User
+import com.uyscuti.social.network.api.request.group.GroupChatDetail
+import com.uyscuti.social.network.api.request.group.GroupMember
 import com.uyscuti.social.network.api.request.group.GroupMemberUser
 import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
 import com.uyscuti.social.network.utils.LocalStorage
@@ -184,7 +186,7 @@ class GroupDialogRepository(
 
                         FileType.DOCUMENT -> {
                             docUrl = attachment.url
-//                            Log.d(TAG, "Document, Path Of Image Received: $docUrl")
+
                             text += "📄 Document"
 
                         }
@@ -286,8 +288,7 @@ class GroupDialogRepository(
                 if (response.isSuccessful) {
                     val chatsResponse = response.body()
 
-//                    Log.d("FetchedDialogs", chatsResponse.toString())
-//                    Log.d("FetchedDialogs", chatsResponse?.data?.size.toString())
+
 
                     chatsResponse?.let {
                         val chatList = chatsResponse.data
@@ -319,8 +320,7 @@ class GroupDialogRepository(
                                 chatName = chat.name
                                 filteredUsers = users
 
-//                                    val random = Random()
-//                                    chatAvatar = filteredUsers.getOrNull(random.nextInt(filteredUsers.size))?.avatar ?: ""
+
 
                                 chatAvatar = filteredUsers.firstOrNull()?.avatar ?: ""
 
@@ -329,11 +329,6 @@ class GroupDialogRepository(
 
                                 val lastMessage = chat.lastMessage?.toMessageEntity() ?: createDefaultMessageEntity(chat.createdAt)
 
-
-//                                    val avatars = filteredUsers.take(4).map { it.avatar }
-//                                    chatAvatar = groupChatImages().toString()
-
-                                // Perform the conversion for each Chat to DialogEntity
 
                                 GroupDialogEntity(
                                     id = chat._id,
