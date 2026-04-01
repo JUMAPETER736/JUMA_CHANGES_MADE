@@ -452,7 +452,7 @@ class MainActivity : AppCompatActivity(),
     private lateinit var videoPickerLauncher: ActivityResultLauncher<Intent>
     private lateinit var docsPickerLauncher: ActivityResultLauncher<Intent>
 
-    private var listOfReplies = mutableListOf<com.uyscuti.social.circuit.data.model.Comment>()
+    private var listOfReplies = mutableListOf<com.uyscuti.social.network.api.models.Comment>()
 
 
     private var adapter: CommentsRecyclerViewAdapter? = null
@@ -467,7 +467,7 @@ class MainActivity : AppCompatActivity(),
     @Inject
     lateinit var clientSocket: CoreChatSocketClient
 
-    private var data: com.uyscuti.social.circuit.data.model.Comment? = null
+    private var data: com.uyscuti.social.network.api.models.Comment? = null
     private var position: Int = 0
     private val timeFormatter = MongoDBTimeFormatter()
 
