@@ -1,7 +1,5 @@
 package com.uyscuti.social.core.pushnotifications.socket.chatsocket.social
 
-import com.uyscuti.social.network.api.models.Avatar
-
 data class FlashNotificationsEvents(
     val name: String,
     val notificationMessage: String,
@@ -14,4 +12,5 @@ data class FlashNotificationsEvents(
     val isRead : Boolean = false,
     val postId : String,
     val commentId:String,
+    val noteFor: String = ""
 )

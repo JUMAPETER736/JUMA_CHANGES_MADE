@@ -103,15 +103,10 @@ class CoreChatSocketClient @Inject constructor(
 
     private var opened = false
 
-    init {
-//        initialize()
-    }
 
     private val socketConnectedObserver = Observer<Boolean> { connected ->
         if (connected) {
-//            // The socket is connected, you can register listeners and use it here
-//            socket.on(Socket.EVENT_CONNECT, onConnect)
-//            socket.on("messageReceived", onMessageReceived)
+
         }
     }
 
@@ -221,7 +216,7 @@ class CoreChatSocketClient @Inject constructor(
                 socket.on("unreadCountUpdate", onUnreadCountUpdate)
             }
         } catch (e: Exception) {
-            Log.e(TAG, "❌ Failed to setup event listeners", e)
+            Log.e(TAG, " Failed to setup event listeners", e)
         }
     }
 
@@ -303,8 +298,7 @@ class CoreChatSocketClient @Inject constructor(
             val avatarId =
                 notificationData.getJSONObject("sender").getJSONObject("avatar").getString("_id")
             val avatarLocalPath = ""
-            //  val postId = notificationData.getJSONObject("data").getString("postId")
-//            val commentId = notificationData.getJSONObject("data").getString("commentId")
+
             val note = Notification(
                 _id = _id,
                 avatar = avatarUrl,
@@ -329,17 +323,13 @@ class CoreChatSocketClient @Inject constructor(
             chatListener?.onNotification(note)
             val socialNotificationService = Intent(context, SocialNotificationService::class.java)
 
-//            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-//                startForegroundService(context,notificationIntent)
-//            } else {
-//                context.startService(notificationIntent)
-//            }
+
             CoroutineScope(Dispatchers.Main).launch {
-//                context.startService(notificationIntent)
+
                 socialNotificationService.putExtra("notification", note)
                 socialNotificationService.action =
                     ChatNotificationServiceActions.ON_ONE_ON_ONE_MESSAGE.name
-//                  ContextCompat.startForegroundService(context, notificationIntent)
+
                 ContextCompat.startForegroundService(context, socialNotificationService)
             }
             EventBus.getDefault().post(
@@ -414,17 +404,13 @@ class CoreChatSocketClient @Inject constructor(
 
             Log.d(TAG, "Starting Social Notification service")
             val socialNotificationService = Intent(context, SocialNotificationService::class.java)
-//            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-//                startForegroundService(context,notificationIntent)
-//            } else {
-//                context.startService(notificationIntent)
-//            }
+
             CoroutineScope(Dispatchers.Main).launch {
-//                context.startService(notificationIntent)
+
                 socialNotificationService.putExtra("notification", note)
                 socialNotificationService.action =
                     ChatNotificationServiceActions.ON_ONE_ON_ONE_MESSAGE.name
-//                  ContextCompat.startForegroundService(context, notificationIntent)
+
                 ContextCompat.startForegroundService(context, socialNotificationService)
             }
             EventBus.getDefault().post(

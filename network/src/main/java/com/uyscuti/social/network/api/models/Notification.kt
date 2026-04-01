@@ -13,4 +13,5 @@ data class Notification(
     val updatedAt: String,
     val postId : String,
     val commentId :String,
+    val noteFor: String = ""
 ): Serializable
