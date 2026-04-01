@@ -52,9 +52,9 @@ interface MessageDao {
     @Query("SELECT * FROM messages WHERE chatId = :chatId AND (userId != :myId OR (userId = :myId AND (id LIKE 'Image%' OR id LIKE 'Video%' OR id LIKE 'Audio%' OR id LIKE 'Text%' OR id LIKE 'Doc%'))) ORDER BY createdAt DESC LIMIT 1")
     suspend fun getLastMessage(chatId: String, myId: String): MessageEntity?
 
-    // Modify the function to return a Flow<DialogEntity?>
-    @Query("SELECT * FROM messages WHERE id = :dialogId")
-    fun getMessageById(dialogId: String): MessageEntity?
+    //OLD Modify the function to return a Flow<DialogEntity?>
+    //@Query("SELECT * FROM messages WHERE id = :dialogId")
+    //fun getMessageById(dialogId: String): MessageEntity?
 
     @Query("SELECT * FROM messages WHERE chatId = :chatId AND id = :messageId")
     fun getMessageByChatIdAndId(chatId: String, messageId: String): Flow<MessageEntity?>
@@ -124,7 +124,11 @@ interface MessageDao {
     @Query("DELETE FROM messages WHERE chatId = :chatId")
     suspend fun deleteMessagesByChatId(chatId: String)
 
+    @Query("SELECT * FROM messages WHERE id = :messageId")
+    suspend fun getMessageById(messageId: String): MessageEntity?
 
+    @Query("""
+    SELECT * FROM messages WHERE chatId = :chatId AND isSystemMessage = 1 ORDER BY createdAt DESC LIMIT 10 """)
+    suspend fun getRecentSystemMessages(chatId: String): List<MessageEntity>
 
-    // Other query and update methods as needed
 }
