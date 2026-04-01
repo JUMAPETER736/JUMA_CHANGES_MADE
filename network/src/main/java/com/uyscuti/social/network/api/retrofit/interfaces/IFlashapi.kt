@@ -23,6 +23,7 @@ import com.uyscuti.social.network.api.request.group.BaseGroupResponse
 import com.uyscuti.social.network.api.request.group.RequestGroupChat
 import com.uyscuti.social.network.api.request.group.ResponseGroupChat
 import com.uyscuti.social.network.api.request.group.SingleGroupChatResponse
+import com.uyscuti.social.network.api.request.group.UpdateGroupAvatarResponse
 import com.uyscuti.social.network.api.request.login.LoginRequest
 import com.uyscuti.social.network.api.request.messages.SendMessageRequest
 import com.uyscuti.social.network.api.request.profile.UpdateSocialProfileRequest
