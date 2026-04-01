@@ -20,5 +20,6 @@ data class MessageEntity(
     var audioUrl: String?,
     var docUrl: String?,
     var fileSize: Long,
-    var deleted: Boolean = false
-    )
+    var deleted: Boolean = false,
+    var isSystemMessage: Boolean = false
+)
