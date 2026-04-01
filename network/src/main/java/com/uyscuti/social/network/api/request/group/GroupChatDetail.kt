@@ -6,7 +6,7 @@ data class GroupChatDetail(
     val isGroupChat: Boolean,
     val admin: String,
     val members: List<GroupMember>,
-    val participants: List<com.uyscuti.social.network.api.models.GroupMemberUser>,
+    val participants: List<GroupMemberUser>,
     val inviteToken: String?,
     val inviteTokenEnabled: Boolean,
     val editInfoLocked: Boolean = false,
@@ -14,5 +14,5 @@ data class GroupChatDetail(
     val createdAt: String?,
     val updatedAt: String?,
     val description: String? = null,
-    val groupAvatar: com.uyscuti.social.network.api.models.AvatarData? = null
+    val groupAvatar: AvatarData? = null
 )
