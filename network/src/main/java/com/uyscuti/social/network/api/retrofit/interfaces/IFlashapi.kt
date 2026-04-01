@@ -20,12 +20,15 @@ import com.uyscuti.social.network.api.request.feed.FeedTextUploadRequestBody
 import com.uyscuti.social.network.api.request.googlelogin.GoogleLoginRequest
 import com.uyscuti.social.network.api.request.group.AddMembersRequest
 import com.uyscuti.social.network.api.request.group.BaseGroupResponse
+import com.uyscuti.social.network.api.request.group.BulkKeysRequest
+import com.uyscuti.social.network.api.request.group.BulkKeysResponse
 import com.uyscuti.social.network.api.request.group.ChangeRoleRequest
 import com.uyscuti.social.network.api.request.group.ChangeRoleResponse
 import com.uyscuti.social.network.api.request.group.GroupKeyResponse
 import com.uyscuti.social.network.api.request.group.GroupLinkResponse
 import com.uyscuti.social.network.api.request.group.GroupMembersResponse
 import com.uyscuti.social.network.api.request.group.JoinViaLinkResponse
+import com.uyscuti.social.network.api.request.group.RecipientKeysResponse
 import com.uyscuti.social.network.api.request.group.RequestGroupChat
 import com.uyscuti.social.network.api.request.group.ResponseGroupChat
 import com.uyscuti.social.network.api.request.group.SingleGroupChatResponse
