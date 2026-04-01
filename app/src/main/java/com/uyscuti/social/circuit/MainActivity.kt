@@ -312,6 +312,7 @@ import com.uyscuti.sharedmodule.viewmodels.comments.ShortCommentsViewModel
 import com.uyscuti.sharedmodule.viewmodels.feed.FeedLiveDataViewModel
 import com.uyscuti.sharedmodule.viewmodels.feed.GetFeedViewModel
 import com.uyscuti.social.business.viewmodel.business.BusinessCatalogueViewModel
+import com.uyscuti.social.circuit.GoogleOAuth
 import com.uyscuti.social.circuit.PostDetailsActivity2
 import com.uyscuti.social.circuit.log_in_and_register.LoginActivity
 import com.uyscuti.social.circuit.settings.SettingsActivity
@@ -2059,18 +2060,6 @@ class MainActivity : AppCompatActivity(),
         )
     }
 
-//    @Subscribe(threadMode = ThreadMode.MAIN)
-//    fun onDirectReplyEvent(event: DirectReplyEvent) {
-//        // Handle the direct reply in your activity
-//        // Update UI, perform actions, etc.
-////        Toast.makeText(this, "Direct Reply: ${event.message}", Toast.LENGTH_SHORT).show()
-//
-//        val message = createMessage(event.message,event.chatId)
-//        CoroutineScope(Dispatchers.IO).launch {
-//            messageViewModel.insertMessage(message)
-//            dialogViewModel.updateLastMessageForThisChat(event.chatId,message)
-//        }
-//    }
 
 
     private fun observerAction() {
