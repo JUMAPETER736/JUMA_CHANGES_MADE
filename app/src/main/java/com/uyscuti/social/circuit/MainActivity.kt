@@ -183,9 +183,9 @@ import com.uyscuti.sharedmodule.adapter.OnViewRepliesClickListener
 import com.uyscuti.sharedmodule.adapter.notifications.AdPaginatedAdapter
 import com.uyscuti.sharedmodule.bottomSheet.BottomNavigationView
 import com.uyscuti.sharedmodule.bottomSheet.NavigationItem
-import com.uyscuti.social.core.models.data.Dialog
-import com.uyscuti.social.core.models.data.Message
-import com.uyscuti.social.core.models.data.User
+import com.uyscuti.sharedmodule.data.model.Dialog
+import com.uyscuti.sharedmodule.data.model.Message
+import com.uyscuti.sharedmodule.data.model.User
 import com.uyscuti.sharedmodule.model.AudioPlayerHandler
 import com.uyscuti.sharedmodule.model.CleanCache
 import com.uyscuti.sharedmodule.model.CommentAudioPlayerHandler
@@ -215,7 +215,6 @@ import com.uyscuti.sharedmodule.model.ToggleReplyToTextView
 import com.uyscuti.sharedmodule.model.UserProfileShortsStartGet
 import com.uyscuti.sharedmodule.model.UserProfileShortsViewModel
 import com.uyscuti.sharedmodule.ui.GifActivity
-import com.uyscuti.sharedmodule.ui.SearchShortActivity
 import com.uyscuti.sharedmodule.uploads.AudioActivity
 import com.uyscuti.sharedmodule.uploads.CameraActivity
 import com.uyscuti.sharedmodule.uploads.VideosActivity
@@ -452,7 +451,7 @@ class MainActivity : AppCompatActivity(),
     private lateinit var videoPickerLauncher: ActivityResultLauncher<Intent>
     private lateinit var docsPickerLauncher: ActivityResultLauncher<Intent>
 
-    private var listOfReplies = mutableListOf<com.uyscuti.social.network.api.models.Comment>()
+    private var listOfReplies = mutableListOf<com.uyscuti.social.circuit.data.model.Comment>()
 
 
     private var adapter: CommentsRecyclerViewAdapter? = null
@@ -467,7 +466,7 @@ class MainActivity : AppCompatActivity(),
     @Inject
     lateinit var clientSocket: CoreChatSocketClient
 
-    private var data: com.uyscuti.social.network.api.models.Comment? = null
+    private var data: com.uyscuti.social.circuit.data.model.Comment? = null
     private var position: Int = 0
     private val timeFormatter = MongoDBTimeFormatter()
 
@@ -4718,6 +4717,25 @@ class MainActivity : AppCompatActivity(),
     private var currentCommentAudioPosition = RecyclerView.NO_POSITION
     private var isReplyVnPlaying = false
     private var isVnAudioToPlay = false
+    override fun onViewRepliesClick(
+        data: com.uyscuti.sharedmodule.data.model.Comment,
+        repliesRecyclerView: RecyclerView,
+        position: Int
+    ) {
+        TODO("Not yet implemented")
+    }
+
+    override fun onViewRepliesClick(
+        data: com.uyscuti.sharedmodule.data.model.Comment,
+        position: Int,
+        commentRepliesTV: TextView,
+        hideCommentReplies: TextView,
+        repliesRecyclerView: RecyclerView,
+        isRepliesVisible: Boolean,
+        page: Int
+    ) {
+        TODO("Not yet implemented")
+    }
 
     //    private var previous
     override fun toggleAudioPlayer(
@@ -4825,6 +4843,29 @@ class MainActivity : AppCompatActivity(),
         }
 
 
+    }
+
+    override fun onReplyButtonClick(
+        position: Int,
+        data: com.uyscuti.sharedmodule.data.model.Comment
+    ) {
+        TODO("Not yet implemented")
+    }
+
+    override fun likeUnLikeComment(
+        position: Int,
+        data: com.uyscuti.sharedmodule.data.model.Comment
+    ) {
+        TODO("Not yet implemented")
+    }
+
+    override fun likeUnlikeCommentReply(
+        replyPosition: Int,
+        replyData: com.uyscuti.social.network.api.response.commentreply.allreplies.Comment,
+        mainCommentPosition: Int,
+        mainComment: com.uyscuti.sharedmodule.data.model.Comment
+    ) {
+        TODO("Not yet implemented")
     }
 
     @OptIn(UnstableApi::class)

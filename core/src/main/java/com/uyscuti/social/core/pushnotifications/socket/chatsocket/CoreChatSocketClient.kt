@@ -2,9 +2,11 @@ package com.uyscuti.social.core.pushnotifications.socket.chatsocket
 
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
+import androidx.annotation.RequiresApi
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Observer
 import com.google.gson.Gson
@@ -45,31 +47,40 @@ import org.greenrobot.eventbus.EventBus
 import org.json.JSONException
 import org.json.JSONObject
 import java.text.SimpleDateFormat
+import java.time.LocalDateTime
+import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
 import java.util.Date
 import java.util.Locale
+import java.util.TimeZone
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.random.Random
 
 
-
 @Singleton
 class CoreChatSocketClient @Inject constructor(
-
     private val localStorage: LocalStorage,
     private var retrofitInstance: RetrofitInstance,
     private val context: Context
 ) {
     private lateinit var socket: Socket
-    private var token: String = localStorage.getToken()
-    private val myId: String = localStorage.getUserId()
+    private var token: String = ""
+    private var myId: String = ""
 
     private var listenersSetup = false
     private var isConnecting = false
-    
+
     private val onSocketAvailableListeners = mutableListOf<OnSocketAvailableListener>()
 
+    private var totalUnreadCountListener: ((Int) -> Unit)? = null
+
+    // Use a list to store multiple listeners
+    private val businessUnreadCountListeners = mutableListOf<(Int) -> Unit>()
+    private val feedUnreadCountListeners = mutableListOf<(Int) -> Unit>()
+
     private var messageRepository: MessageRepository = MessageRepository(
+        context,
         ChatDatabase.getInstance(context).messageDao(),
         retrofitInstance
     )
@@ -80,7 +91,8 @@ class CoreChatSocketClient @Inject constructor(
     )
     private var groupDialogRepository: GroupDialogRepository = GroupDialogRepository(
         ChatDatabase.getInstance(context).groupDialogDao(),
-        retrofitInstance
+        retrofitInstance,
+        localStorage
     )
 
     val TAG = "CoreChatSocketClient"
@@ -91,11 +103,15 @@ class CoreChatSocketClient @Inject constructor(
 
     private var opened = false
 
-
+    init {
+//        initialize()
+    }
 
     private val socketConnectedObserver = Observer<Boolean> { connected ->
         if (connected) {
-
+//            // The socket is connected, you can register listeners and use it here
+//            socket.on(Socket.EVENT_CONNECT, onConnect)
+//            socket.on("messageReceived", onMessageReceived)
         }
     }
 
@@ -178,31 +194,34 @@ class CoreChatSocketClient @Inject constructor(
         Log.d(TAG, "Setting up all event listeners...")
 
         try {
-            // Connection events
-                CoroutineScope(Dispatchers.Main).launch {
+            CoroutineScope(Dispatchers.Main).launch {
 
-                    socket.on("messageReceived", onMessageReceived)
-                    socket.on("newChat", onNewChat)
-                    socket.on("socketError", onSocketError)
-                    socket.on("typing", onTyping)
-                    socket.on("stopTyping", onStopTyping)
-                    socket.on("updateGroupName", updateGroupName)
-                    socket.on("messageDelivered", onMessageDelivered)
-                    socket.on("lastSeen", onLastSeenUpdate)
-                    socket.on("messageSeen", onMessageOpened)
-                    socket.on("downloaded", onDownloaded)
-                    socket.on("followed", onFollow)
-                    socket.on("postLiked", onLike)
-                    socket.on("bookMarked", onBookmarkedPost)
-                    socket.on("onCommentPosted", onComment)
-                    socket.on("commentReply", onCommentReplyComment)
-                    socket.on("unfollowed", unFollowed)
-                    socket.on("friendsSuggestions", friendSuggestions)
-                    socket.on("businessLocationAdvertisement", onBusinessLocationAdvertisement)
-                    socket.on("walkingBillboardLocationAdvertisement", onWalkingBillboardLocationAdvertisement)
-                }
+                socket.on("messageReceived", onMessageReceived)
+                socket.on("newChat", onNewChat)
+                socket.on("GROUP_MEMBER_JOINED",  onMemberAdded)
+                socket.on("GROUP_MEMBER_REMOVED", onMemberRemoved)
+
+                socket.on("socketError", onSocketError)
+                socket.on("typing", onTyping)
+                socket.on("stopTyping", onStopTyping)
+                socket.on("updateGroupName", updateGroupName)
+                socket.on("messageDelivered", onMessageDelivered)
+                socket.on("lastSeen", onLastSeenUpdate)
+                socket.on("messageSeen", onMessageOpened)
+                socket.on("downloaded", onDownloaded)
+                socket.on("followed", onFollow)
+                socket.on("postLiked", onLike)
+                socket.on("bookMarked", onBookmarkedPost)
+                socket.on("onCommentPosted", onComment)
+                socket.on("commentReply", onCommentReplyComment)
+                socket.on("unfollowed", unFollowed)
+                socket.on("friendsSuggestions", friendSuggestions)
+                socket.on("businessLocationAdvertisement", onBusinessLocationAdvertisement)
+                socket.on("walkingBillboardLocationAdvertisement", onWalkingBillboardLocationAdvertisement)
+                socket.on("unreadCountUpdate", onUnreadCountUpdate)
+            }
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to setup event listeners", e)
+            Log.e(TAG, "❌ Failed to setup event listeners", e)
         }
     }
 
@@ -225,12 +244,17 @@ class CoreChatSocketClient @Inject constructor(
         Log.d(TAG, "isConnected(): ${isConnected()}")
         Log.d(TAG, "listenersSetup: $listenersSetup")
         Log.d(TAG, "socket initialized: ${::socket.isInitialized}")
-        Log.d(TAG, "socket.connected(): ${if (::socket.isInitialized) socket.connected() else "socket not initialized"}")
+        Log.d(
+            TAG,
+            "socket.connected(): ${if (::socket.isInitialized) socket.connected() else "socket not initialized"}"
+        )
         Log.d(TAG, "LiveData value: ${ChatSocketManager.socketConnectedLiveData.value}")
     }
 
     private fun initialize() {
         try {
+            token = localStorage.getToken()
+            myId = localStorage.getUserId()
             Log.d(TAG, "Initializing ChatSocketManager with token length: ${token.length}")
             ChatSocketManager.initSocket(token)
 
@@ -259,9 +283,9 @@ class CoreChatSocketClient @Inject constructor(
     }
 
 
-    private val onBookmarkedPost = Emitter.Listener { args->
-        val notificationData= args[0] as JSONObject
-        Log.d (TAG,"Notification Data: $notificationData")
+    private val onBookmarkedPost = Emitter.Listener { args ->
+        val notificationData = args[0] as JSONObject
+        Log.d(TAG, "Notification Data: $notificationData")
         try {
             val _id = notificationData.getString("_id")
             val message = notificationData.getString("message")
@@ -274,10 +298,13 @@ class CoreChatSocketClient @Inject constructor(
             val senderEmail = notificationData.getJSONObject("sender").getString("email")
             val senderId = notificationData.getJSONObject("sender").getString("_id")
 
-            val avatarUrl = notificationData.getJSONObject("sender").getJSONObject("avatar").getString("url")
-            val avatarId = notificationData.getJSONObject("sender").getJSONObject("avatar").getString("_id")
+            val avatarUrl =
+                notificationData.getJSONObject("sender").getJSONObject("avatar").getString("url")
+            val avatarId =
+                notificationData.getJSONObject("sender").getJSONObject("avatar").getString("_id")
             val avatarLocalPath = ""
-
+            //  val postId = notificationData.getJSONObject("data").getString("postId")
+//            val commentId = notificationData.getJSONObject("data").getString("commentId")
             val note = Notification(
                 _id = _id,
                 avatar = avatarUrl,
@@ -302,32 +329,42 @@ class CoreChatSocketClient @Inject constructor(
             chatListener?.onNotification(note)
             val socialNotificationService = Intent(context, SocialNotificationService::class.java)
 
+//            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+//                startForegroundService(context,notificationIntent)
+//            } else {
+//                context.startService(notificationIntent)
+//            }
             CoroutineScope(Dispatchers.Main).launch {
-
+//                context.startService(notificationIntent)
                 socialNotificationService.putExtra("notification", note)
-                socialNotificationService.action = ChatNotificationServiceActions.ON_ONE_ON_ONE_MESSAGE.name
-
+                socialNotificationService.action =
+                    ChatNotificationServiceActions.ON_ONE_ON_ONE_MESSAGE.name
+//                  ContextCompat.startForegroundService(context, notificationIntent)
                 ContextCompat.startForegroundService(context, socialNotificationService)
             }
-            EventBus.getDefault().post(FlashNotificationsEvents(
-                note.sender.username,
-                note.message,
-                "postBooked",
-                "bookMarked",
-                note.createdAt,
-                note.avatar,
-                note._id,
-                note.sender._id,
-                note.read,
-                note.postId,
-                note.commentId))
+            EventBus.getDefault().post(
+                FlashNotificationsEvents(
+                    note.sender.username,
+                    note.message,
+                    "postBooked",
+                    "bookMarked",
+                    note.createdAt,
+                    note.avatar,
+                    note._id,
+                    note.sender._id,
+                    note.read,
+                    note.postId,
+                    note.commentId
+                )
+            )
 
         } catch (e: JSONException) {
             // Handle JSON parsing errors here
             e.printStackTrace()
         }
     }
-    private val onLike = Emitter.Listener { args->
+
+    private val onLike = Emitter.Listener { args ->
         val notificationData = args[0] as JSONObject
         Log.d(TAG, "Notification Data: $notificationData")
 
@@ -342,9 +379,14 @@ class CoreChatSocketClient @Inject constructor(
             val senderEmail = notificationData.getJSONObject("sender").getString("email")
             val senderId = notificationData.getJSONObject("sender").getString("_id")
 
-            val avatarUrl = notificationData.getJSONObject("sender").getJSONObject("avatar").getString("url")
-            val avatarId = notificationData.getJSONObject("sender").getJSONObject("avatar").getString("_id")
+            val avatarUrl =
+                notificationData.getJSONObject("sender").getJSONObject("avatar").getString("url")
+            val avatarId =
+                notificationData.getJSONObject("sender").getJSONObject("avatar").getString("_id")
             val avatarLocalPath = ""
+
+            val postId = notificationData.getJSONObject("data").getString("postId")
+            val noteFor = notificationData.getJSONObject("data").getString("for")
 
             val note = Notification(
                 _id = _id,
@@ -354,13 +396,14 @@ class CoreChatSocketClient @Inject constructor(
                 message = message,
                 read = false,
                 owner = owner,
-                postId = "", //postId,
+                postId = postId,
+                noteFor = noteFor,
                 commentId = "",
                 sender = Sender(
                     _id = senderId,
                     email = senderEmail,
                     username = senderUsername.toString(),
-                    avatar =AvatarX(
+                    avatar = AvatarX(
                         _id = avatarId,
                         localPath = avatarLocalPath,
                         url = avatarUrl,
@@ -371,26 +414,34 @@ class CoreChatSocketClient @Inject constructor(
 
             Log.d(TAG, "Starting Social Notification service")
             val socialNotificationService = Intent(context, SocialNotificationService::class.java)
-
+//            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+//                startForegroundService(context,notificationIntent)
+//            } else {
+//                context.startService(notificationIntent)
+//            }
             CoroutineScope(Dispatchers.Main).launch {
-
+//                context.startService(notificationIntent)
                 socialNotificationService.putExtra("notification", note)
                 socialNotificationService.action =
                     ChatNotificationServiceActions.ON_ONE_ON_ONE_MESSAGE.name
-
+//                  ContextCompat.startForegroundService(context, notificationIntent)
                 ContextCompat.startForegroundService(context, socialNotificationService)
             }
-            EventBus.getDefault().post(FlashNotificationsEvents(
-                note.sender.username,
-                note.message,
-                "onLiked",
-                "postLiked",
-                note.createdAt,
-                note.avatar,note._id,
-                note.sender._id,
-                note.read,
-                note.postId,
-                note.commentId ))
+            EventBus.getDefault().post(
+                FlashNotificationsEvents(
+                    note.sender.username,
+                    note.message,
+                    "onLiked",
+                    "postLiked",
+                    note.createdAt,
+                    note.avatar, note._id,
+                    note.sender._id,
+                    note.read,
+                    note.postId,
+                    note.commentId,
+                    note.noteFor
+                )
+            )
 
 
         } catch (e: JSONException) {
@@ -398,6 +449,7 @@ class CoreChatSocketClient @Inject constructor(
             e.printStackTrace()
         }
     }
+
     private val onFollow = Emitter.Listener { args ->
         val notificationData = args[0] as JSONObject
         Log.d(TAG, "Notification Data: $notificationData")
@@ -412,9 +464,14 @@ class CoreChatSocketClient @Inject constructor(
             val senderEmail = notificationData.getJSONObject("sender").getString("email")
             val senderId = notificationData.getJSONObject("sender").getString("_id")
 
-            val avatarUrl = notificationData.getJSONObject("sender").getJSONObject("avatar").getString("url")
-            val avatarId = notificationData.getJSONObject("sender").getJSONObject("avatar").getString("_id")
+            val avatarUrl =
+                notificationData.getJSONObject("sender").getJSONObject("avatar").getString("url")
+            val avatarId =
+                notificationData.getJSONObject("sender").getJSONObject("avatar").getString("_id")
             val avatarLocalPath = ""
+
+            val postId = notificationData.getJSONObject("data").getString("postId")
+            val noteFor = notificationData.getJSONObject("data").getString("for")
 
             val note = Notification(
                 _id = _id,
@@ -424,13 +481,14 @@ class CoreChatSocketClient @Inject constructor(
                 message = message,
                 read = false,
                 owner = owner,
-                postId = "",
+                postId = postId,
+                noteFor = noteFor,
                 commentId = "",
                 sender = Sender(
                     _id = senderId,
                     email = senderEmail,
                     username = senderUsername.toString(),
-                    avatar =AvatarX(
+                    avatar = AvatarX(
                         _id = avatarId,
                         localPath = avatarLocalPath,
                         url = avatarUrl,
@@ -442,27 +500,35 @@ class CoreChatSocketClient @Inject constructor(
             Log.d(TAG, "Starting Social Notification service")
 
             val socialNotificationService = Intent(context, SocialNotificationService::class.java)
-
+//            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+//                startForegroundService(context,notificationIntent)
+//            } else {
+//                context.startService(notificationIntent)
+//            }
             CoroutineScope(Dispatchers.Main).launch {
-
+//                context.startService(notificationIntent)
                 socialNotificationService.putExtra("notification", note)
                 socialNotificationService.action =
                     ChatNotificationServiceActions.ON_ONE_ON_ONE_MESSAGE.name
-
+//                  ContextCompat.startForegroundService(context, notificationIntent)
                 ContextCompat.startForegroundService(context, socialNotificationService)
             }
 
-            EventBus.getDefault().post(FlashNotificationsEvents(
-                note.sender.username,
-                note.message,
-                "follow",
-                "followed",
-                note.createdAt,
-                note.avatar,note._id,
-                note.sender._id,
-                note.read,
-                "",
-                "" ))
+            EventBus.getDefault().post(
+                FlashNotificationsEvents(
+                    note.sender.username,
+                    note.message,
+                    "follow",
+                    "followed",
+                    note.createdAt,
+                    note.avatar, note._id,
+                    note.sender._id,
+                    note.read,
+                    "",
+                    "",
+                    note.noteFor
+                )
+            )
 
         } catch (e: JSONException) {
             // Handle JSON parsing errors here
@@ -471,9 +537,10 @@ class CoreChatSocketClient @Inject constructor(
 
 
     }
+
     private val friendSuggestions = Emitter.Listener { args ->
         val notificationData = args[0] as JSONObject
-        Log.d(TAG, "Socket Connection Successful")
+        Log.d(TAG, "Notification Data: $notificationData")
 
         try {
             // Extracting top-level fields
@@ -483,6 +550,7 @@ class CoreChatSocketClient @Inject constructor(
             val updatedAt = notificationData.getString("updatedAt")
             val owner = notificationData.getString("owner")
             val read = notificationData.getBoolean("read")
+            val type = notificationData.getString("type")
 
             // Extracting sender details
             val senderJson = notificationData.getJSONObject("sender")
@@ -496,9 +564,16 @@ class CoreChatSocketClient @Inject constructor(
 
             // Extracting suggested user details
             val dataJson = notificationData.getJSONObject("data")
+            val suggestedUserId = dataJson.getString("suggestedUserId")
             val suggestedUserJson = dataJson.getJSONObject("suggestedUser")
+            val suggestedUsername = suggestedUserJson.getString("username")
+            val suggestedEmail = suggestedUserJson.getString("email")
             val suggestedAvatarJson = suggestedUserJson.getJSONObject("avatar")
             val suggestedAvatarUrl = suggestedAvatarJson.getString("url")
+            val suggestedAvatarLocalPath = suggestedAvatarJson.getString("localPath")
+            val suggestedAvatarId = suggestedAvatarJson.getString("_id")
+
+            val noteFor = notificationData.getJSONObject("data").getString("for")
 
             // Constructing Notification object
             val note = Notification(
@@ -510,6 +585,7 @@ class CoreChatSocketClient @Inject constructor(
                 read = read,
                 owner = owner,
                 postId = "", // Since postId is not used in friend suggestion notifications
+                noteFor = noteFor,
                 commentId = "", // Since commentId is not used in friend suggestion notifications
                 sender = Sender(
                     _id = senderId,
@@ -530,7 +606,8 @@ class CoreChatSocketClient @Inject constructor(
             val socialNotificationService = Intent(context, SocialNotificationService::class.java)
             CoroutineScope(Dispatchers.Main).launch {
                 socialNotificationService.putExtra("notification", note)
-                socialNotificationService.action = ChatNotificationServiceActions.ON_ONE_ON_ONE_MESSAGE.name
+                socialNotificationService.action =
+                    ChatNotificationServiceActions.ON_ONE_ON_ONE_MESSAGE.name
                 ContextCompat.startForegroundService(context, socialNotificationService)
             }
 
@@ -559,7 +636,7 @@ class CoreChatSocketClient @Inject constructor(
 
     private val unFollowed = Emitter.Listener { args ->
         val notificationData = args[0] as JSONObject
-        Log.d(TAG,"socket Connection successful ")
+        Log.d(TAG, "socket Connection successful ")
         try {
             val _id = notificationData.getString("_id")
             val message = notificationData.getString("message")
@@ -571,8 +648,10 @@ class CoreChatSocketClient @Inject constructor(
             val senderEmail = notificationData.getJSONObject("sender").getString("email")
             val senderId = notificationData.getJSONObject("sender").getString("_id")
 
-            val avatarUrl = notificationData.getJSONObject("sender").getJSONObject("avatar").getString("url")
-            val avatarId = notificationData.getJSONObject("sender").getJSONObject("avatar").getString("_id")
+            val avatarUrl =
+                notificationData.getJSONObject("sender").getJSONObject("avatar").getString("url")
+            val avatarId =
+                notificationData.getJSONObject("sender").getJSONObject("avatar").getString("_id")
             val avatarLocalPath = ""
             val note = Notification(
                 _id = _id,
@@ -584,81 +663,6 @@ class CoreChatSocketClient @Inject constructor(
                 owner = owner,
                 postId = "",
                 commentId = "",
-                sender = Sender(
-                    _id = senderId,
-                    email = senderEmail,
-                    username = senderUsername.toString(),
-                    avatar =AvatarX(
-                        _id = avatarId,
-                        localPath = avatarLocalPath,
-                        url = avatarUrl,
-                    ),
-                )
-            )
-            chatListener?.onNotification(note)
-
-            Log.d(TAG, "Starting Social Notification service")
-
-            val socialNotificationService = Intent(context, SocialNotificationService::class.java)
-
-
-            CoroutineScope(Dispatchers.Main).launch {
-
-                socialNotificationService.putExtra("notification", note)
-                socialNotificationService.action =
-                    ChatNotificationServiceActions.ON_ONE_ON_ONE_MESSAGE.name
-
-                ContextCompat.startForegroundService(context, socialNotificationService)
-            }
-
-            EventBus.getDefault().post(FlashNotificationsEvents(
-                note.sender.username,
-                note.message,
-                "unfollowed",
-                "unfollow",
-                note.createdAt,
-                note.avatar,
-                note._id,
-                note.sender._id,
-                note.read,
-                "",""))
-
-
-        } catch (e: JSONException) {
-            // Handle JSON parsing errors here
-            e.printStackTrace()
-        }
-    }
-
-    private val onCommentReplyComment = Emitter.Listener { args ->
-        val notificationData= args[0] as JSONObject
-        Log.d ("onCommentReply","socket Connection Successful")
-
-        try {
-            val _id = notificationData.getString("_id")
-            val message = notificationData.getString("message")
-            val createdAt = notificationData.getString("createdAt")
-            val updatedAt = notificationData.getString("updatedAt")
-            val owner = notificationData.getString("owner")
-
-            val senderUsername = notificationData.getJSONObject("sender").getString("username")
-            val senderEmail = notificationData.getJSONObject("sender").getString("email")
-            val senderId = notificationData.getJSONObject("sender").getString("_id")
-
-            val avatarUrl = notificationData.getJSONObject("sender").getJSONObject("avatar").getString("url")
-            val avatarId = notificationData.getJSONObject("sender").getJSONObject("avatar").getString("_id")
-            val avatarLocalPath = ""
-
-            val note = Notification(
-                _id = _id,
-                avatar = avatarUrl,
-                createdAt = createdAt,
-                updatedAt = updatedAt,
-                message = message,
-                read = false,
-                owner = owner,
-                postId = "", //postId,
-                commentId = "", // commentId,
                 sender = Sender(
                     _id = senderId,
                     email = senderEmail,
@@ -686,28 +690,31 @@ class CoreChatSocketClient @Inject constructor(
                 ContextCompat.startForegroundService(context, socialNotificationService)
             }
 
-            EventBus.getDefault().post(FlashNotificationsEvents(
-                note.sender.username,
-                note.message,
-                "onCommentReply",
-                "reply",
-                note.createdAt,
-                note.avatar,note._id,
-                note.sender._id,
-                note.read,
-                note.postId,
-                note.commentId))
+            EventBus.getDefault().post(
+                FlashNotificationsEvents(
+                    note.sender.username,
+                    note.message,
+                    "unfollowed",
+                    "unfollow",
+                    note.createdAt,
+                    note.avatar,
+                    note._id,
+                    note.sender._id,
+                    note.read,
+                    "", ""
+                )
+            )
 
 
         } catch (e: JSONException) {
             // Handle JSON parsing errors here
             e.printStackTrace()
         }
-
     }
-    private val onComment = Emitter.Listener { args ->
-        val notificationData= args[0] as JSONObject
-        Log.d(TAG,"Socket Connection Successful")
+
+    private val onCommentReplyComment = Emitter.Listener { args ->
+        val notificationData = args[0] as JSONObject
+        Log.d(TAG, "Notification Data: $notificationData")
 
         try {
             val _id = notificationData.getString("_id")
@@ -716,15 +723,17 @@ class CoreChatSocketClient @Inject constructor(
             val updatedAt = notificationData.getString("updatedAt")
             val owner = notificationData.getString("owner")
 
-
             val senderUsername = notificationData.getJSONObject("sender").getString("username")
             val senderEmail = notificationData.getJSONObject("sender").getString("email")
             val senderId = notificationData.getJSONObject("sender").getString("_id")
 
-            val avatarUrl = notificationData.getJSONObject("sender").getJSONObject("avatar").getString("url")
-            val avatarId = notificationData.getJSONObject("sender").getJSONObject("avatar").getString("_id")
+            val avatarUrl =
+                notificationData.getJSONObject("sender").getJSONObject("avatar").getString("url")
+            val avatarId =
+                notificationData.getJSONObject("sender").getJSONObject("avatar").getString("_id")
             val avatarLocalPath = ""
-
+            val postId = notificationData.getJSONObject("data").getString("postId")
+            val noteFor = notificationData.getJSONObject("data").getString("for")
 
             val note = Notification(
                 _id = _id,
@@ -734,13 +743,14 @@ class CoreChatSocketClient @Inject constructor(
                 message = message,
                 read = false,
                 owner = owner,
-                postId = "", //postId,
-                commentId = "", //commentId,
+                postId = postId,
+                noteFor = noteFor,
+                commentId = "", // commentId,
                 sender = Sender(
                     _id = senderId,
                     email = senderEmail,
                     username = senderUsername.toString(),
-                    avatar =AvatarX(
+                    avatar = AvatarX(
                         _id = avatarId,
                         localPath = avatarLocalPath,
                         url = avatarUrl,
@@ -755,27 +765,118 @@ class CoreChatSocketClient @Inject constructor(
 
 
             CoroutineScope(Dispatchers.Main).launch {
-
                 socialNotificationService.putExtra("notification", note)
                 socialNotificationService.action =
                     ChatNotificationServiceActions.ON_ONE_ON_ONE_MESSAGE.name
-
                 ContextCompat.startForegroundService(context, socialNotificationService)
             }
 
-            EventBus.getDefault().post(FlashNotificationsEvents(
-                note.sender.username,
-                note.message,
-                "onComment",
-                "onCommentPost",
-                note.createdAt,
-                note.avatar,note._id,
-                note.sender._id,
-                note.read,
-                note.postId,
-                note.commentId))
+            EventBus.getDefault().post(
+                FlashNotificationsEvents(
+                    note.sender.username,
+                    note.message,
+                    "onCommentReply",
+                    "reply",
+                    note.createdAt,
+                    note.avatar, note._id,
+                    note.sender._id,
+                    note.read,
+                    note.postId,
+                    note.commentId,
+                    note.noteFor
+                )
+            )
 
 
+        } catch (e: JSONException) {
+            // Handle JSON parsing errors here
+            e.printStackTrace()
+        }
+
+    }
+
+    private val onComment = Emitter.Listener { args ->
+        val notificationData = args[0] as JSONObject
+        Log.d(TAG, "Notification Data: $notificationData")
+
+        try {
+            val _id = notificationData.getString("_id")
+            val message = notificationData.getString("message")
+            val createdAt = notificationData.getString("createdAt")
+            val updatedAt = notificationData.getString("updatedAt")
+            val owner = notificationData.getString("owner")
+
+            val senderUsername = notificationData.getJSONObject("sender").getString("username")
+            val senderEmail = notificationData.getJSONObject("sender").getString("email")
+            val senderId = notificationData.getJSONObject("sender").getString("_id")
+
+            val avatarUrl =
+                notificationData.getJSONObject("sender").getJSONObject("avatar").getString("url")
+            val avatarId =
+                notificationData.getJSONObject("sender").getJSONObject("avatar").getString("_id")
+            val avatarLocalPath = ""
+            val postId = notificationData.getJSONObject("data").getString("postId")
+            val noteFor = notificationData.getJSONObject("data").getString("for")
+
+            val note = Notification(
+                _id = _id,
+                avatar = avatarUrl,
+                createdAt = createdAt,
+                updatedAt = updatedAt,
+                message = message,
+                read = false,
+                owner = owner,
+                postId = postId,
+                noteFor = noteFor,
+                commentId = "", //commentId,
+                sender = Sender(
+                    _id = senderId,
+                    email = senderEmail,
+                    username = senderUsername.toString(),
+                    avatar = AvatarX(
+                        _id = avatarId,
+                        localPath = avatarLocalPath,
+                        url = avatarUrl,
+                    ),
+                )
+            )
+            chatListener?.onNotification(note)
+
+            Log.d(TAG, "Starting Social Notification service")
+
+            val socialNotificationService = Intent(context, SocialNotificationService::class.java)
+
+//            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+//                startForegroundService(context,notificationIntent)
+//            } else {
+//                context.startService(notificationIntent)
+//            }
+            CoroutineScope(Dispatchers.Main).launch {
+//                context.startService(notificationIntent)
+                socialNotificationService.putExtra("notification", note)
+                socialNotificationService.action =
+                    ChatNotificationServiceActions.ON_ONE_ON_ONE_MESSAGE.name
+//                  ContextCompat.startForegroundService(context, notificationIntent)
+                ContextCompat.startForegroundService(context, socialNotificationService)
+            }
+
+            EventBus.getDefault().post(
+                FlashNotificationsEvents(
+                    note.sender.username,
+                    note.message,
+                    "onComment",
+                    "onCommentPost",
+                    note.createdAt,
+                    note.avatar, note._id,
+                    note.sender._id,
+                    note.read,
+                    note.postId,
+                    note.commentId,
+                    note.noteFor
+                )
+            )
+
+//            val event = FlashNotificationsEvents(note.sender.username,note.message,"onComment","onCommentPost",note.createdAt,note.avatar,note._id,note.sender._id,note.read,note.postId,note.commentId)
         } catch (e: JSONException) {
             // Handle JSON parsing errors here
             e.printStackTrace()
@@ -787,14 +888,16 @@ class CoreChatSocketClient @Inject constructor(
         Log.d(TAG, "Socket Connection Successful")
     }
 
-    private val onBusinessLocationAdvertisement = Emitter.Listener  { args ->
+    private val onBusinessLocationAdvertisement = Emitter.Listener { args ->
         val advertisement = args[0].toString()
         try {
 
-            val businessAds: BusinessNotificationData = gson.fromJson(advertisement,
-                BusinessNotificationData::class.java)
+            val businessAds: BusinessNotificationData = gson.fromJson(
+                advertisement,
+                BusinessNotificationData::class.java
+            )
 
-            val limitedProducts = if(businessAds.items.size > 10){
+            val limitedProducts = if (businessAds.items.size > 10) {
                 businessAds.items.subList(0, 10)
             } else {
                 businessAds.items
@@ -807,7 +910,7 @@ class CoreChatSocketClient @Inject constructor(
                     is String -> {
                     }
 
-                    is Map<*,*> -> {
+                    is Map<*, *> -> {
                         val productName = product["itemName"] as? String ?: ""
                         products.add(productName)
                     }
@@ -828,24 +931,27 @@ class CoreChatSocketClient @Inject constructor(
 
             CoroutineScope(Dispatchers.Main).launch {
                 advertisementService.putExtra("adsNotification", adsNotification)
-                advertisementService.action = AdvertisementNotificationService.BUSINESS_LOCATION_ADVERTISEMENT
+                advertisementService.action =
+                    AdvertisementNotificationService.BUSINESS_LOCATION_ADVERTISEMENT
                 ContextCompat.startForegroundService(context, advertisementService)
             }
 
-        } catch (e: JSONException){
+        } catch (e: JSONException) {
             e.printStackTrace()
         }
 
     }
 
-    private val onWalkingBillboardLocationAdvertisement = Emitter.Listener  { args ->
+    private val onWalkingBillboardLocationAdvertisement = Emitter.Listener { args ->
         val advertisement = args[0].toString()
         Log.d(TAG, "Advertisement data: $advertisement")
 
-        try{
+        try {
 
-            val businessAd: BillboardAdvertisement = gson.fromJson(advertisement,
-                BillboardAdvertisement::class.java)
+            val businessAd: BillboardAdvertisement = gson.fromJson(
+                advertisement,
+                BillboardAdvertisement::class.java
+            )
 
             Log.d(TAG, "Business Ad Data: $businessAd")
 
@@ -854,15 +960,17 @@ class CoreChatSocketClient @Inject constructor(
 
             CoroutineScope(Dispatchers.Main).launch {
                 advertisementService.putExtra("adsBillboard", businessAd)
-                advertisementService.action = AdvertisementNotificationService.BILLBOARD_LOCATION_ADVERTISEMENT
+                advertisementService.action =
+                    AdvertisementNotificationService.BILLBOARD_LOCATION_ADVERTISEMENT
                 ContextCompat.startForegroundService(context, advertisementService)
             }
 
-        } catch (e: JSONException){
+        } catch (e: JSONException) {
             e.printStackTrace()
         }
 
     }
+
     private val onMessageReceived = Emitter.Listener { args ->
         val messageData = args[0] as JSONObject
 
@@ -873,25 +981,23 @@ class CoreChatSocketClient @Inject constructor(
             val senderId = messageData.getJSONObject("sender").getString("_id")
             val senderUsername = messageData.getJSONObject("sender").getString("username")
             val senderEmail = messageData.getJSONObject("sender").getString("email")
-            val senderAvatarUrl =
-                messageData.getJSONObject("sender").getJSONObject("avatar").getString("url")
-            val senderAvatarLocalPath =
-                messageData.getJSONObject("sender").getJSONObject("avatar").getString("localPath")
-            val senderAvatarId =
-                messageData.getJSONObject("sender").getJSONObject("avatar").getString("_id")
-            val messageContent = messageData.getString("content")
+            val senderAvatarUrl = messageData.getJSONObject("sender").getJSONObject("avatar").getString("url")
+            val senderAvatarLocalPath = messageData.getJSONObject("sender").getJSONObject("avatar").getString("localPath")
+            val senderAvatarId = messageData.getJSONObject("sender").getJSONObject("avatar").getString("_id")
+            val messageContent = messageData.optString("content", "")
             val chatId = messageData.getString("chat")
             val createdAt = messageData.getString("createdAt")
             val updatedAt = messageData.getString("updatedAt")
 
+            // ── E2EE fields ──────────────────────────────────────────────────────
+            val isEncrypted = messageData.optBoolean("isEncrypted", false)
+            val encryptedContent = messageData.optString("encryptedContent", null)
+            val iv = messageData.optString("iv", null)
+            val ephemeralPublicKey = messageData.optString("ephemeralPublicKey", null)
+            // ────────────────────────────────────────────────────────────────────
 
-            // Extract the attachments array
             val attachmentsArray = messageData.getJSONArray("attachments")
-
-            // Create a list to store attachments
             val attachments = mutableListOf<Attachment>()
-
-            // Iterate through the attachments array and parse each attachment
             for (i in 0 until attachmentsArray.length()) {
                 val attachmentData = attachmentsArray.getJSONObject(i)
                 val attachment = Attachment(
@@ -928,38 +1034,126 @@ class CoreChatSocketClient @Inject constructor(
                 chat = chatId,
                 attachments = attachments,
                 createdAt = createdAt,
-                updatedAt = updatedAt
+                updatedAt = updatedAt,
+                isEncrypted = isEncrypted,
+                encryptedContent = encryptedContent.takeIf { it.isNotEmpty() },
+                iv = iv.takeIf { it.isNotEmpty() },
+                ephemeralPublicKey = ephemeralPublicKey.takeIf { it.isNotEmpty() }
             )
 
-
             chatListener?.onNewMessage(message)
-
             updateDB(message)
 
             Log.d(TAG, "Starting Chat Notification service")
-
             val chatNotificationService = Intent(context, ChatNotificationService::class.java)
 
             CoroutineScope(Dispatchers.Main).launch {
-
                 chatNotificationService.putExtra("message", message)
                 chatNotificationService.action = ChatNotificationServiceActions.ON_ONE_ON_ONE_MESSAGE.name
-
                 ContextCompat.startForegroundService(context, chatNotificationService)
             }
 
             sendDeliveryReport(chatId, senderId)
             sendAcknowledgement(myId, messageId)
 
-
         } catch (e: JSONException) {
-            // Handle JSON parsing errors here
             e.printStackTrace()
+        }
+    }
+
+
+    private val onUnreadCountUpdate = Emitter.Listener { args ->
+        try {
+
+            if (args.isEmpty()) {
+                return@Listener
+            }
+
+            val data = args[0] as JSONObject
+            val totalUnreadCount = data.getInt("totalUnreadCount")
+            val businessUnreadCount = data.getInt("businessUnreadCount")
+            val feedUnreadCount = data.getInt("feedUnreadCount")
+
+
+            totalUnreadCountListener?.invoke(totalUnreadCount)
+
+            feedUnreadCountListeners.forEach { listener ->
+                listener.invoke(feedUnreadCount)
+            }
+
+            businessUnreadCountListeners.forEach { listener ->
+                listener.invoke(businessUnreadCount)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    // Add a business listener
+    fun addBusinessUnreadCountListener(listener: (Int) -> Unit) {
+        businessUnreadCountListeners.add(listener)
+    }
+
+    // Remove a business listener (important for memory leaks)
+    fun removeBusinessUnreadCountListener(listener: (Int) -> Unit) {
+        businessUnreadCountListeners.remove(listener)
+    }
+
+    // Add a business listener
+    fun addFeedUnreadCountListener(listener: (Int) -> Unit) {
+        feedUnreadCountListeners.add(listener)
+    }
+
+    // Remove a business listener (important for memory leaks)
+    fun removeFeedUnreadCountListener(listener: (Int) -> Unit) {
+        feedUnreadCountListeners.remove(listener)
+    }
+
+    // Clear all listeners
+    fun clearAllUnreadCountListeners() {
+        businessUnreadCountListeners.clear()
+        feedUnreadCountListeners.clear()
+    }
+
+
+    fun setTotalUnreadCountListener(listener: ((Int) -> Unit)?) {
+        totalUnreadCountListener = listener
+    }
+
+    fun requestUnreadCount() {
+        if (isConnected()) {
+            socket.emit("requestUnreadCount")
+        }
+    }
+
+
+    private suspend fun updateLastMessage(chatId: String, imageMessage: MessageEntity) {
+//        if (group){
+//            val dialog = groupDialogRepository.getDialog(chatId)
+//            groupDialogRepository.updateLastMessage(dialog,imageMessage)
+//        } else {
+//            val dialog = dialogRepository.getDialog(chatId)
+//            dialogRepository.updateLastMessage(dialog,imageMessage)
+//        }
+
+        try {
+            val dialog = groupDialogRepository.getDialog(chatId)
+            groupDialogRepository.updateLastMessage(dialog, imageMessage)
+        } catch (e: Exception) {
+            // Handle the exception, and try getting the dialog from dialogRepository
+            e.printStackTrace()
+            try {
+                val dialog = dialogRepository.getDialog(chatId)
+                dialogRepository.updateLastMessage(dialog, imageMessage)
+            } catch (e: Exception) {
+                // Handle the exception from dialogRepository, if needed
+                e.printStackTrace() // or log the exception
+            }
         }
 
     }
 
-    private fun updateLastMessageForGroup(chatId: String, imageMessage: MessageEntity) {
+    private suspend fun updateLastMessageForGroup(chatId: String, imageMessage: MessageEntity) {
         try {
             val dialog = groupDialogRepository.getDialog(chatId)
             groupDialogRepository.updateLastMessage(dialog, imageMessage)
@@ -979,6 +1173,23 @@ class CoreChatSocketClient @Inject constructor(
         }
     }
 
+//    private fun insertNewChat(chatId: String, isGroup: Boolean){
+//        try {
+//            if (isGroup){
+//                groupDialogRepository.insertNewChat(chatId)
+//            } else {
+//                dialogRepository.insertDialog()
+//            }
+//        } catch (e:Exception){
+//            e.printStackTrace()
+//        }
+//    }
+
+//    private suspend fun chatExists(chatId: String): Boolean {
+//        val dialog = groupDialogRepository.checkGroup(chatId) ?: dialogRepository.checkDialog(chatId)
+//        return dialog != null
+//    }
+
 
     private suspend fun chatExists(chatId: String): Pair<Boolean, Boolean> {
         val groupDialog = groupDialogRepository.checkGroup(chatId)
@@ -992,7 +1203,7 @@ class CoreChatSocketClient @Inject constructor(
     }
 
 
-    private fun updateDB(message: com.uyscuti.social.network.api.models.Message) {
+    private fun updateDB(message: Message) {
         CoroutineScope(Dispatchers.IO).launch {
 
             delay(50)
@@ -1011,7 +1222,25 @@ class CoreChatSocketClient @Inject constructor(
             var docUrl: String? = null
 
             var text = ""
-            ""
+            var senderName = ""
+
+//            try {
+//                val dialog = groupDialogRepository.getDialog(dialogToUpdate)
+//
+////            Log.d(TAG, "dialog to update: $dialog")
+//
+//                senderName = message.sender.username
+//
+//                if (dialog.users.size > 1) {
+//                    text = if (senderName.isNotEmpty()) {
+//                        "$senderName: " // Highlighted sender's name
+//                    } else {
+//                        "Anonymous:"
+//                    }
+//                }
+//            } catch (e: Exception) {
+//                e.printStackTrace()
+//            }
 
 
             // Handle attachments and assign URLs
@@ -1029,7 +1258,7 @@ class CoreChatSocketClient @Inject constructor(
                             FileType.AUDIO -> {
                                 audioUrl = attachment.url
                                 Log.d(TAG, "Audio, Path Of Image Received: $audioUrl")
-
+//                                audioList.add(audioUrl)
                                 text += "🎵 Audio"
                             }
 
@@ -1092,10 +1321,13 @@ class CoreChatSocketClient @Inject constructor(
             }
 
 
+//            updateLastMessage(dialogToUpdate, messageEntity)
+//            dialogRepository.incrementUnreadCount(dialogToUpdate)
+//            dialogRepository.updateLastMessage(dialog, messageEntity)
         }
     }
 
-    private fun fetchAndInsertNewDialog(chatId: String, lastMessageEntity: MessageEntity) {
+    private suspend fun fetchAndInsertNewDialog(chatId: String, lastMessageEntity: MessageEntity) {
         var filteredUsers: List<UserEntity> = emptyList()
         CoroutineScope(Dispatchers.IO).launch {
             try {
@@ -1112,11 +1344,11 @@ class CoreChatSocketClient @Inject constructor(
                         var chatName = ""
                         var chatAvatar = ""
 
-                        ""
-                        ""
+                        var text = ""
+                        var senderName = ""
 
                         if (!chat.isGroupChat) {
-
+//                                    firstUser = users.firstOrNull { it.id != userId }
                             chatName = firstUser.name
                                 ?: "" // Set dialogName to the name of the first user or an empty string if there are no users.
                             Log.d(TAG, "CHAT USERS $users")
@@ -1225,7 +1457,7 @@ class CoreChatSocketClient @Inject constructor(
         }
     }
 
-    private fun Message.toMessageEntity(): MessageEntity {
+    private fun com.uyscuti.social.network.api.models.Message.toMessageEntity(): MessageEntity {
 
         val createdAt = convertIso8601ToUnixTimestamp(createdAt)
 
@@ -1245,7 +1477,7 @@ class CoreChatSocketClient @Inject constructor(
                     when (getFileType(attachment.url)) {
                         FileType.IMAGE -> {
                             imageUrl = attachment.url
-
+//                            size = getFileSize(attachment.url)
 
                             Log.d(
                                 "Received Attachment ",
@@ -1291,21 +1523,35 @@ class CoreChatSocketClient @Inject constructor(
 
         return MessageEntity(
             id = _id,
-            chatId = chat,
-            userName = sender.username,
+            chatId = chat ?: "",
+            userId = sender._id,
+            userName = sender.username ?: "",
             user = sender.toUserEntity(),
-            text = content,
+            text = content ?: "",
             createdAt = createdAt,
             imageUrl = imageUrl,
             voiceUrl = null,
             voiceDuration = 0,
-            userId = sender._id,
             status = "Received",
             videoUrl = videoUrl,
             audioUrl = audioUrl,
             docUrl = docUrl,
             fileSize = size
         )
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun convertTime(iso8601Date: String): Long {
+        val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+        val localDateTime = LocalDateTime.parse(iso8601Date, formatter)
+
+        // Explicitly set the input date's time zone to UTC
+        val utcDateTime = ZonedDateTime.of(localDateTime, java.time.ZoneOffset.UTC)
+
+        // Convert UTC to the local time zone
+        val localZonedDateTime = utcDateTime.withZoneSameInstant(TimeZone.getDefault().toZoneId())
+
+        return localZonedDateTime.toInstant().toEpochMilli()
     }
 
     private fun convertIso8601ToUnixTimestamp(iso8601Date: String): Long {
@@ -1326,6 +1572,14 @@ class CoreChatSocketClient @Inject constructor(
         )
     }
 
+    private fun GroupMemberUser.toUserEntity(): UserEntity = UserEntity(
+        id       = _id,
+        name     = username ?: fullName ?: "Unknown",
+        avatar   = avatar?.url ?: "",
+        online   = false,
+        lastSeen = Date()
+    )
+
     interface ChatSocketEvents {
         fun onSocketConnect()
         fun onNewMessage(message: Message)
@@ -1334,14 +1588,128 @@ class CoreChatSocketClient @Inject constructor(
         fun onMessageOpenedReport()
     }
 
-    // Example listener for the NEW_CHAT_EVENT
+    // OLD Example listener for the NEW_CHAT_EVENT
+//    private val onNewChat = Emitter.Listener { args ->
+//        // Handle the new chat event
+//        val chatData = args[0] as JSONObject
+//        Log.d("Socket", "New Chat Event: $chatData")
+//        // Add your logic to process the new chat event
+//    }
+
+
     private val onNewChat = Emitter.Listener { args ->
-        // Handle the new chat event
         val chatData = args[0] as JSONObject
         Log.d("Socket", "New Chat Event: $chatData")
-        // Add your logic to process the new chat event
-    }
 
+        try {
+            val chatId = chatData.getString("_id")
+            val isGroupChat = chatData.optBoolean("isGroupChat", false)
+            if (!isGroupChat) return@Listener
+
+            val members = chatData.optJSONArray("members") ?: return@Listener
+
+            var joinerUsername = ""
+            var joinerAvatar = ""
+            var joinerId = ""
+            var latestJoinTime = 0L
+
+            // Find the member with the most recent joinedAt
+            for (i in 0 until members.length()) {
+                val member = members.getJSONObject(i)
+                val joinedAtStr = member.optString("joinedAt", "")
+                val joinedAt = if (joinedAtStr.isNotEmpty()) {
+                    try {
+                        val sdf = java.text.SimpleDateFormat(
+                            "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",
+                            java.util.Locale.getDefault()
+                        )
+                        sdf.timeZone = java.util.TimeZone.getTimeZone("UTC")
+                        sdf.parse(joinedAtStr)?.time ?: 0L
+                    } catch (e: Exception) { 0L }
+                } else 0L
+
+                if (joinedAt > latestJoinTime) {
+                    latestJoinTime = joinedAt
+                    val userObj = member.getJSONObject("user")
+                    joinerUsername = userObj.optString("username", "Someone")
+                    joinerId = userObj.optString("_id", "")
+                    joinerAvatar = userObj
+                        .optJSONObject("avatar")
+                        ?.optString("url", "") ?: ""
+                }
+            }
+
+            if (joinerUsername.isEmpty()) return@Listener
+
+            val now = System.currentTimeMillis()
+
+            val userEntity = UserEntity(
+                id = joinerId,
+                name = joinerUsername,
+                avatar = joinerAvatar,
+                online = true,
+                lastSeen = Date(now)
+
+            )
+
+            val systemMessage = MessageEntity(
+                id = "Text_system_join_${joinerId}_$now",
+                chatId = chatId,
+                text = "@$joinerUsername joined via the group link",
+                userId = joinerId,
+                user = userEntity,
+                createdAt = now,
+                imageUrl = null,
+                voiceUrl = null,
+                voiceDuration = 0,
+                userName = joinerUsername,
+                status = "Received",
+                videoUrl = null,
+                audioUrl = null,
+                docUrl = null,
+                fileSize = 0,
+                isSystemMessage = true
+            )
+
+            CoroutineScope(Dispatchers.IO).launch {
+                // Deduplicate — only insert if not already saved
+                val existing = messageRepository.getMessageById(systemMessage.id)
+                if (existing == null) {
+                    messageRepository.insertMessage(systemMessage)
+                    updateLastMessageForGroup(chatId, systemMessage)
+                }
+            }
+
+            Handler(Looper.getMainLooper()).post {
+                chatListener?.onNewMessage(
+                    Message(
+                        _id = systemMessage.id,
+                        sender = com.uyscuti.social.network.api.models.User(
+                            _id = joinerId,
+                            username = joinerUsername,
+                            avatar = Avatar("", joinerAvatar, ""),
+                            email = "",
+                            isEmailVerified = false,
+                            role = "USER",
+                            lastseen = Date(now)
+                        ),
+                        content = systemMessage.text,
+                        chat = chatId,
+                        attachments = emptyList(),
+                        createdAt = "",
+                        updatedAt = "",
+                        isEncrypted = false,
+                        encryptedContent = null,
+                        iv = null,
+                        ephemeralPublicKey = null
+                    )
+                )
+            }
+
+        } catch (e: Exception) {
+            Log.e("Socket", "Error processing newChat event", e)
+        }
+    }
 
     // Example listener for the NEW_CHAT_EVENT
     private val onTyping = Emitter.Listener { args ->
@@ -1371,6 +1739,7 @@ class CoreChatSocketClient @Inject constructor(
                 // Add your logic to process the String payload
                 chatListener?.onDeliveryReport()
 
+//                handleChange(arg,"Delivered")
 
             }
         }
@@ -1409,6 +1778,11 @@ class CoreChatSocketClient @Inject constructor(
         CoroutineScope(Dispatchers.IO).launch {
             messageRepository.processPendingMessages(chatId)
 
+//            Log.d("Socket", "Loaded Messages Size : ${messages.size}")
+//
+//            if (messages.isNotEmpty()){
+//                updateMessageStatus(status,messages)
+//            }
         }
     }
 
@@ -1431,6 +1805,27 @@ class CoreChatSocketClient @Inject constructor(
         Log.d("Socket", "on Last Seen Info: $data")
     }
 
+
+    // Example function to send a typing event
+    fun sendTypingEvent(chatId: String) {
+        // Example payload for the typing event
+        val typingData = JSONObject().apply {
+            put("chatId", chatId)
+        }
+
+        // Emit the TYPING_EVENT
+        socket.emit("typing", typingData)
+    }
+
+    // Example function to send a stop typing event
+    fun sendStopTypingEvent(chatId: String) {
+        // Example payload for the stop typing event
+        val stopTypingData = JSONObject().apply {
+            put("chatId", chatId)
+        }
+        // Emit the STOP_TYPING_EVENT
+        socket.emit("stopTyping", stopTypingData)
+    }
 
     fun sendDeliveryReport(chatId: String, senderId: String) {
         val delivery = JSONObject().apply {
@@ -1465,16 +1860,252 @@ class CoreChatSocketClient @Inject constructor(
                 put("sender", senderId)
             }
             socket.emit("messageSeen", seenReport)
-        }catch (e:Exception){
+        } catch (e: Exception) {
             e.printStackTrace()
         }
     }
 
+    // Other functions...
 
+    fun observeSocketAvailability(listener: OnSocketAvailableListener) {
+        onSocketAvailableListeners.add(listener)
+    }
 
     interface OnSocketAvailableListener {
         fun onSocketAvailable(socket: Socket?)
     }
+
+
+    fun getSocket(): Socket? {
+        return if (::socket.isInitialized) socket else null
+    }
+
+
+    private val onMemberAdded = Emitter.Listener { args ->
+        val data = args[0] as JSONObject
+        Log.d("Socket", "GROUP_MEMBER_JOINED Event: $data")
+
+        try {
+            val chatId    = data.getString("chatId")
+            val addedById = data.optString("addedBy", "")
+
+            //    Server sends "newMembers" (array) for bulk add from AddMembersActivity
+            //    and "newMember" (single string) for single add — handle both
+            val newMembersArray: org.json.JSONArray = when {
+                data.has("newMembers") -> data.optJSONArray("newMembers") ?: org.json.JSONArray()
+                data.has("newMember")  -> org.json.JSONArray().put(data.optString("newMember", ""))
+                else                   -> return@Listener
+            }
+
+            if (newMembersArray.length() == 0) return@Listener
+
+            CoroutineScope(Dispatchers.IO).launch {
+                try {
+                    val response = retrofitInstance.apiService.getGroupChatDetails(chatId)
+                    if (!response.isSuccessful) return@launch
+
+                    val groupDetail     = response.body()?.data ?: return@launch
+                    val allMembers      = groupDetail.members
+
+                    val adder           = allMembers.firstOrNull { it.user._id == addedById }
+                    val addedByUsername = adder?.user?.username ?: "Someone"
+                    val addedByAvatar   = adder?.user?.avatar?.url ?: ""
+
+                    for (i in 0 until newMembersArray.length()) {
+                        val addedUserId = newMembersArray.getString(i)
+                        if (addedUserId.isBlank()) continue
+
+                        val addedMember   = allMembers.firstOrNull { it.user._id == addedUserId }
+                        val addedUsername = addedMember?.user?.username ?: "Someone"
+                        val addedAvatar   = addedMember?.user?.avatar?.url ?: ""
+
+                        val now = System.currentTimeMillis()
+
+                        // I was the one who added — AddMembersActivity already inserted
+                        // "You added @X" locally — skip to avoid duplicate
+                        if (addedById == myId) {
+                            Log.d("Socket", "Skipping GROUP_MEMBER_JOINED — already inserted locally by AddMembersActivity")
+                            continue
+                        }
+
+                        // WhatsApp-style 3 cases:
+                        // I was added        → "@godbless added you"
+                        // Someone else added → "@godbless added @random"
+                        val text = when (myId) {
+                            addedUserId -> "@$addedByUsername added you"
+                            else        -> "@$addedByUsername added @$addedUsername"
+                        }
+
+                        val userEntity = UserEntity(
+                            id       = addedById.ifEmpty { addedUserId },
+                            name     = addedByUsername,
+                            avatar   = addedByAvatar,
+                            online   = true,
+                            lastSeen = Date(now)
+                        )
+
+                        val systemMessage = MessageEntity(
+                            id              = "Text_system_add_${addedUserId}_$now",
+                            chatId          = chatId,
+                            text            = text,
+                            userId          = addedById.ifEmpty { addedUserId },
+                            user            = userEntity,
+                            createdAt       = now,
+                            imageUrl        = null,
+                            voiceUrl        = null,
+                            voiceDuration   = 0,
+                            userName        = addedByUsername,
+                            status          = "Received",
+                            videoUrl        = null,
+                            audioUrl        = null,
+                            docUrl          = null,
+                            fileSize        = 0,
+                            isSystemMessage = true
+                        )
+
+                        val existing = messageRepository.getMessageById(systemMessage.id)
+                        if (existing == null) {
+                            messageRepository.insertMessage(systemMessage)
+                            updateLastMessageForGroup(chatId, systemMessage)
+
+                            Handler(Looper.getMainLooper()).post {
+                                chatListener?.onNewMessage(
+                                    Message(
+                                        _id    = systemMessage.id,
+                                        sender = com.uyscuti.social.network.api.models.User(
+                                            _id             = addedById.ifEmpty { addedUserId },
+                                            username        = addedByUsername,
+                                            avatar          = Avatar("", addedByAvatar, ""),
+                                            email           = "",
+                                            isEmailVerified = false,
+                                            role            = "USER",
+                                            lastseen        = Date(now)
+                                        ),
+                                        content          = text,
+                                        chat             = chatId,
+                                        attachments      = emptyList(),
+                                        createdAt        = "",
+                                        updatedAt        = "",
+                                        isEncrypted      = false,
+                                        encryptedContent = null,
+                                        iv               = null,
+                                        ephemeralPublicKey = null
+                                    )
+                                )
+                            }
+                        }
+                    }
+                } catch (e: Exception) {
+                    Log.e("Socket", "Failed to fetch group details for member add", e)
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("Socket", "Error processing GROUP_MEMBER_JOINED event", e)
+        }
+    }
+
+    private val onMemberRemoved = Emitter.Listener { args ->
+        val data = args[0] as JSONObject
+        Log.d("Socket", "GROUP_MEMBER_REMOVED Event: $data")
+
+        try {
+            val chatId          = data.getString("chatId")
+            val removedById     = data.optString("removedBy", "")
+            val removedUserId   = data.optString("removedUserId", "")
+            val removedUsername = data.optString("removedUsername", "Someone")
+
+            if (removedUserId.isBlank()) return@Listener
+
+            CoroutineScope(Dispatchers.IO).launch {
+                try {
+                    // Fetch group details only to resolve the REMOVER's username/avatar
+                    val response = retrofitInstance.apiService.getGroupChatDetails(chatId)
+                    val allMembers = if (response.isSuccessful) response.body()?.data?.members ?: emptyList() else emptyList()
+
+                    val remover         = allMembers.firstOrNull { it.user._id == removedById }
+                    val removerUsername = remover?.user?.username ?: "Someone"
+                    val removerAvatar   = remover?.user?.avatar?.url ?: ""
+
+                    val now = System.currentTimeMillis()
+
+                    // WhatsApp-style 3 cases:
+                    // I removed someone  → "You removed @username"
+                    // I was removed      → "@remover removed you"
+                    // Someone else       → "@remover removed @removed"
+                    val text = when {
+                        removedById == myId   -> "You removed @$removedUsername"
+                        removedUserId == myId -> "@$removerUsername removed you"
+                        else                  -> "@$removerUsername removed @$removedUsername"
+                    }
+
+                    val userEntity = UserEntity(
+                        id       = removedById.ifEmpty { removedUserId },
+                        name     = if (removedById == myId) "You" else removerUsername,
+                        avatar   = removerAvatar,
+                        online   = true,
+                        lastSeen = Date(now)
+                    )
+
+                    val systemMessage = MessageEntity(
+                        id              = "Text_system_remove_${removedUserId}_${removedById}_${chatId.takeLast(6)}",
+                        chatId          = chatId,
+                        text            = text,
+                        userId          = removedById.ifEmpty { removedUserId },
+                        user            = userEntity,
+                        createdAt       = now,
+                        imageUrl        = null,
+                        voiceUrl        = null,
+                        voiceDuration   = 0,
+                        userName        = if (removedById == myId) "You" else removerUsername,
+                        status          = "Received",
+                        videoUrl        = null,
+                        audioUrl        = null,
+                        docUrl          = null,
+                        fileSize        = 0,
+                        isSystemMessage = true
+                    )
+
+                    val existing = messageRepository.getMessageById(systemMessage.id)
+                    if (existing == null) {
+                        messageRepository.insertMessage(systemMessage)
+                        updateLastMessageForGroup(chatId, systemMessage)
+
+                        Handler(Looper.getMainLooper()).post {
+                            chatListener?.onNewMessage(
+                                Message(
+                                    _id              = systemMessage.id,
+                                    sender           = com.uyscuti.social.network.api.models.User(
+                                        _id             = removedById.ifEmpty { removedUserId },
+                                        username        = if (removedById == myId) "You" else removerUsername,
+                                        avatar          = Avatar("", removerAvatar, ""),
+                                        email           = "",
+                                        isEmailVerified = false,
+                                        role            = "USER",
+                                        lastseen        = Date(now)
+                                    ),
+                                    content          = text,
+                                    chat             = chatId,
+                                    attachments      = emptyList(),
+                                    createdAt        = now.toString(),
+                                    updatedAt        = now.toString(),
+                                    isEncrypted      = false,
+                                    encryptedContent = null,
+                                    iv               = null,
+                                    ephemeralPublicKey = null
+                                )
+                            )
+                        }
+                    }
+                } catch (e: Exception) {
+                    Log.e("Socket", "Failed to process GROUP_MEMBER_REMOVED", e)
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("Socket", "Error processing GROUP_MEMBER_REMOVED event", e)
+        }
+    }
+
+
 
 }
 
