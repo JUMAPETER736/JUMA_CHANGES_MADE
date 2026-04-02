@@ -9,6 +9,7 @@ import android.os.Parcel;
 import android.os.Parcelable;
 
 import com.uyscuti.social.chatsuit.commons.models.IDialog;
+import com.uyscuti.social.core.models.data.Message;
 
 public class Dialog implements IDialog<Message>, Parcelable {
 

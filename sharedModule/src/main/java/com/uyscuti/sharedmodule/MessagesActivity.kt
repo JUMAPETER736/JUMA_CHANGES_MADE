@@ -30,6 +30,7 @@ import android.os.ResultReceiver
 import android.provider.MediaStore
 import android.provider.OpenableColumns
 import android.provider.Settings
+import android.system.Os.socket
 import android.text.Editable
 import android.text.TextWatcher
 import android.text.format.DateUtils
@@ -72,9 +73,9 @@ import com.bumptech.glide.request.transition.Transition
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.snackbar.Snackbar
 import com.uyscuti.sharedmodule.calls.viewmodel.CallViewModel
-import com.uyscuti.sharedmodule.data.model.Dialog
-import com.uyscuti.sharedmodule.data.model.Message
-import com.uyscuti.sharedmodule.data.model.User
+import com.uyscuti.social.core.models.data.Dialog
+import com.uyscuti.social.core.models.data.Message
+import com.uyscuti.social.core.models.data.User
 import com.uyscuti.sharedmodule.media.PlayVideoActivity
 import com.uyscuti.sharedmodule.media.ViewImagesActivity
 import com.uyscuti.sharedmodule.presentation.DialogViewModel
@@ -143,6 +144,9 @@ import kotlin.collections.map
 import kotlin.random.Random
 import androidx.activity.viewModels
 import androidx.annotation.RequiresExtension
+import androidx.core.net.toUri
+import androidx.lifecycle.lifecycleScope
+
 import com.uyscuti.sharedmodule.User_Interfaces.OtherUserProfile.OtherUserProfileAccount
 import com.uyscuti.sharedmodule.data.model.shortsmodels.OtherUsersProfile
 import com.uyscuti.sharedmodule.utils.Timer
@@ -155,6 +159,9 @@ import com.uyscuti.sharedmodule.databinding.ActivityMessageBinding
 import com.uyscuti.sharedmodule.model.PauseShort
 import com.uyscuti.sharedmodule.utils.audiomixer.input.GeneralAudioInput
 import kotlin.toString
+import com.uyscuti.social.network.api.request.messages.SendMessageRequest
+import org.json.JSONObject
+
 
 
 @AndroidEntryPoint

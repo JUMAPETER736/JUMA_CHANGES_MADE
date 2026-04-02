@@ -184,7 +184,19 @@ public class MessagesListAdapter<MESSAGE extends IMessage>
         return count;
     }
 
+//    public int getSelectedItemsCount(){
+//        int count = 0;
+//        for (Wrapper item : items){
+//            if (item.item instanceof IMessage && item.isSelected){
+//                count++;
+//            }
+//        }
+//        return count;
+//    }
 
+    /*
+     * PUBLIC METHODS
+     * */
 
     /**
      * Adds message to bottom of list and scroll if needed.
@@ -255,6 +267,8 @@ public class MessagesListAdapter<MESSAGE extends IMessage>
         items.addAll(newItems);
         generateDateHeaders(messages);
 
+//        notifyItemRangeInserted(0, items.size());
+//        notifyDataSetChanged();
     }
 
 
@@ -264,6 +278,7 @@ public class MessagesListAdapter<MESSAGE extends IMessage>
     public void modifyMessageStatus(MESSAGE message) {
         if (message != null) {
             // Modify the status of the message
+//            message.(newStatus); // Assuming a setStatus method exists in the Message class
 
             // Notify the adapter that the data has changed
 
@@ -272,7 +287,18 @@ public class MessagesListAdapter<MESSAGE extends IMessage>
         }
     }
 
-
+//    public void addToStartS(MESSAGE message, boolean isSent, boolean scroll) {
+//        boolean isNewMessageToday = !isPreviousSameDate(0, message.getCreatedAt());
+//        if (isNewMessageToday) {
+//            items.add(0, new IWrapper<>(message.getCreatedAt(),));
+//        }
+//        IWrapper<MESSAGE> element = new IWrapper<>(message, isSent);
+//        items.add(0, element);
+//        notifyItemRangeInserted(0, isNewMessageToday ? 2 : 1);
+//        if (layoutManager != null && scroll) {
+//            layoutManager.scrollToPosition(0);
+//        }
+//    }
 
 
     /**
@@ -739,11 +765,12 @@ public class MessagesListAdapter<MESSAGE extends IMessage>
                 MESSAGE nextMessage = messages.get(i + 1);
                 if (!DateFormatter.isSameDay(message.getCreatedAt(), nextMessage.getCreatedAt())) {
                     this.items.add(new Wrapper<>(message.getCreatedAt()));
-
+//                    Log.d("MessageListAdapter", "Date Header : " + message.getCreatedAt());
                 }
             } else {
                 this.items.add(new Wrapper<>(message.getCreatedAt()));
-
+//                Log.d("MessageListAdapter", "Date Headers" + items);
+//                Log.d("MessageListAdapter", "The Date Headers Size Is " + items.size());
             }
         }
     }
@@ -1247,14 +1274,17 @@ public class MessagesListAdapter<MESSAGE extends IMessage>
         @Override
         public void onBind(Date date) {
 
-
+//            Log.d("Formatter", "Binding Date Header Before Checking Text");
 
             if (text != null) {
 
+//                Log.d("Formatter", "Binding Date Header After Checking Text");
 
                 String formattedDate = null;
+//                if (dateHeadersFormatter != null) formattedDate = dateHeadersFormatter.format(date);
 
                 if(dateListener != null ) formattedDate = dateListener.onFormatDate(date);
+//                text.setText(formattedDate == null ? DateFormatter.format(date, dateFormat) : formattedDate);
 
                 Log.d("Formatter", "Binding Date Header");
                 text.setText(R.string.app_name);

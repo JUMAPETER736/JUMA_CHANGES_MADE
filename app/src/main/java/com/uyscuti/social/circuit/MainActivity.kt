@@ -294,9 +294,8 @@ import kotlin.random.Random
 import androidx.core.content.edit
 import androidx.core.view.isVisible
 import com.uyscuti.sharedmodule.adapter.OnCommentsClickListener
-import com.uyscuti.sharedmodule.data.model.Dialog
-import com.uyscuti.sharedmodule.data.model.Message
-import com.uyscuti.sharedmodule.data.model.User
+import com.uyscuti.social.core.models.data.Dialog
+import com.uyscuti.social.core.models.data.User
 import com.uyscuti.sharedmodule.model.ShortsLikeUnLike
 import com.uyscuti.sharedmodule.shorts.OtherUserProfileShortsPlayerFragment
 import com.uyscuti.sharedmodule.shorts.OtherUserProfileShortsPlayerFragment.Companion.CLICKED_SHORT
@@ -321,7 +320,7 @@ import com.uyscuti.social.core.service.LocationService
 import com.uyscuti.social.core.util.LocationServiceUtil
 import com.uyscuti.social.core.util.NetworkUtil
 import java.lang.Math.sqrt
-
+import com.uyscuti.social.core.models.data.Message
 
 private const val TAG = "MainActivity"
 
@@ -1054,8 +1053,7 @@ class MainActivity : AppCompatActivity(),
                         // You can proceed to send the image or display it in your chat.
                         val docFileName =
                             "files/${System.currentTimeMillis()}.jpg" // Change the file name as needed
-//                        Log.d(TAG, "file name $docFileName")
-//                        Log.d(TAG, "image path $docPath")
+
 
                         val user = User("0", "You", "test", true, Date())
                         val messageId = "Doc_${Random.nextInt()}"
@@ -1073,10 +1071,10 @@ class MainActivity : AppCompatActivity(),
 
                             Log.d("Document File", "Document File Exists : $file")
                             val absolutePath = file.absolutePath
-//                            Log.d(TAG, "image absolute path $absolutePath")
+
                             val fileUri = Uri.fromFile(file)
                             val fileUrl = fileUri.toString()
-//                            Log.d(TAG, "image file url path $fileUrl")
+
 
                         }
 
