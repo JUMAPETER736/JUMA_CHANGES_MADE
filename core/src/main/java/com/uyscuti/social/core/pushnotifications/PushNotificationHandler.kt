@@ -45,16 +45,21 @@ class PushNotificationHandler @Inject constructor(
     private var dialogRepository: DialogRepository,
     private var chatNotificationManager: NotificationManagerCompat,
     private var chatNotificationBuilder: NotificationCompat.Builder,
-    retrofitInstance: RetrofitInstance
+    private var coreChatSocketClient: CoreChatSocketClient,
+    private var retrofitInstance: RetrofitInstance
 
 ) : CoreChatSocketClient.ChatSocketEvents {
 
     private val TAG = "PushNotificationHandler"
 
+
     private var messageRepository: MessageRepository =
-        MessageRepository(ChatDatabase.getInstance(context).messageDao(), retrofitInstance)
+        MessageRepository(context, ChatDatabase.getInstance(context).messageDao(), retrofitInstance)
 
 
+    init {
+//        coreChatSocketClient.chatListener = this
+    }
 
     @RequiresPermission(Manifest.permission.POST_NOTIFICATIONS)
     private fun handleNotifications(chatId: String, message: String, user: String) {
@@ -92,6 +97,7 @@ class PushNotificationHandler @Inject constructor(
                 Manifest.permission.POST_NOTIFICATIONS
             ) != PackageManager.PERMISSION_GRANTED
         ) {
+            // TODO: Consider calling
 
             return
         }
@@ -126,9 +132,9 @@ class PushNotificationHandler @Inject constructor(
 
         Log.d(TAG, "onSocketConnect: New Message In PushNotificationHandler")
 
-        message.chat
-        message.content
-        message.sender.username
+        val chatId = message.chat
+        val text = message.content
+        val sender = message.sender.username
 
         updateDB(message)
     }
@@ -160,15 +166,12 @@ class PushNotificationHandler @Inject constructor(
 
         val createdAt = convertIso8601ToUnixTimestamp(createdAt)
 
-
-        // Initialize URLs as null
         var imageUrl: String? = null
         var audioUrl: String? = null
         var videoUrl: String? = null
         var docUrl: String? = null
         var size: Long = 0
 
-        // Handle attachments and assign URLs
         if (attachments != null && attachments?.isNotEmpty() == true) {
             val attachments = attachments
             if (attachments != null) {
@@ -176,61 +179,37 @@ class PushNotificationHandler @Inject constructor(
                     when (getFileType(attachment.url)) {
                         FileType.IMAGE -> {
                             imageUrl = attachment.url
-
-
-                            Log.d(
-                                "Received Attachment ",
-                                "Image To Save, Path Of Image Received: $imageUrl"
-                            )
+                            Log.d("Received Attachment ", "Image To Save, Path Of Image Received: $imageUrl")
                         }
-
                         FileType.AUDIO -> {
                             audioUrl = attachment.url
-                            Log.d(
-                                "Received Attachment",
-                                "Audio To Save, Path Of Audio Received: $audioUrl"
-                            )
-
+                            Log.d("Received Attachment", "Audio To Save, Path Of Audio Received: $audioUrl")
                         }
-
                         FileType.VIDEO -> {
                             videoUrl = attachment.url
-                            Log.d(
-                                "Received Attachment",
-                                "Video To Save, Path Of Video Received: $videoUrl"
-                            )
-
+                            Log.d("Received Attachment", "Video To Save, Path Of Video Received: $videoUrl")
                         }
-
                         FileType.DOCUMENT -> {
                             docUrl = attachment.url
-                            Log.d(
-                                "Received Attachment",
-                                "Document To Save, Path Of Document Received: $docUrl"
-                            )
-
+                            Log.d("Received Attachment", "Document To Save, Path Of Document Received: $docUrl")
                         }
-
-                        FileType.OTHER -> {
-                            // Handle other types, if needed
-                        }
+                        FileType.OTHER -> { }
                     }
                 }
             }
         }
 
-
         return MessageEntity(
             id = _id,
-            chatId = chat,
-            userName = sender.username,
+            chatId = chat ?: "",
+            userId = sender._id,
+            userName = sender.username ?: "",
             user = sender.toUserEntity(),
-            text = content,
+            text = content ?: "",
             createdAt = createdAt,
             imageUrl = imageUrl,
             voiceUrl = null,
             voiceDuration = 0,
-            userId = sender._id,
             status = "Received",
             videoUrl = videoUrl,
             audioUrl = audioUrl,
@@ -253,10 +232,16 @@ class PushNotificationHandler @Inject constructor(
                     Manifest.permission.POST_NOTIFICATIONS
                 ) != PackageManager.PERMISSION_GRANTED
             ) {
-
+                // TODO: Consider calling
+                //    ActivityCompat#requestPermissions
+                // here to request the missing permissions, and then overriding
+                //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+                //                                          int[] grantResults)
+                // to handle the case where the user grants the permission. See the documentation
+                // for ActivityCompat#requestPermissions for more details.
                 return@launch
             }
-            handleNotifications(message.chat, message.content, message.sender.username)
+            handleNotifications(message.chat, message.content.toString(), message.sender.username)
 
             val messageEnt: MessageEntity = message.toMessageEntity()
             insertMessage(messageEnt)
@@ -294,26 +279,26 @@ class PushNotificationHandler @Inject constructor(
                             FileType.IMAGE -> {
                                 imageUrl = attachment.url
                                 Log.d(TAG, "Image, Path Of Image Received: $imageUrl")
-                                text = "📷 Image"
+                                text = " Image"
                             }
 
                             FileType.AUDIO -> {
                                 audioUrl = attachment.url
                                 Log.d(TAG, "Audio, Path Of Image Received: $audioUrl")
-
-                                text = "🎵 Audio"
+//                                audioList.add(audioUrl)
+                                text = "Audio"
                             }
 
                             FileType.VIDEO -> {
                                 videoUrl = attachment.url
                                 Log.d(TAG, "Video, Path Of Image Received: $videoUrl")
-                                text = "🎬 Video"
+                                text = " Video"
                             }
 
                             FileType.DOCUMENT -> {
                                 docUrl = attachment.url
                                 Log.d(TAG, "Document, Path Of Image Received: $docUrl")
-                                text = "📄 Document"
+                                text = " Document"
                             }
 
                             FileType.OTHER -> {
@@ -343,7 +328,7 @@ class PushNotificationHandler @Inject constructor(
                 docUrl = docUrl,
                 fileSize = 0,
             )
-
+//            dialogRepository.incrementUnreadCount(dialogToUpdate)
             dialogRepository.updateLastMessage(dialog, messageEntity)
         }
     }
