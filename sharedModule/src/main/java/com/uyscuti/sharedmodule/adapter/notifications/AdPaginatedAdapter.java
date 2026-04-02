@@ -9,7 +9,7 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.uyscuti.sharedmodule.data.model.Comment;
+import com.uyscuti.social.network.api.models.Comment; // FIX: changed from sharedmodule to social
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -42,8 +42,6 @@ public abstract class AdPaginatedAdapter<VH extends RecyclerView.ViewHolder> ext
     public void submitItems(Collection<? extends Comment> collection) {
         int previousSize = mDataSet.size();
         mDataSet.addAll(collection);
-
-        // Notify the adapter about the inserted items
         notifyItemRangeInserted(previousSize, collection.size());
         if (mListener != null) {
             mListener.onCurrentPage(mCurrentPage);
@@ -54,7 +52,6 @@ public abstract class AdPaginatedAdapter<VH extends RecyclerView.ViewHolder> ext
             }
         }
     }
-
 
     @SuppressLint("NotifyDataSetChanged")
     public void submitItem(Comment item) {
@@ -74,22 +71,18 @@ public abstract class AdPaginatedAdapter<VH extends RecyclerView.ViewHolder> ext
         notifyDataSetChanged();
     }
 
-
     protected Comment getItem(int position) {
         return mDataSet.get(position);
     }
 
     protected void setItem(int position, Comment commentItem) {
-
         mDataSet.set(position, commentItem);
-
     }
 
     public void setStartPage(int mFirstPage) {
         this.mStartPage = mFirstPage;
         this.mCurrentPage = mFirstPage;
     }
-
 
     public int getStartPage() {
         return mStartPage;
@@ -112,10 +105,8 @@ public abstract class AdPaginatedAdapter<VH extends RecyclerView.ViewHolder> ext
 
     public void setDefaultRecyclerView(Activity activity, int recyclerViewId) {
         String TAG = "setDefaultRecyclerView";
-
         Log.d("setDefaultRecyclerView", "setDefaultRecyclerView: activity: "+ activity+" re id: "+ recyclerViewId);
         RecyclerView recyclerView = activity.findViewById(recyclerViewId);
-
         Log.d(TAG, "setDefaultRecyclerView: 1");
         recyclerView.setLayoutManager(new LinearLayoutManager(activity));
         Log.d(TAG, "setDefaultRecyclerView: 2");
@@ -129,7 +120,6 @@ public abstract class AdPaginatedAdapter<VH extends RecyclerView.ViewHolder> ext
         Log.d(TAG, "setDefaultRecyclerView: 6");
     }
 
-
     private void setAdapter() {
         mRecyclerView.setAdapter(this);
     }
@@ -137,10 +127,10 @@ public abstract class AdPaginatedAdapter<VH extends RecyclerView.ViewHolder> ext
     public RecyclerView.Adapter getAdapter() {
         return mRecyclerView.getAdapter();
     }
+
     public RecyclerView.LayoutManager getLayoutManager() {
         return mRecyclerView.getLayoutManager();
     }
-
 
     public void setPagination() {
         initPaginating();
@@ -179,55 +169,43 @@ public abstract class AdPaginatedAdapter<VH extends RecyclerView.ViewHolder> ext
 
     public void updateItem(int position, Comment updatedItem) {
         if (position >= 0 && position < mDataSet.size()) {
-            // Update the data in the dataset
             mDataSet.set(position, updatedItem);
 
             for(int i = 0; i < updatedItem.getReplies().size(); i++) {
                 Log.d("updateItem", "updated item position " + position + " is liked "+ updatedItem.getReplies().get(i).isLiked() + " position " +i);
             }
 
-            // Notify the adapter about the change
             notifyItemChanged(position);
         }
     }
-
 
     public void resetParentAdapterPosition() {
         parentItemPosition = -1;
     }
 
-
     public void changePlayingStatus() {
         Log.d("changePlayingStatus", "invoke changePlayingStatus ");
-
 
         for (int i = 0; i < mDataSet.size(); i++) {
             Comment item = mDataSet.get(i);
 
             if (item.isReplyPlaying()) {
                 Log.d("changePlayingStatus", "reply playing for parent position - " + i);
-
                 item.setReplyPlaying(false);
 
                 for (int j = 0; j < item.getReplies().size(); j++) {
                     com.uyscuti.social.network.api.response.commentreply.allreplies.Comment replyItem = item.getReplies().get(j);
-
                     Log.d("Replies", "Replies count is " + item.getReplies().size());
                     Log.d("Replies", "Replies was playing  " + replyItem.isPlaying() + " on position " + j);
                     replyItem.setProgress(0f);
                     item.getReplies().set(j, replyItem);
-
                 }
                 mDataSet.set(i, item);
-
                 notifyItemChanged(i);
 
-            }
-            else if (item.isPlaying()) { // Assuming there's a method to check if the item is playing
-                // If an item with isPlaying true is found, update its position and set it to false
+            } else if (item.isPlaying()) {
                 Log.i("changePlayingStatus", "(else)changePlayingStatus isPlaying" + item.isPlaying() + " position " + i);
                 Log.i("changePlayingStatus", "(else)changePlayingStatus isReplyPlaying" + item.isReplyPlaying() + " position " + i);
-
 
                 item.setPlaying(false);
 
@@ -237,15 +215,12 @@ public abstract class AdPaginatedAdapter<VH extends RecyclerView.ViewHolder> ext
                 mDataSet.set(i, item);
                 notifyItemChanged(i);
             }
-            // Update the item in the dataset
         }
     }
+
     public interface OnPaginationListener {
         void onCurrentPage(int page);
-
         void onNextPage(int page);
-
         void onFinish();
     }
-
 }
