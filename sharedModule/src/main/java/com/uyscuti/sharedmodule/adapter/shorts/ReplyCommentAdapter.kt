@@ -66,10 +66,9 @@ private const val VIEW_TYPE_DOCUMENT = 4
 private const val VIEW_TYPE_GIF = 5
 private const val VIEW_TYPE_EMPTY = 10
 
-
 class ReplyCommentAdapter(
     private val context: Context,
-    private val data: com.uyscuti.sharedmodule.data.model.Comment,
+    private val data: com.uyscuti.social.network.api.models.Comment,
     private val postId: String,
     private val mPosition: Int
 ) :
@@ -96,6 +95,9 @@ class ReplyCommentAdapter(
 
     private lateinit var listener: OnViewRepliesClickListener
     private var isPlay: Boolean = false
+    private lateinit var waveRunnable: Runnable
+
+    private val mWaveForms: ArrayList<WaveformSeekBar> = arrayListOf()
 
     init {
         cachePath = context.cacheDir.path
@@ -178,7 +180,7 @@ class ReplyCommentAdapter(
                 )
 
 
-                val commentReply = com.uyscuti.sharedmodule.data.model.Comment(
+                val commentReply = com.uyscuti.social.network.api.models.Comment(
                     __v = currentItem.__v,
                     _id = currentItem.commentId,
                     author = author,
@@ -202,7 +204,7 @@ class ReplyCommentAdapter(
                 reply.setOnClickListener {
                     // Handle the click event for the reply button
                     EventBus.getDefault().post(ToggleReplyToTextView(data, commentReply.__v))
-                    listener.onReplyButtonClick(absoluteAdapterPosition, data)
+                    listener.onReplyButtonClick(absoluteAdapterPosition, data, false)
                 }
 
                 Glide.with(profilePic.context)
@@ -265,6 +267,12 @@ class ReplyCommentAdapter(
                 likesCount.setOnClickListener {
                     currentItem.isLiked = !currentItem.isLiked
                     EventBus.getDefault().post(LikeCommentReply(currentItem, data, commentReply.__v))
+                    listener.likeUnlikeCommentReply(
+                        absoluteAdapterPosition,
+                        currentItem,
+                        mPosition,
+                        data
+                    )
                     // Update likes count
                     when {
                         currentItem.isLiked -> currentItem.likes += 1
@@ -293,6 +301,9 @@ class ReplyCommentAdapter(
         }
 
     }
+
+
+
 
 
     private fun setCacheSample(sample: IntArray, path: String) {
@@ -402,7 +413,7 @@ class ReplyCommentAdapter(
                     avatar = null
                 )
 
-                val commentReply = com.uyscuti.sharedmodule.data.model.Comment(
+                val commentReply = com.uyscuti.social.network.api.models.Comment(
                     __v = currentItem.__v,
                     _id = currentItem.commentId,
                     author = author,
@@ -689,13 +700,7 @@ class ReplyCommentAdapter(
                 // Handle reply button click
                 reply.setOnClickListener {
                     EventBus.getDefault().post(ToggleReplyToTextView(data, commentReply.__v))
-                    listener.onReplyButtonClick(absoluteAdapterPosition, data)
-                }
-
-                // Handle like button and like count display
-                likeUnLikeComment.setOnClickListener {
-                    // Handle like button click
-                    // Add your like handling logic here
+                    listener.onReplyButtonClick(absoluteAdapterPosition, data, false)
                 }
 
                 // Display like count according to XML structure
@@ -838,6 +843,13 @@ class ReplyCommentAdapter(
 
                     EventBus.getDefault()
                         .post(LikeCommentReply(currentItem, data, commentReply.__v))
+
+                    listener.likeUnlikeCommentReply(
+                        absoluteAdapterPosition,
+                        currentItem,
+                        mPosition,
+                        data
+                    )
 
                     if (currentItem.isLiked) {
                         likeUnLikeComment.text = "Like"
@@ -986,7 +998,7 @@ class ReplyCommentAdapter(
                 Log.d("currentItemData", "currentItemContent ${currentItem.content}")
                 username.text = currentItem.author!!.account.username
 
-                MongoDBTimeFormatter()
+                val timeFormatter = MongoDBTimeFormatter()
 
                 time.text = TimeUtils.formatMongoTimestamp(currentItem.createdAt)
 
@@ -1011,7 +1023,7 @@ class ReplyCommentAdapter(
                 )
 
 
-                val commentReply = com.uyscuti.sharedmodule.data.model.Comment(
+                val commentReply = com.uyscuti.social.network.api.models.Comment(
                     __v = currentItem.__v,
                     _id = currentItem.commentId,
                     author = author,
@@ -1028,14 +1040,14 @@ class ReplyCommentAdapter(
                     docs = data.docs,
                     videos = data.videos,
                     thumbnail = data.thumbnail,
-                    gifs = data.gifs,
+                    gifs = data.gifs ?: "",
                     contentType = currentItem.contentType,
                     localUpdateId = data.localUpdateId
                 )
                 reply.setOnClickListener {
                     // Handle the click event for the reply button
                     EventBus.getDefault().post(ToggleReplyToTextView(data, commentReply.__v))
-                    listener.onReplyButtonClick(absoluteAdapterPosition, data)
+                    listener.onReplyButtonClick(absoluteAdapterPosition, data, false)
                 }
 
                 Glide.with(profilePic.context)
@@ -1096,6 +1108,13 @@ class ReplyCommentAdapter(
 
                     EventBus.getDefault()
                         .post(LikeCommentReply(currentItem, data, commentReply.__v))
+
+                    listener.likeUnlikeCommentReply(
+                        absoluteAdapterPosition,
+                        currentItem,
+                        mPosition,
+                        data
+                    )
 
                     if (currentItem.isLiked) {
                         likeUnLikeComment.text = "Like"
@@ -1186,7 +1205,7 @@ class ReplyCommentAdapter(
                 )
 
 
-                val commentReply = com.uyscuti.sharedmodule.data.model.Comment(
+                val commentReply = com.uyscuti.social.network.api.models.Comment(
                     __v = currentItem.__v,
                     _id = currentItem.commentId,
                     author = author,
@@ -1210,6 +1229,8 @@ class ReplyCommentAdapter(
                 reply.setOnClickListener {
                     // Handle the click event for the reply button
                     EventBus.getDefault().post(ToggleReplyToTextView(data, commentReply.__v))
+                    listener.onReplyButtonClick(absoluteAdapterPosition, data, false)
+
                 }
 
                 Glide.with(profilePic.context)
@@ -1274,6 +1295,13 @@ class ReplyCommentAdapter(
 
                     EventBus.getDefault()
                         .post(LikeCommentReply(currentItem, data, commentReply.__v))
+
+                    listener.likeUnlikeCommentReply(
+                        absoluteAdapterPosition,
+                        currentItem,
+                        mPosition,
+                        data
+                    )
 
                     if (currentItem.isLiked) {
                         likeUnLikeComment.text = "Like"
@@ -1361,7 +1389,7 @@ class ReplyCommentAdapter(
                     avatar = null
                 )
 
-                val commentReply = com.uyscuti.sharedmodule.data.model.Comment(
+                val commentReply = com.uyscuti.social.network.api.models.Comment(
                     __v = currentItem.__v,
                     _id = currentItem.commentId,
                     author = author,
@@ -1385,7 +1413,7 @@ class ReplyCommentAdapter(
                 reply.setOnClickListener {
                     // Handle the click event for the reply button
                     EventBus.getDefault().post(ToggleReplyToTextView(data, commentReply.__v))
-                    listener.onReplyButtonClick(absoluteAdapterPosition, data)
+                    listener.onReplyButtonClick(absoluteAdapterPosition, data, false)
                 }
 
                 Glide.with(profilePic.context)
@@ -1450,6 +1478,13 @@ class ReplyCommentAdapter(
 
                     EventBus.getDefault()
                         .post(LikeCommentReply(currentItem, data, commentReply.__v))
+
+                    listener.likeUnlikeCommentReply(
+                        absoluteAdapterPosition,
+                        currentItem,
+                        mPosition,
+                        data
+                    )
 
                     if (currentItem.isLiked) {
                         likeUnLikeComment.text = "Like"
@@ -1547,7 +1582,7 @@ class ReplyCommentAdapter(
                     avatar = null
                 )
 
-                val commentReply = com.uyscuti.sharedmodule.data.model.Comment(
+                val commentReply = com.uyscuti.social.network.api.models.Comment(
                     __v = currentItem.__v,
                     _id = currentItem.commentId,
                     author = author,
@@ -1571,7 +1606,7 @@ class ReplyCommentAdapter(
                 reply.setOnClickListener {
                     // Handle the click event for the reply button
                     EventBus.getDefault().post(ToggleReplyToTextView(data, commentReply.__v))
-                    listener.onReplyButtonClick(absoluteAdapterPosition, data)
+                    listener.onReplyButtonClick(absoluteAdapterPosition, data, false)
                 }
 
                 Glide.with(profilePic.context)
@@ -1648,6 +1683,13 @@ class ReplyCommentAdapter(
 
                     EventBus.getDefault()
                         .post(LikeCommentReply(currentItem, data, commentReply.__v))
+
+                    listener.likeUnlikeCommentReply(
+                        absoluteAdapterPosition,
+                        currentItem,
+                        mPosition,
+                        data
+                    )
 
                     if (currentItem.isLiked) {
                         likeUnLikeComment.text = "Like"
