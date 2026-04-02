@@ -183,9 +183,6 @@ import com.uyscuti.sharedmodule.adapter.OnViewRepliesClickListener
 import com.uyscuti.sharedmodule.adapter.notifications.AdPaginatedAdapter
 import com.uyscuti.sharedmodule.bottomSheet.BottomNavigationView
 import com.uyscuti.sharedmodule.bottomSheet.NavigationItem
-import com.uyscuti.sharedmodule.data.model.Dialog
-import com.uyscuti.sharedmodule.data.model.Message
-import com.uyscuti.sharedmodule.data.model.User
 import com.uyscuti.sharedmodule.model.AudioPlayerHandler
 import com.uyscuti.sharedmodule.model.CleanCache
 import com.uyscuti.sharedmodule.model.CommentAudioPlayerHandler
@@ -274,7 +271,7 @@ import org.greenrobot.eventbus.ThreadMode
 import retrofit2.HttpException
 import retrofit2.Response
 import ru.nikartm.support.ImageBadgeView
-import com.uyscuti.social.network.api.models.Comment
+
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileInputStream
@@ -297,6 +294,9 @@ import kotlin.random.Random
 import androidx.core.content.edit
 import androidx.core.view.isVisible
 import com.uyscuti.sharedmodule.adapter.OnCommentsClickListener
+import com.uyscuti.sharedmodule.data.model.Dialog
+import com.uyscuti.sharedmodule.data.model.Message
+import com.uyscuti.sharedmodule.data.model.User
 import com.uyscuti.sharedmodule.model.ShortsLikeUnLike
 import com.uyscuti.sharedmodule.shorts.OtherUserProfileShortsPlayerFragment
 import com.uyscuti.sharedmodule.shorts.OtherUserProfileShortsPlayerFragment.Companion.CLICKED_SHORT
@@ -312,7 +312,6 @@ import com.uyscuti.sharedmodule.viewmodels.comments.ShortCommentsViewModel
 import com.uyscuti.sharedmodule.viewmodels.feed.FeedLiveDataViewModel
 import com.uyscuti.sharedmodule.viewmodels.feed.GetFeedViewModel
 import com.uyscuti.social.business.viewmodel.business.BusinessCatalogueViewModel
-import com.uyscuti.social.circuit.GoogleOAuth
 import com.uyscuti.social.circuit.PostDetailsActivity2
 import com.uyscuti.social.circuit.log_in_and_register.LoginActivity
 import com.uyscuti.social.circuit.settings.SettingsActivity
@@ -322,6 +321,7 @@ import com.uyscuti.social.core.service.LocationService
 import com.uyscuti.social.core.util.LocationServiceUtil
 import com.uyscuti.social.core.util.NetworkUtil
 import java.lang.Math.sqrt
+
 
 private const val TAG = "MainActivity"
 
