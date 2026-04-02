@@ -1,9 +1,11 @@
 package com.uyscuti.sharedmodule.adapter
 
+import android.animation.ValueAnimator
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.graphics.Color
 import android.os.Handler
 import android.text.Spannable
 import android.text.SpannableString
@@ -47,6 +49,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.greenrobot.eventbus.EventBus
+import kotlin.apply
 
 
 private const val TAG = "CommentsRecyclerViewAdapter"
@@ -59,9 +62,7 @@ private const val VIEW_TYPE_DOCUMENT_COMMENT = 4
 private const val VIEW_TYPE_GIF = 5
 private const val VIEW_TYPE_EMPTY = 10
 
-
 class CommentsRecyclerViewAdapter(
-
     private val context: Context,
     private val onViewReplies: OnViewRepliesClickListener,
 
@@ -84,6 +85,7 @@ class CommentsRecyclerViewAdapter(
     private var secondAudioDurationTV: TextView? = null
     private val audioWave: WaveformSeekBar? = null
     private var playingMainCommentPosition = -1
+    private var highlightedPosition: Int = -1
 
     fun getComment(position: Int): Comment {
         return getItem(position)
@@ -95,12 +97,47 @@ class CommentsRecyclerViewAdapter(
         }
     }
 
+    fun findCommentPosition(commentId: String): Int {
+        return getmDataSet().indexOfFirst { it._id == commentId }
+    }
+
+    fun setHighlightedPosition(position: Int) {
+        val oldPosition = highlightedPosition
+        highlightedPosition = position
+
+        if (oldPosition != -1) notifyItemChanged(oldPosition)
+        if (position != -1) notifyItemChanged(position)
+    }
+
+    fun clearHighlight() {
+        val position = highlightedPosition
+        highlightedPosition = -1
+        if (position != -1) notifyItemChanged(position)
+    }
+
+    @SuppressLint("ResourceType")
+    private fun animateHighlight(itemView: View) {
+        val highlightColor = ContextCompat.getColor(
+            itemView.context,
+            R.color.unReadNotification
+        )
+
+        ValueAnimator.ofArgb(Color.TRANSPARENT, highlightColor, Color.TRANSPARENT).apply {
+            duration = 2000
+            addUpdateListener { animator ->
+                itemView.setBackgroundColor(animator.animatedValue as Int)
+            }
+            start()
+        }
+    }
+
     inner class CommentGifViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
 
         val TAG = "Comment Gif ViewHolder"
 
         private val imageView: ImageView = itemView.findViewById(R.id.profilePic)
         private val imageComment: ImageView = itemView.findViewById(R.id.imageComment)
+        //private val likeUnLikeCommentImageView: ImageView = itemView.findViewById(R.id.likeUnLikeComment)
         private val likeButton: TextView = itemView.findViewById(R.id.likeButton)
         private val username: TextView = itemView.findViewById(R.id.username)
 
@@ -108,15 +145,22 @@ class CommentsRecyclerViewAdapter(
         private val time: TextView = itemView.findViewById(R.id.time)
         private val reply: TextView = itemView.findViewById(R.id.reply)
         private val commentReplies: TextView = itemView.findViewById(R.id.commentReplies)
-
         private val hideCommentReplies: TextView = itemView.findViewById(R.id.hideCommentReplies)
         private val likesCount: TextView = itemView.findViewById(R.id.likesCount)
         private val viewRepliesContainer: LinearLayout = itemView.findViewById(R.id.viewRepliesContainer)
         private val repliesRecyclerView: RecyclerView =
             itemView.findViewById(R.id.repliesRecyclerView)
 
+        private var isReplyCount = false
+
         @SuppressLint("SetTextI18n")
-        fun render(data: Comment, position: Int) {
+        fun render(data: Comment, position: Int, isHighlighted: Boolean) {
+
+            if (isHighlighted) {
+                animateHighlight(itemView)
+            } else {
+                itemView.setBackgroundColor(Color.TRANSPARENT)
+            }
 
             var imageUrl = ""
             Log.d(TAG, "data $data")
@@ -128,14 +172,14 @@ class CommentsRecyclerViewAdapter(
                 .diskCacheStrategy(DiskCacheStrategy.ALL)
                 .into(imageView)
 
-
-            if (data.gifs != "") {
-                imageUrl = data.gifs
+//            Log.d("")
+            if (data.gifs != "" && data.gifs != null) {
+                imageUrl = data.gifs!!
                 if (imageUrl.isNotEmpty()) {
                     Log.d(TAG, "Image url is not empty for holder")
                     Glide.with(context)
                         .load(data.gifs)
-
+//                        .apply(RequestOptions.bitmapTransform(CircleCrop()))
                         .placeholder(R.drawable.flash21)
                         .diskCacheStrategy(DiskCacheStrategy.ALL)
                         .into(imageComment)
@@ -151,12 +195,12 @@ class CommentsRecyclerViewAdapter(
 
                 for (commentReply in data.replies) {
                     commentReply.__v = absoluteAdapterPosition
-
+//                    commentReply.
                 }
 
                 Log.d("ImageCommentRenderData", "data.replies ${data.replies}")
                 if (data.isReplyPlaying) {
-
+//                    mReplyPosition = mReplyPosition
                     replyCommentAdapter =
                         ReplyCommentAdapter(context, data, data.postId, mReplyPosition)
 
@@ -219,7 +263,8 @@ class CommentsRecyclerViewAdapter(
                         } else {
                             commentReplies.visibility = View.GONE
                         }
-
+//                        commentReplies.text =
+//                            if (replyCount == 1) "...View 1 reply" else "...View more replies"
                     } else {
                         commentReplies.text =
                             if (replyCount == 1) "...View 1 reply" else "...View $replyCount replies"
@@ -240,7 +285,7 @@ class CommentsRecyclerViewAdapter(
 
             hideCommentReplies.setOnClickListener {
                 data.isRepliesVisible = false
-
+//                data.pageNumber = 1
                 repliesRecyclerView.visibility = View.GONE
                 hideCommentReplies.visibility = View.GONE
                 commentReplies.visibility = View.VISIBLE
@@ -264,15 +309,17 @@ class CommentsRecyclerViewAdapter(
                 commentReplies.text = if (replyCount == 1) "...View 1 reply" else "...View more"
 
                 onViewReplies.onViewRepliesClick(
-                    data, absoluteAdapterPosition, commentReplies, hideCommentReplies,
+                    data, absoluteAdapterPosition,
+                    commentReplies,
+                    hideCommentReplies,
                     repliesRecyclerView,
                     data.isRepliesVisible, data.pageNumber
                 )
             }
 
 
-            username.text = data.author.account.username
-            val owner = data.author.account.username
+            username.text = data.author!!.account.username
+            val owner = data.author!!.account.username
 
             imageComment.setOnClickListener {
                 val intent = Intent(context, ViewImagesActivity::class.java)
@@ -281,19 +328,18 @@ class CommentsRecyclerViewAdapter(
                 intent.putExtra("displayLikeButton", true)
                 intent.putExtra("position", absoluteAdapterPosition)
                 intent.putExtra("data", data)
-
+//                context.startActivity(intent)
                 (context as Activity).startActivityForResult(intent, R_CODE)
             }
-
-            data.content
-            Regex("@\\w+")
+            val inputString = data.content
+            val regex = Regex("@\\w+")
 
             time.text = formatMongoTimestamp(data.createdAt)
 
             reply.setOnClickListener {
-
+//                Log.d(TAG, "render: comment to reply on position $absoluteAdapterPosition and id ${data._id}")
                 EventBus.getDefault().post(ToggleReplyToTextView(data, absoluteAdapterPosition))
-                onViewReplies.onReplyButtonClick(position, data)
+                onViewReplies.onReplyButtonClick(position, data, true)
             }
 
             when (data.likes) {
@@ -400,21 +446,28 @@ class CommentsRecyclerViewAdapter(
         private val imageComment: ImageView = itemView.findViewById(R.id.imageComment)
         private val username: TextView = itemView.findViewById(R.id.username)
         private val captionContent: TextView = itemView.findViewById(R.id.content)
-
         private val time: TextView = itemView.findViewById(R.id.time)
         private val reply: TextView = itemView.findViewById(R.id.reply)
         private val commentReplies: TextView = itemView.findViewById(R.id.commentReplies)
         private val hideCommentReplies: TextView = itemView.findViewById(R.id.hideCommentReplies)
         private val likesCount: TextView = itemView.findViewById(R.id.likesCount)
-
         private val likeCountContainer: LinearLayout = itemView.findViewById(R.id.likeCountContainer)
         private val likeButton: TextView = itemView.findViewById(R.id.likeButton)
         private val repliesRecyclerView: RecyclerView = itemView.findViewById(R.id.repliesRecyclerView)
         private val viewRepliesContainer: LinearLayout = itemView.findViewById(R.id.viewRepliesContainer)
 
+        private var isReplyCount = false
+
 
         @SuppressLint("SetTextI18n")
-        fun render(data: Comment, position: Int) {
+        fun render(data: Comment, position: Int, isHighlighted: Boolean) {
+
+            if (isHighlighted) {
+                animateHighlight(itemView)
+            } else {
+                itemView.setBackgroundColor(Color.TRANSPARENT)
+            }
+
             var imageUrl = ""
             Log.d(TAG, "data $data")
             val replyCount = data.replyCount
@@ -445,7 +498,10 @@ class CommentsRecyclerViewAdapter(
             // Handle mention text
             // Handle mention text
             if (!data.content.isNullOrEmpty()){
-                if (data.content.contains(Regex("@\\w+"))) {
+                if (data.content!!.contains(Regex("@\\w+"))) {
+                    captionContent.text = data.content
+                    captionContent.visibility = View.VISIBLE
+                } else {
                     captionContent.text = data.content
                     captionContent.visibility = View.VISIBLE
                 }
@@ -549,24 +605,24 @@ class CommentsRecyclerViewAdapter(
             }
 
             // Set username and time
-            username.text = data.author.account.username
+            username.text = data.author!!.account.username
             time.text = formatMongoTimestamp(data.createdAt)
 
             // Handle image click
             imageComment.setOnClickListener {
                 val intent = Intent(itemView.context, ViewImagesActivity::class.java)
                 intent.putExtra("imageUrl", imageUrl)
-                intent.putExtra("owner", data.author.account.username)
+                intent.putExtra("owner", data.author!!.account.username)
                 intent.putExtra("displayLikeButton", true)
                 intent.putExtra("position", absoluteAdapterPosition)
                 intent.putExtra("data", data)
-                (itemView.context as Activity).startActivityForResult(intent, R_CODE)
+                (context as Activity).startActivityForResult(intent, R_CODE)
             }
 
             // Handle reply click
             reply.setOnClickListener {
                 EventBus.getDefault().post(ToggleReplyToTextView(data, absoluteAdapterPosition))
-                onViewReplies.onReplyButtonClick(position, data)
+                onViewReplies.onReplyButtonClick(position, data, true)
             }
 
             when (data.likes) {
@@ -672,17 +728,14 @@ class CommentsRecyclerViewAdapter(
         private val username: TextView = itemView.findViewById(R.id.username)
         private val time: TextView = itemView.findViewById(R.id.time)
         private val reply: TextView = itemView.findViewById(R.id.reply)
-
         private val commentReplies: TextView = itemView.findViewById(R.id.commentReplies)
         private val hideCommentReplies: TextView = itemView.findViewById(R.id.hideCommentReplies)
         private val likesCount: TextView = itemView.findViewById(R.id.likesCount)
         private val likeUnLikeComment: TextView = itemView.findViewById(R.id.likeUnLikeComment)
-
         private val likeCountContainer: LinearLayout = itemView.findViewById(R.id.likeCountContainer)
         private val repliesRecyclerView: RecyclerView = itemView.findViewById(R.id.repliesRecyclerView)
         private val docTitle: TextView = itemView.findViewById(R.id.docTitle)
         private val docInfo: TextView = itemView.findViewById(R.id.docInfo)
-
         private val documentLayout: RelativeLayout = itemView.findViewById(R.id.documentLayout)
         private val documentImageView: ImageView = itemView.findViewById(R.id.documentImageView)
         private  val captionContent: TextView = itemView.findViewById(R.id.content)
@@ -690,7 +743,13 @@ class CommentsRecyclerViewAdapter(
 
 
         @SuppressLint("SetTextI18n")
-        fun render(data: Comment, position: Int) {
+        fun render(data: Comment, position: Int, isHighlighted: Boolean) {
+
+            if (isHighlighted) {
+                animateHighlight(itemView)
+            } else {
+                itemView.setBackgroundColor(Color.TRANSPARENT)
+            }
 
             var documentUrl = ""
             Log.d(TAG, "data $data")
@@ -698,7 +757,10 @@ class CommentsRecyclerViewAdapter(
 
             // Handle mention text
             if (!data.content.isNullOrEmpty()){
-                if (data.content.contains(Regex("@\\w+"))) {
+                if (data.content!!.contains(Regex("@\\w+"))) {
+                    captionContent.text = data.content
+                    captionContent.visibility = View.VISIBLE
+                } else {
                     captionContent.text = data.content
                     captionContent.visibility = View.VISIBLE
                 }
@@ -847,13 +909,13 @@ class CommentsRecyclerViewAdapter(
             }
 
             // Set username and time
-            username.text = data.author.account.username
+            username.text = data.author!!.account.username
             time.text = formatMongoTimestamp(data.createdAt)
 
             // Handle reply button
             reply.setOnClickListener {
                 EventBus.getDefault().post(ToggleReplyToTextView(data, absoluteAdapterPosition))
-                onViewReplies.onReplyButtonClick(position, data)
+                onViewReplies.onReplyButtonClick(position, data, true)
             }
 
             // Like count visibility
@@ -958,23 +1020,28 @@ class CommentsRecyclerViewAdapter(
         private val imageView: ImageView = itemView.findViewById(R.id.profilePic)
         private val videoThumbnail: ImageView = itemView.findViewById(R.id.videoThumbnail)
         private val likeButton: TextView = itemView.findViewById(R.id.likeButton) // Updated to use likeButton
-
         private val likeCountContainer: LinearLayout = itemView.findViewById(R.id.likeCountContainer) // Updated to use likeCountContainer
         private val username: TextView = itemView.findViewById(R.id.username)
         private val time: TextView = itemView.findViewById(R.id.time)
-
         private val reply: TextView = itemView.findViewById(R.id.reply)
         private val commentReplies: TextView = itemView.findViewById(R.id.commentReplies)
         private val hideCommentReplies: TextView = itemView.findViewById(R.id.hideCommentReplies)
         private val likesCount: TextView = itemView.findViewById(R.id.likesCount)
-
         private val commentVideoDurationTextView: TextView = itemView.findViewById(R.id.commentVideoDurationTextView)
         private val repliesRecyclerView: RecyclerView = itemView.findViewById(R.id.repliesRecyclerView)
         private val viewRepliesContainer: LinearLayout = itemView.findViewById(R.id.viewRepliesContainer)
+        private var isReplyCount = false
 
 
         @SuppressLint("SetTextI18n")
-        fun render(data: Comment, position: Int) {
+        fun render(data: Comment, position: Int, isHighlighted: Boolean) {
+
+            if (isHighlighted) {
+                animateHighlight(itemView)
+            } else {
+                itemView.setBackgroundColor(Color.TRANSPARENT)
+            }
+
             var videourl = ""
             var thumbnail = ""
             Log.d(TAG, "data $data")
@@ -985,7 +1052,10 @@ class CommentsRecyclerViewAdapter(
             // Handle mention text
             // Handle mention text
             if (!data.content.isNullOrEmpty()){
-                if (data.content.contains(Regex("@\\w+"))) {
+                if (data.content!!.contains(Regex("@\\w+"))) {
+                    captionContent.text = data.content
+                    captionContent.visibility = View.VISIBLE
+                } else {
                     captionContent.text = data.content
                     captionContent.visibility = View.VISIBLE
                 }
@@ -1136,8 +1206,8 @@ class CommentsRecyclerViewAdapter(
                 )
             }
 
-            username.text = data.author.account.username
-            val owner = data.author.account.username
+            username.text = data.author!!.account.username
+            val owner = data.author!!.account.username
 
             videoThumbnail.setOnClickListener {
                 val intent = Intent(context, CommentVideoPlayerActivity::class.java)
@@ -1152,7 +1222,7 @@ class CommentsRecyclerViewAdapter(
 
             reply.setOnClickListener {
                 EventBus.getDefault().post(ToggleReplyToTextView(data, absoluteAdapterPosition))
-                onViewReplies.onReplyButtonClick(position, data)
+                onViewReplies.onReplyButtonClick(position, data, true)
             }
 
             // Like count visibility
@@ -1258,29 +1328,28 @@ class CommentsRecyclerViewAdapter(
         val TAG = "Comment Audio ViewHolder"
 
         private val imageView: ImageView = itemView.findViewById(R.id.profilePic)
+        // Use likeButton TextView instead of likeUnLikeCommentImageView
         private val likeButton: TextView = itemView.findViewById(R.id.likeButton)
         private val captionContent: TextView = itemView.findViewById(R.id.content)
         private val likeCountContainer: LinearLayout = itemView.findViewById(R.id.likeCountContainer)
-
         private val username: TextView = itemView.findViewById(R.id.username)
         private val time: TextView = itemView.findViewById(R.id.time)
         private val reply: TextView = itemView.findViewById(R.id.reply)
         private val commentReplies: TextView = itemView.findViewById(R.id.commentReplies)
-
         private val hideCommentReplies: TextView = itemView.findViewById(R.id.hideCommentReplies)
         private val likesCount: TextView = itemView.findViewById(R.id.likesCount)
         private val audioDurationTextView: TextView = itemView.findViewById(R.id.audioDurationTV)
         private val secondAudioDurationTextView: TextView = itemView.findViewById(R.id.secondAudioDurationTVCount)
-
         private val audioDurationTVCount: TextView = itemView.findViewById(R.id.audioDurationTVCount)
         private val audioWave: WaveformSeekBar = itemView.findViewById(R.id.wave)
         private val secondAudioWave: WaveformSeekBar = itemView.findViewById(R.id.secondWave)
         private val commentAudioSeekBar: SeekBar = itemView.findViewById(R.id.commentAudioSeekBar)
-
         private val secondCommentAudioSeekBar: SeekBar = itemView.findViewById(R.id.secondCommentAudioSeekBar)
         val repliesRecyclerView: RecyclerView = itemView.findViewById(R.id.repliesRecyclerView)
         private val playVnAudioBtn: ImageView = itemView.findViewById(R.id.playVnAudioBtn)
         private val viewRepliesContainer: LinearLayout = itemView.findViewById(R.id.viewRepliesContainer)
+
+        private var isReplyCount = false
 
         init {
             // Add null checks for critical views to prevent crashes
@@ -1289,9 +1358,16 @@ class CommentsRecyclerViewAdapter(
         }
 
         @SuppressLint("SetTextI18n", "NotifyDataSetChanged", "DefaultLocale")
-        fun render(data: Comment, position: Int) {
+        fun render(data: Comment, position: Int, isHighlighted: Boolean) {
+
+            if (isHighlighted) {
+                animateHighlight(itemView)
+            } else {
+                itemView.setBackgroundColor(Color.TRANSPARENT)
+            }
+
             var audioUrl = ""
-            data.replyCount
+            var replyCount = data.replyCount
 
             Log.d("DataIsPlaying", "Data is playing ${data.isPlaying}")
             Log.d("CommentAudioViewHolder", "audio type: ${data.fileType}")
@@ -1301,7 +1377,10 @@ class CommentsRecyclerViewAdapter(
             // Handle mention text
             // Handle mention text
             if (!data.content.isNullOrEmpty()){
-                if (data.content.contains(Regex("@\\w+"))) {
+                if (data.content!!.contains(Regex("@\\w+"))) {
+                    captionContent.text = data.content
+                    captionContent.visibility = View.VISIBLE
+                } else {
                     captionContent.text = data.content
                     captionContent.visibility = View.VISIBLE
                 }
@@ -1484,8 +1563,8 @@ class CommentsRecyclerViewAdapter(
                 override fun onStopTrackingTouch(seekBar: SeekBar?) {
                     if (!data.isPlaying) {
                         // Return to total duration after scrubbing (WhatsApp behavior)
-                        secondAudioDurationTextView.text = data.duration
-                        secondCommentAudioSeekBar.progress = 0
+                        secondAudioDurationTextView.text = TrimVideoUtils.stringForTime(seekBar!!.progress.toFloat())
+                        secondCommentAudioSeekBar.progress = seekBar.progress
                     }
                 }
             })
@@ -1552,6 +1631,8 @@ class CommentsRecyclerViewAdapter(
 
                     // Show total duration
                     secondAudioDurationTextView.text = data.duration
+                    secondCurrentSeekBar = secondCommentAudioSeekBar
+
                 }
             }
         }
@@ -1592,7 +1673,7 @@ class CommentsRecyclerViewAdapter(
 
                 // Update adapter state
                 mReplyPosition = -1
-                mPlayingPosition = if (mPlayingPosition == absoluteAdapterPosition) -1 else absoluteAdapterPosition
+                mPlayingPosition = absoluteAdapterPosition
                 notifyItemChanged(absoluteAdapterPosition)
 
                 // Post events
@@ -1663,7 +1744,7 @@ class CommentsRecyclerViewAdapter(
                     secondCommentAudioSeekBar.visibility = View.VISIBLE
                     secondAudioDurationTextView.visibility = View.VISIBLE
                     secondAudioDurationTextView.text = data.duration // Show total duration
-                    secondCommentAudioSeekBar.progress = 0 // Reset to beginning
+                    secondCommentAudioSeekBar.progress = 0// Reset to beginning
                 }
             }
         }
@@ -1736,7 +1817,7 @@ class CommentsRecyclerViewAdapter(
 
             // Reply visibility logic
             if (replyCount == 0) {
-              viewRepliesContainer.visibility = View.GONE
+                viewRepliesContainer.visibility = View.GONE
             } else {
 
                 viewRepliesContainer.visibility = View.VISIBLE
@@ -1791,7 +1872,7 @@ class CommentsRecyclerViewAdapter(
 
             reply.setOnClickListener {
                 EventBus.getDefault().post(ToggleReplyToTextView(data, absoluteAdapterPosition))
-                onViewReplies.onReplyButtonClick(position, data)
+                onViewReplies.onReplyButtonClick(position, data, true)
             }
         }
 
@@ -1860,9 +1941,18 @@ class CommentsRecyclerViewAdapter(
         private val viewRepliesContainer: LinearLayout = itemView.findViewById(R.id.viewRepliesContainer)
         private val repliesRecyclerView: RecyclerView = itemView.findViewById(R.id.repliesRecyclerView)
 
+        private var isReplyCount = false
+
 
         @SuppressLint("SetTextI18n")
-        fun render(data: Comment, position: Int) {
+        fun render(data: Comment, position: Int, isHighlighted: Boolean) {
+
+            if (isHighlighted) {
+                animateHighlight(itemView)
+            } else {
+                itemView.setBackgroundColor(Color.TRANSPARENT)
+            }
+
             var replyCount = data.replyCount
 
             Glide.with(context)
@@ -1970,7 +2060,7 @@ class CommentsRecyclerViewAdapter(
                 )
             }
 
-            username.text = data.author.account.username
+            username.text = data.author!!.account.username
 
             // Handle mentions in content
             val inputString = data.content
@@ -2002,7 +2092,7 @@ class CommentsRecyclerViewAdapter(
 
             reply.setOnClickListener {
                 EventBus.getDefault().post(ToggleReplyToTextView(data, absoluteAdapterPosition))
-                onViewReplies.onReplyButtonClick(position, data)
+                onViewReplies.onReplyButtonClick(position, data, true)
             }
 
             // Handle likes display
@@ -2051,6 +2141,17 @@ class CommentsRecyclerViewAdapter(
     }
 
 
+    fun getMentionedNames(): List<String> {
+        val inputString =
+            "Hello @user1, how are you? @user2 is also here. Mention @user3 in your reply."
+
+        val regex = Regex("@\\w+")
+        val matches = regex.findAll(inputString)
+
+        return matches.map { it.value }.toList()
+//        println("Mentioned users: $mentionedUsers")
+    }
+
     fun refreshMainComment(position: Int) {
         Log.d("refreshMainComment", "refreshMainComment position $position")
         this@CommentsRecyclerViewAdapter.refreshItem(position)
@@ -2091,15 +2192,16 @@ class CommentsRecyclerViewAdapter(
     }
 
     fun setSecondSeekBarProgress(progress: Float, position: Int) {
-            if (secondCurrentSeekBar != null && mPlayingPosition == position) {
-                CoroutineScope(Dispatchers.Main).launch {
-                    secondCurrentSeekBar!!.progress = progress.toInt()
-                    secondAudioDurationTV?.text = String.format(
-                        "%s",
-                        TrimVideoUtils.stringForTime(progress)
-                    )
-                }
+        Log.d(TAG, "Progress: $progress position $position")
+        if (secondCurrentSeekBar != null && mPlayingPosition == position) {
+            CoroutineScope(Dispatchers.Main).launch {
+                secondCurrentSeekBar!!.progress = progress.toInt()
+                secondAudioDurationTV?.text = String.format(
+                    "%s",
+                    TrimVideoUtils.stringForTime(progress)
+                )
             }
+        }
     }
 
     fun setSecondWaveFormProgress(progress: Float, position: Int) {
@@ -2148,7 +2250,7 @@ class CommentsRecyclerViewAdapter(
             CoroutineScope(Dispatchers.Main).launch {
                 mCurrentWaveForm!!.progress = progress
                 currentComment?.progress = progress
-
+//                Log.d("updateWaveProgress", "updateWaveProgress: $progress")
             }
         } else {
             mCurrentWaveForm?.progress = 0F
@@ -2178,7 +2280,7 @@ class CommentsRecyclerViewAdapter(
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
         val inflater = LayoutInflater.from(parent.context)
 
-
+//        Log.d(TAG, "onCreateViewHolder: view type $viewType")
         return when (viewType) {
             VIEW_TYPE_TEXT_COMMENT -> {
                 val itemView = inflater.inflate(R.layout.comment_text_item, parent, false)
@@ -2229,26 +2331,32 @@ class CommentsRecyclerViewAdapter(
     ) {
         when (holder) {
             is CommentTextViewHolder -> {
-                holder.render(getItem(position), position)
+                val isHighlighted = position == highlightedPosition
+                holder.render(getItem(position), position,isHighlighted)
             }
 
             is CommentAudioViewHolder -> {
-                holder.render(getItem(position), position)
+                val isHighlighted = position == highlightedPosition
+                holder.render(getItem(position), position,isHighlighted)
             }
 
             is CommentImageViewHolder -> {
+                val isHighlighted = position == highlightedPosition
                 // You can customize this part if needed
-                holder.render(getItem(position), position)
+                holder.render(getItem(position), position, isHighlighted)
             }
 
             is CommentVideoViewHolder -> {
-                holder.render(getItem(position), position)
+                val isHighlighted = position == highlightedPosition
+                holder.render(getItem(position), position, isHighlighted)
             }
             is CommentDocumentViewHolder -> {
-                holder.render(getItem(position), position)
+                val isHighlighted = position == highlightedPosition
+                holder.render(getItem(position), position, isHighlighted)
             }
             is CommentGifViewHolder -> {
-                holder.render(getItem(position), position)
+                val isHighlighted = position == highlightedPosition
+                holder.render(getItem(position), position, isHighlighted)
             }
             is EmptyViewHolder -> {
                 // You can customize this part if needed
@@ -2259,20 +2367,20 @@ class CommentsRecyclerViewAdapter(
 
     override fun getItemViewType(position: Int): Int {
         val tag = "CommentType"
-
+//        Log.d(TAG, "getItemViewType: size $itemCount")
         return when (getItem(position).contentType) {
             "audio" -> {
-
+//                Log.d(TAG, "getItemViewType: audio type")
                 VIEW_TYPE_AUDIO_COMMENT
             }
 
             "text" -> {
-
+//                Log.d(TAG, "getItemViewType: text type")
                 VIEW_TYPE_TEXT_COMMENT
             }
 
             "image" -> {
-
+//                Log.d(tag, "getItemViewType: text type")
                 VIEW_TYPE_IMAGE_COMMENT
             }
 
@@ -2292,6 +2400,8 @@ class CommentsRecyclerViewAdapter(
             }
         }
     }
+
+    //
 }
 
 interface OnViewRepliesClickListener {
@@ -2323,7 +2433,11 @@ interface OnViewRepliesClickListener {
         isVnAudio: Boolean
     )
 
-    fun onReplyButtonClick(position: Int, data: Comment)
+    fun onReplyButtonClick(
+        position: Int,
+        data: Comment,
+        isMainComment: Boolean
+    )
 
     fun likeUnLikeComment(position: Int, data: Comment)
 
