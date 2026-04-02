@@ -75,4 +75,5 @@ dependencies {
 
     implementation(project(":notifications"))
     implementation(project(":network"))
+    implementation(project(":chatsuit"))
 }

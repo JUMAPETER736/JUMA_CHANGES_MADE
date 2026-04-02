@@ -7,7 +7,6 @@ import android.os.Parcel;
 import android.os.Parcelable;
 
 import com.uyscuti.social.chatsuit.commons.models.IUser;
-
 import java.util.Date;
 
 public class User implements IUser, Parcelable {
