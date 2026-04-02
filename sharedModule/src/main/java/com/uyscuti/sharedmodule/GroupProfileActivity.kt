@@ -1,5 +1,8 @@
 package com.uyscuti.sharedmodule
 
+import android.app.Activity
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
@@ -9,6 +12,10 @@ import android.graphics.drawable.InsetDrawable
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
+import android.view.View
+import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.viewModels
 import androidx.annotation.ColorInt
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -21,14 +28,41 @@ import com.bumptech.glide.request.target.SimpleTarget
 import com.bumptech.glide.request.transition.Transition
 import com.google.android.material.tabs.TabLayout
 import com.uyscuti.sharedmodule.adapter.GroupTabsAdapter
-import com.uyscuti.sharedmodule.data.model.Dialog
 import com.uyscuti.sharedmodule.databinding.ActivityGroupProfileBinding
 import com.uyscuti.sharedmodule.media.ViewImagesActivity
+import com.uyscuti.social.core.models.data.Dialog
+import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
 import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class GroupProfileActivity : AppCompatActivity() {
-    private lateinit var binding: ActivityGroupProfileBinding
+
+    companion object {
+        fun open(
+            context:        Context,
+            dialog:         Dialog,
+            adminId:        String,
+            groupCreatedAt: String,
+            myRole:         String  = "member",
+            inviteLink:     String? = null,
+            description:    String  = ""
+        ) {
+            context.startActivity(
+                Intent(context, GroupProfileActivity::class.java).apply {
+                    putExtra("Dialog_Extra", dialog)
+                    putExtra("adminId",      adminId)
+                    putExtra("createdAt",    groupCreatedAt)
+                    putExtra("myRole",       myRole)
+                    putExtra("inviteLink",   inviteLink)
+                    putExtra("description",  description)
+                }
+            )
+        }
+    }
+
+
+   private lateinit var binding: ActivityGroupProfileBinding
     private var dialog: Dialog? = null
     private lateinit var groupAdminId: String
     private lateinit var groupCreatedAt: String
@@ -243,13 +277,4 @@ class GroupProfileActivity : AppCompatActivity() {
         // Code to start a voice call
     }
 
-    companion object {
-        fun open(context: Context, dialog: Dialog, adminId: String, groupCreatedAt: String) {
-            val intent = Intent(context, GroupProfileActivity::class.java)
-            intent.putExtra("Dialog_Extra", dialog)
-            intent.putExtra("adminId", adminId)
-            intent.putExtra("createdAt", groupCreatedAt)
-            context.startActivity(intent)
-        }
-    }
 }
