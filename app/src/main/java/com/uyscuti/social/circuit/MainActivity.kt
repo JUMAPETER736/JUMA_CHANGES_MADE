@@ -4215,105 +4215,7 @@ class MainActivity : AppCompatActivity(),
     }
 
 
-    //    var firstTime = true
-    @SuppressLint("SetTextI18n")
-    override fun onViewRepliesClick(
-        data: com.uyscuti.social.network.api.models.Comment,
-        position: Int,
-        commentRepliesTV: TextView,
-        hideCommentReplies: TextView,
-        repliesRecyclerView: RecyclerView,
-        isRepliesVisible: Boolean,
-        page: Int
-    ) {
-        val TAG = "onViewRepliesClick"
-        lifecycleScope.launch {
-//            Log.d(TAG, "onViewRepliesClick:  display on view with ${data.replyCount} reply count")
-            Log.d(TAG, "onViewRepliesClick:  page number $page")
 
-//            var commentReplies : List<com.uyscut.network.api.response.commentreply.allreplies.Comment> = listOf()
-//            if(data.replies.isEmpty() ) {
-//                firstTime = false
-//            if(!commentRepliesTV.text.equals("Loading...")) {
-//                Log.d(TAG, "onViewRepliesClick: before does not contain loading...")
-//            }
-            if (data.hasNextPage) {
-                commentRepliesTV.text = "Loading..."
-
-                if (commentRepliesTV.text.equals("Loading...")) {
-                    Log.d(TAG, "onViewRepliesClick: contains loading...")
-                    withContext(Dispatchers.Main) {
-                        hideCommentReplies.visibility = View.GONE
-                    }
-                }
-//                Log.d(TAG, "onViewRepliesClick: Data is not available")
-
-//                val commentReplies = allCommentReplies2(1, data._id)
-                val commentReplies = allCommentRepliesOnce(page, data._id)
-                val commentWithReplies = com.uyscuti.social.network.api.models.Comment(
-                    __v = data.__v,
-                    _id = data._id,
-                    author = data.author,
-                    content = data.content,
-                    createdAt = data.createdAt,
-                    isLiked = data.isLiked,
-                    likes = data.likes,
-                    postId = data.postId,
-                    updatedAt = data.updatedAt,
-                    replyCount = data.replyCount,
-                    replies = mutableListOf(),
-                    hasNextPage = data.hasNextPage,
-                    images = data.images,
-                    audios = data.audios,
-                    docs = data.docs,
-                    gifs = data.gifs,
-                    thumbnail = data.thumbnail,
-                    videos = data.videos,
-                    contentType = data.contentType,
-                    isPlaying = data.isPlaying,
-                    localUpdateId = data.localUpdateId,
-                    duration = data.duration,
-                    fileName = data.fileName,
-                    fileSize = data.fileSize,
-                    fileType = data.fileType,
-                    numberOfPages = data.numberOfPages
-
-
-//                    pageNumber =
-                )
-
-
-                Log.d(
-                    TAG,
-                    "onViewRepliesClick: has next page ${commentReplies.hasNextPage} page number ${commentReplies.pageNumber}"
-                )
-                val updatedComment = commentWithReplies.copy(
-//                        replies = commentReplies.comments,
-                    replies = data.replies.toMutableList().apply {
-                        // Assuming newReply is the new reply you want to add
-                        addAll(commentReplies.comments)
-                    },
-                    isRepliesVisible = isRepliesVisible,
-                    hasNextPage = commentReplies.hasNextPage,
-                    pageNumber = commentReplies.pageNumber
-                )
-
-                withContext(Dispatchers.Main) {
-                    adapter?.updateItem(position, updatedComment)
-//                commentRepliesTV.text = "Hide replies"
-                    hideCommentReplies.visibility = View.VISIBLE
-                }
-            }
-//            }else {
-//                Log.d(TAG, "onViewRepliesClick: Data is already available")
-//            }
-
-//            replyAdapter.addComment(newComment)
-
-//            Log.d(TAG, "onViewRepliesClick:  display replies - ${commentReplies[0].content} ")
-
-        }
-    }
 
 
     override fun onReplyButtonClick(
@@ -4329,50 +4231,31 @@ class MainActivity : AppCompatActivity(),
         data: com.uyscuti.social.network.api.models.Comment
     ) {
         val TAG = "likeUnLikeComment"
+        Log.d(TAG, "override: likeUnLikeComment: data.isLiked ${data.isLiked}")
 
-        Log.d(
-            "CommentsRecyclerViewAdapter",
-            "override: likeUnLikeComment: data.isLiked ${data.isLiked}"
-        )
-//        var updatedComment : com.uyscuti.social.circuit.data.model.Comment? = null
         val updatedComment = if (data.isLiked) {
-            data.copy(
-                likes = data.likes + 1,
-            )
+            data.copy(likes = data.likes + 1)
         } else {
-            data.copy(
-                likes = data.likes - 1,
-            )
+            data.copy(likes = data.likes - 1)
         }
-        Log.d(
-            "CommentsRecyclerViewAdapter",
-            "override: likeUnLikeComment: likes count is ${data.likes}"
-        )
-        adapter?.updateItem(position, updatedComment)
+
+        Log.d(TAG, "override: likeUnLikeComment: likes count is ${data.likes}")
+
+        // FIX: convert to sharedmodule Comment before passing to adapter
+        adapter?.updateItem(position, updatedComment.toSharedComment())
 
         if (isInternetAvailable(this)) {
-            Log.d(TAG, "override :likeUnLikeComment: internet is available")
-//            Log.d(TAG, "likeUnLikeComment: internet is available")
             var result by Delegates.notNull<Boolean>()
             lifecycleScope.launch {
                 result = if (isFeedComment) {
                     feedCommentLikeUnLike(data._id)
-
                 } else {
                     commentLikeUnLike(data._id)
                 }
             }
-//            lifecycleScope.launch {
-//                val result = commentLikeUnLike(data._id)
-//                Log.d(TAG, "likeUnLikeComment server result: $result")
-//
-//                if (result) {
-//                }
-//            }
         } else {
             Log.d(TAG, "likeUnLikeComment: cant like offline")
         }
-
     }
 
     override fun likeUnlikeCommentReply(
