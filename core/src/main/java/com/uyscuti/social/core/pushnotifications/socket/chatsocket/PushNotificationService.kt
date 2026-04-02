@@ -40,7 +40,7 @@ class PushNotificationService : IntentService("NotificationService") {
             val message = intent.getSerializableExtra("message") as Message
 
             val chatId = message.chat
-            val text = message.content
+            val text = message.content ?: ""
             val sender = message.sender.username
             val attachments = message.attachments
             var notificationContent = ""
@@ -49,24 +49,24 @@ class PushNotificationService : IntentService("NotificationService") {
                 for (attachment in attachments) {
                     when (getFileType(attachment.url)) {
                         FileType.IMAGE -> {
-                            notificationContent = "📷 Image"
+                            notificationContent = "Image"
                         }
 
                         FileType.AUDIO -> {
-                            notificationContent = "🎵 Audio"
+                            notificationContent = "Audio"
                         }
 
                         FileType.VIDEO -> {
-                            notificationContent = "🎬 Video"
+                            notificationContent = "Video"
                         }
 
                         FileType.DOCUMENT -> {
-                            notificationContent = "📄 Document"
+                            notificationContent = "Document"
                         }
 
                         FileType.OTHER -> {
                             // Handle other types, if needed
-                            notificationContent = "📎 Attachment"
+                            notificationContent = "Attachment"
                         }
                     }
                 }

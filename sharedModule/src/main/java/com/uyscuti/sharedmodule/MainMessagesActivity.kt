@@ -17,9 +17,9 @@ import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.request.RequestOptions
 import com.uyscuti.sharedmodule.data.fixtures.MessagesFixtures
-import com.uyscuti.sharedmodule.data.model.Dialog
-import com.uyscuti.sharedmodule.data.model.Message
-import com.uyscuti.sharedmodule.data.model.User
+import com.uyscuti.social.core.models.data.Dialog
+import com.uyscuti.social.core.models.data.Message
+import com.uyscuti.social.core.models.data.User
 import com.uyscuti.sharedmodule.presentation.DialogViewModel
 import com.uyscuti.sharedmodule.presentation.MessageViewModel
 import com.uyscuti.sharedmodule.utils.AppUtils
@@ -56,8 +56,6 @@ abstract class MainMessagesActivity : AppCompatActivity(), MessagesListAdapter.S
     private var TOTAL_MESSAGES_COUNT = 10
     private var first_messages_count = 0
 
-
-
     private var firstLoad = true
 
     private lateinit var messageRepository: MessageRepository
@@ -70,7 +68,7 @@ abstract class MainMessagesActivity : AppCompatActivity(), MessagesListAdapter.S
     private var lastLoadedDate: Date? = null
 
     private lateinit var settings: SharedPreferences
-    private val PREFS_NAME = "LocalSettings" // Change this to a unique name for your app
+    private val PREFS_NAME = "LocalSettings"
 
     private var dialog: Dialog? = null
 
@@ -81,11 +79,9 @@ abstract class MainMessagesActivity : AppCompatActivity(), MessagesListAdapter.S
     private val messageViewModel: MessageViewModel by viewModels()
     private val dialogViewModel: DialogViewModel by viewModels()
 
-    private lateinit var groupDialogRepository: GroupDialogRepository
+    internal lateinit var groupDialogRepository: GroupDialogRepository
 
     private var selectedMessagesIds = ArrayList<String>()
-
-
 
     private lateinit var chatId: String
     private lateinit var myId: String
@@ -101,38 +97,29 @@ abstract class MainMessagesActivity : AppCompatActivity(), MessagesListAdapter.S
 
         groupDialogRepository = GroupDialogRepository(
             ChatDatabase.Companion.getInstance(this).groupDialogDao(),
-            retrofitInterface
+            retrofitInterface,
+            localStorage
         )
         imageLoader = ImageLoader { imageView: ImageView?, url: String?, _: Any? ->
             try {
-                // Check if the URL is for a video file (you can adjust the list of video file extensions)
                 if (isVideoFile(url)) {
-
-
                     if (url != null) {
                         if (imageView != null) {
-
                             loadVideoThumbnail(this, url, imageView)
                         }
                     }
                 } else {
-                    // It's not a video, load it as an image
-
-
                     if (imageView != null) {
                         if (url != null) {
                             loadVideoThumbnail(this, url, imageView)
                         }
                     }
-
                 }
             } catch (error: Exception) {
                 Log.d("Thumbnail Exception", "The exception is : ${error.message}")
             }
         }
         settings = getSharedPreferences(PREFS_NAME, 0)
-
-
 
         loadMessageList()
     }
@@ -148,9 +135,7 @@ abstract class MainMessagesActivity : AppCompatActivity(), MessagesListAdapter.S
     override fun onStart() {
         super.onStart()
 
-
         if (firstLoad) {
-
             initMessages()
         }
     }
@@ -177,88 +162,49 @@ abstract class MainMessagesActivity : AppCompatActivity(), MessagesListAdapter.S
                 )
                 val date = Date(message.createdAt)
 
-                // Check if the text is "None" and imageUrl is not null
                 val messageContent = if (message.imageUrl != null) {
-
-                    Message(
-                        message.id,
-                        user,
-                        null,
-                        date
-                    ).apply {
+                    Message(message.id, user, null, date).apply {
                         setImage(Message.Image(message.imageUrl!!))
                         setStatus(status)
                     }
                 } else if (message.videoUrl != null) {
-
-                    Message(
-                        message.id,
-                        user,
-                        null,
-                        date
-                    ).apply {
+                    Message(message.id, user, null, date).apply {
                         setVideo(Message.Video(message.videoUrl!!))
                         setStatus(status)
                     }
                 } else if (message.audioUrl != null) {
-
-                    Message(
-                        message.id,
-                        user,
-                        null,
-                        date
-                    ).apply {
-                        setAudio(
-                            Message.Audio(
-                                message.audioUrl!!,
-                                0,
-                                getNameFromUrl(message.audioUrl!!)
-                            )
-                        )
+                    Message(message.id, user, null, date).apply {
+                        setAudio(Message.Audio(message.audioUrl!!, 0, getNameFromUrl(message.audioUrl!!)))
                         setStatus(status)
                     }
                 } else if (message.voiceUrl != null) {
-
-                    Message(
-                        message.id,
-                        user,
-                        null,
-                        date
-                    ).apply {
+                    Message(message.id, user, null, date).apply {
                         setVoice(Message.Voice(message.voiceUrl!!, 10000))
                         setStatus(status)
                     }
                 } else if (message.docUrl != null) {
-
-                    Message(
-                        message.id,
-                        user,
-                        null,
-                        date
-                    ).apply {
-
+                    Message(message.id, user, null, date).apply {
                         val size = getFileSize(message.docUrl!!)
-                        setDocument(
-                            Message.Document(
-                                message.docUrl!!,
-                                getNameFromUrl(message.docUrl!!),
-                                formatFileSize(size)
-                            )
-                        )
+                        setDocument(Message.Document(message.docUrl!!, getNameFromUrl(message.docUrl!!), formatFileSize(size)))
                         setStatus(status)
                     }
                 } else {
-                    Message(
-                        message.id,
-                        user,
-                        message.text,
-                        date
-                    ).apply {
+                    val rawText = message.text ?: ""
+                    val displayText = if (rawText.startsWith("circuit://join/group/"))
+                        "👥  Group Invite — tap to join"
+                    else
+                        rawText
+                    Message(message.id, user, displayText, date).apply {
                         setStatus(status)
+
+                        // use stored flag
+                        if (message.isSystemMessage) {
+                            Log.d("SystemMsg", "text='$rawText' isSystem=true [initMessages]")
+                            setSystemMessage(true)
+                        }
                     }
                 }
                 withContext(Dispatchers.Main) {
-
                     if (!message.deleted) {
                         messagesAdapter?.addToStart(messageContent, true)
                     }
@@ -289,7 +235,6 @@ abstract class MainMessagesActivity : AppCompatActivity(), MessagesListAdapter.S
         myId = id
     }
 
-
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         this.menu = menu
         menuInflater.inflate(R.menu.chat_actions_menu, menu)
@@ -299,47 +244,30 @@ abstract class MainMessagesActivity : AppCompatActivity(), MessagesListAdapter.S
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
-            // Handle menu item clicks here
             R.id.action_delete_ -> {
-
-//                Log.d("SelectedMessages", "${selectedMessagesIds.size}")
                 messagesAdapter?.deleteSelectedMessages()
-
                 val selectedMessages = messagesAdapter?.allSelectedMessages
-
-//                Log.d("SelectedMessages", "${selectedMessages?.size}")
-
                 selectedMessages?.map {
                     selectedMessagesIds.add(it.id)
                 }
-//                CoroutineScope(Dispatchers.IO).launch {
-//                    messageViewModel.deleteMessages(selectedMessagesIds)
-//                }
             }
 
             R.id.action_copy_ -> {
-                messagesAdapter?.copySelectedMessagesText(this, getMessageStringFormatter(), true);
-                AppUtils.showToast(this, R.string.copied_message, true);
+                messagesAdapter?.copySelectedMessagesText(this, getMessageStringFormatter(), true)
+                AppUtils.showToast(this, R.string.copied_message, true)
             }
 
-            else -> {
-
-            }
+            else -> {}
         }
         return true
     }
-
 
     @OptIn(UnstableApi::class)
     @Deprecated("Deprecated in Java")
     override fun onBackPressed() {
         if (selectionCount == 0) {
             super.onBackPressed()
-//            val upIntent = Intent(this, MainActivity::class.java)
-//            upIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
-//            NavUtils.navigateUpTo(this, upIntent)
             finish()
-
         } else {
             messagesAdapter?.unselectAllItems()
         }
@@ -347,8 +275,7 @@ abstract class MainMessagesActivity : AppCompatActivity(), MessagesListAdapter.S
 
     override fun onLoadMore(page: Int, totalItemsCount: Int) {
         if (totalItemsCount < TOTAL_MESSAGES_COUNT) {
-//            loadMessages()
-//            loadMessageList()
+            // reserved for pagination
         }
     }
 
@@ -357,115 +284,79 @@ abstract class MainMessagesActivity : AppCompatActivity(), MessagesListAdapter.S
         CoroutineScope(Dispatchers.IO).launch {
 
             val messageList: List<MessageEntity> = messageViewModel.getLastMessagesByChatId(chatId)
-
             first_messages_count = messageList.size
 
             val sortedMessages = messageList.sortedByDescending { it.createdAt }
-
             Log.d("TAG", "Sorted Message List: $sortedMessages")
             val filteredMessages = sortedMessages.filter { !it.deleted }
 
             val messages = filteredMessages.filter { message ->
+
+                // system messages always pass through
+                if (message.isSystemMessage) return@filter true
+
                 val userId = if (message.userId == myId) "0" else "1"
-                userId != "0" || (userId == "0" && message.id.startsWith("Image") || message.id.startsWith(
-                    "Video"
-                ) || message.id.startsWith("Audio") || message.id.startsWith("Text") || message.id.startsWith(
-                    "Doc"
-                ))
+                if (userId != "0") return@filter true
+
+                message.id.startsWith("Image") ||
+                        message.id.startsWith("Video") ||
+                        message.id.startsWith("Audio") ||
+                        message.id.startsWith("Text") ||
+                        message.id.startsWith("Doc")
             }.map { message ->
                 val userId = if (message.userId == myId) "0" else "1"
                 val status = message.status
-                val user =
-                    User(
-                        userId,
-                        message.user.name,
-                        message.user.avatar,
-                        message.user.online,
-                        message.user.lastSeen
-                    )
+                val user = User(
+                    userId,
+                    message.user.name,
+                    message.user.avatar,
+                    message.user.online,
+                    message.user.lastSeen
+                )
                 val date = Date(message.createdAt)
 
-                // Check if the text is "None" and imageUrl is not null
-                val messageContent = if (message.imageUrl != null) {
-//                        user.id = "0"
-                    Message(
-                        message.id,
-                        user,
-                        null,
-                        date
-                    ).apply {
+                if (message.imageUrl != null) {
+                    Message(message.id, user, null, date).apply {
                         setImage(Message.Image(message.imageUrl!!))
                         setStatus(status)
                     }
                 } else if (message.videoUrl != null) {
-//                        user.id = "0"
-                    Message(
-                        message.id,
-                        user,
-                        null,
-                        date
-                    ).apply {
+                    Message(message.id, user, null, date).apply {
                         setVideo(Message.Video(message.videoUrl!!))
                         setStatus(status)
                     }
                 } else if (message.audioUrl != null) {
-//                        user.id = "0"
-                    Message(
-                        message.id,
-                        user,
-                        null,
-                        date
-                    ).apply {
-                        setAudio(
-                            Message.Audio(
-                                message.audioUrl!!,
-                                0,
-                                getNameFromUrl(message.audioUrl!!)
-                            )
-                        )
+                    Message(message.id, user, null, date).apply {
+                        setAudio(Message.Audio(message.audioUrl!!, 0, getNameFromUrl(message.audioUrl!!)))
                         setStatus(status)
                     }
                 } else if (message.voiceUrl != null) {
-//                        user.id = "0"
-                    Message(
-                        message.id,
-                        user,
-                        null,
-                        date
-                    ).apply {
+                    Message(message.id, user, null, date).apply {
                         setVoice(Message.Voice(message.voiceUrl!!, 10000))
                         setStatus(status)
                     }
                 } else if (message.docUrl != null) {
-//                        user.id = "0"
-                    Message(
-                        message.id,
-                        user,
-                        null,
-                        date
-                    ).apply {
-
+                    Message(message.id, user, null, date).apply {
                         val size = getFileSize(message.docUrl!!)
-                        setDocument(
-                            Message.Document(
-                                message.docUrl!!,
-                                getNameFromUrl(message.docUrl!!),
-                                formatFileSize(size)
-                            )
-                        )
+                        setDocument(Message.Document(message.docUrl!!, getNameFromUrl(message.docUrl!!), formatFileSize(size)))
                         setStatus(status)
                     }
                 } else {
-                    Message(
-                        message.id,
-                        user,
-                        message.text,
-                        date
-                    ).apply {
+                    val rawText = message.text ?: ""
+                    val displayText = if (rawText.startsWith("circuit://join/group/"))
+                        "👥  Group Invite — tap to join"
+                    else
+                        rawText
+                    Message(message.id, user, displayText, date).apply {
                         setStatus(status)
+
+                        //  use stored flag
+                        if (message.isSystemMessage) {
+                            Log.d("SystemMsg", "text='$rawText' isSystem=true [loadFirstMessages]")
+                            setSystemMessage(true)
+                        }
                     }
                 }
-                messageContent
             } as List<Message>
 
             runOnUiThread {
@@ -475,125 +366,85 @@ abstract class MainMessagesActivity : AppCompatActivity(), MessagesListAdapter.S
     }
 
     private fun loadMessageList() {
-
         Handler().post {
             CoroutineScope(Dispatchers.Main).launch {
-
                 val messageList: List<MessageEntity> = messageViewModel.messages(chatId)
                 val sortedMessages = messageList.sortedByDescending { it.createdAt }
                 val filteredMessages = sortedMessages.filter { !it.deleted }
                 TOTAL_MESSAGES_COUNT = filteredMessages.size
 
                 val messages = filteredMessages.filter { message ->
+
+                    // system messages always pass through
+                    if (message.isSystemMessage) return@filter true
+
                     val userId = if (message.userId == myId) "0" else "1"
-                    userId != "0" || (userId == "0" && message.id.startsWith("Image") || message.id.startsWith(
-                        "Video"
-                    ) || message.id.startsWith("Audio") || message.id.startsWith("Text") || message.id.startsWith(
-                        "Doc"
-                    ))
+                    if (userId != "0") return@filter true
+
+                    message.id.startsWith("Image") ||
+                            message.id.startsWith("Video") ||
+                            message.id.startsWith("Audio") ||
+                            message.id.startsWith("Text") ||
+                            message.id.startsWith("Doc")
                 }.map { message ->
                     val userId = if (message.userId == myId) "0" else "1"
                     val status = message.status
-                    val user =
-                        User(
-                            userId,
-                            message.user.name,
-                            message.user.avatar,
-                            message.user.online,
-                            message.user.lastSeen
-                        )
+                    val user = User(
+                        userId,
+                        message.user.name,
+                        message.user.avatar,
+                        message.user.online,
+                        message.user.lastSeen
+                    )
                     val date = Date(message.createdAt)
 
-                    // Check if the text is "None" and imageUrl is not null
-                    val messageContent = if (message.imageUrl != null) {
-
-                        Message(
-                            message.id,
-                            user,
-                            null,
-                            date
-                        ).apply {
+                    if (message.imageUrl != null) {
+                        Message(message.id, user, null, date).apply {
                             setImage(Message.Image(message.imageUrl!!))
                             setStatus(status)
                         }
                     } else if (message.videoUrl != null) {
-
-                        Message(
-                            message.id,
-                            user,
-                            null,
-                            date
-                        ).apply {
+                        Message(message.id, user, null, date).apply {
                             setVideo(Message.Video(message.videoUrl!!))
                             setStatus(status)
                         }
                     } else if (message.audioUrl != null) {
-
-                        Message(
-                            message.id,
-                            user,
-                            null,
-                            date
-                        ).apply {
-                            setAudio(
-                                Message.Audio(
-                                    message.audioUrl!!,
-                                    0,
-                                    getNameFromUrl(message.audioUrl!!)
-                                )
-                            )
+                        Message(message.id, user, null, date).apply {
+                            setAudio(Message.Audio(message.audioUrl!!, 0, getNameFromUrl(message.audioUrl!!)))
                             setStatus(status)
                         }
                     } else if (message.voiceUrl != null) {
-
-                        Message(
-                            message.id,
-                            user,
-                            null,
-                            date
-                        ).apply {
+                        Message(message.id, user, null, date).apply {
                             setVoice(Message.Voice(message.voiceUrl!!, 10000))
                             setStatus(status)
                         }
                     } else if (message.docUrl != null) {
-
-                        Message(
-                            message.id,
-                            user,
-                            null,
-                            date
-                        ).apply {
-
+                        Message(message.id, user, null, date).apply {
                             val size = getFileSize(message.docUrl!!)
-                            setDocument(
-                                Message.Document(
-                                    message.docUrl!!,
-                                    getNameFromUrl(message.docUrl!!),
-                                    formatFileSize(size)
-                                )
-                            )
+                            setDocument(Message.Document(message.docUrl!!, getNameFromUrl(message.docUrl!!), formatFileSize(size)))
                             setStatus(status)
                         }
                     } else {
-                        Message(
-                            message.id,
-                            user,
-                            message.text,
-                            date
-                        ).apply {
+                        val rawText = message.text ?: ""
+                        val displayText = if (rawText.startsWith("circuit://join/group/"))
+                            "👥  Group Invite — tap to join"
+                        else
+                            rawText
+                        Message(message.id, user, displayText, date).apply {
                             setStatus(status)
+
+                            // use stored flag
+                            if (message.isSystemMessage) {
+                                Log.d("SystemMsg", "text='$rawText' isSystem=true [loadMessageList]")
+                                setSystemMessage(true)
+                            }
                         }
                     }
-                    messageContent
                 } as List<Message>
-
 
                 withContext(Dispatchers.Main) {
                     if (messages.isNotEmpty()) {
-                        // Create a filtered list without the last message
                         val filteredMessageList = messages.subList(1, messages.size)
-
-                        // Add the filtered messages to the adapter
                         messagesAdapter?.addToEnd(filteredMessageList, false)
                     }
                 }
@@ -615,38 +466,26 @@ abstract class MainMessagesActivity : AppCompatActivity(), MessagesListAdapter.S
     }
 
     fun getNameFromUrl(videoUrl: String): String {
-        // Split the URL using '/' as a delimiter and get the last part, which is the video filename
         val parts = videoUrl.split("/")
-
-        // You can further process the filename if needed, such as removing the file extension
         return parts.last()
     }
 
-
     fun getFileSize(filePath: String): Long {
         Log.d("Attachment File Size", "File path to be is : $filePath")
-
         try {
             val uri = URI.create(filePath)
             if (uri.scheme == "file") {
-                // It's a local file
                 val file = File(uri)
                 if (file.exists()) {
-
                     return file.length()
                 }
             } else if (uri.scheme == "http" || uri.scheme == "https") {
-                // It's a remote URL, you can handle it differently or return an appropriate value
-
-                return 0L // Or handle it according to your requirements
+                return 0L
             }
         } catch (e: IllegalArgumentException) {
-            // Handle invalid URIs here if needed
-
             e.printStackTrace()
         }
-
-        return 0L // Return 0 for unsupported or non-existent files
+        return 0L
     }
 
     override fun onSelectionChanged(count: Int) {
@@ -659,7 +498,6 @@ abstract class MainMessagesActivity : AppCompatActivity(), MessagesListAdapter.S
     }
 
     private fun loadMessages() {
-        // Imitation of internet connection
         Handler().postDelayed({
             val messages = MessagesFixtures.getMessages(lastLoadedDate)
             lastLoadedDate = messages[messages.size - 1].createdAt
@@ -682,7 +520,6 @@ abstract class MainMessagesActivity : AppCompatActivity(), MessagesListAdapter.S
     }
 
     private fun isVideoFile(url: String?): Boolean {
-        // List of video file extensions (you can add more if needed)
         val videoExtensions = listOf(
             ".mp4", ".avi", ".mkv", ".mov", ".flv",
             ".webm", ".wmv", ".mpg", ".mpeg", ".3gp",
@@ -691,8 +528,6 @@ abstract class MainMessagesActivity : AppCompatActivity(), MessagesListAdapter.S
             ".mts", ".f4v", ".swf", ".dat", ".yuv",
             ".r3d", ".m2v", ".m1v", ".fla", ".f4p"
         )
-
-        // Check if the URL ends with any of the video extensions
         return videoExtensions.any { url?.endsWith(it, true) == true }
     }
 
@@ -713,7 +548,6 @@ abstract class MainMessagesActivity : AppCompatActivity(), MessagesListAdapter.S
 
     private fun isFileInLocalStorage(audioFilePath: String): Boolean {
         return try {
-            // Check if the file path does not start with "file://" or "/storage/"
             !(audioFilePath.startsWith("file://") || audioFilePath.startsWith("/storage/"))
         } catch (e: Exception) {
             e.printStackTrace()
@@ -721,76 +555,55 @@ abstract class MainMessagesActivity : AppCompatActivity(), MessagesListAdapter.S
         }
     }
 
-
     suspend fun getCachedOrCalculateAudioDuration(context: Context, audioFilePath: String): Long {
         val preferences: SharedPreferences =
             context.getSharedPreferences("audio_duration_cache", MODE_PRIVATE)
-        // Check if the cache contains the duration for the given audioFilePath
         if (preferences.contains(audioFilePath)) {
             return preferences.getLong(audioFilePath, 0)
         }
 
         if (audioFilePath.startsWith("file://") || audioFilePath.startsWith("/storage/")) {
-            // Create or obtain a reference to the SharedPreferences
-
             val startTime = System.currentTimeMillis()
             try {
                 val retriever = MediaMetadataRetriever()
                 retriever.setDataSource(audioFilePath)
-
                 val durationStr =
                     retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
                 if (durationStr != null) {
                     val endTime = System.currentTimeMillis()
                     val executionTime = endTime - startTime
-
                     Log.d("Audio Duration", "Execution Time: $executionTime")
-
                     val duration = durationStr.toLong()
-
-                    // Cache the duration for future use
                     preferences.edit().putLong(audioFilePath, duration).apply()
-
                     return duration
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
             }
-
             val endTime = System.currentTimeMillis()
             val executionTime = endTime - startTime
             Log.d("Audio Duration", "Execution Time: $executionTime")
-
             return 0
-
         } else {
             return 0
         }
-        return 0 // Return 0 if there was an error or if the duration couldn't be retrieved.
+        return 0
     }
 
     override fun onDelete(deletedItems: MutableList<String>?) {
-
         CoroutineScope(Dispatchers.IO).launch {
             if (deletedItems != null) {
-
-
                 val isLast = deletedItems.contains(lastMessageId)
-
 
                 if (isGroup) {
                     messageViewModel.markMessagesDeleted(deletedItems)
-
-
                 } else {
-
                     try {
                         messageViewModel.deleteMessages(deletedItems)
-
-                    } catch (e:Exception){
+                    } catch (e: Exception) {
                         e.printStackTrace()
                     } finally {
-                        if (isLast){
+                        if (isLast) {
                             val last = getLastMessage(chatId)
                             if (last != null) {
                                 dialogViewModel.updateLastMessageForThisChat(chatId, last)
@@ -803,38 +616,28 @@ abstract class MainMessagesActivity : AppCompatActivity(), MessagesListAdapter.S
                     if (isGroup) {
                         val groupDG = groupDialogRepository.getDialog(chatId)
                         val empty = setEmptyMessage(groupDG)
-
                         groupDialogRepository.updateLastMessageForThisChat(chatId, empty)
-
-                    } else {
-
                     }
                 }
             }
         }
     }
 
-
     private fun convertIso8601ToUnixTimestamp(iso8601Date: String): Long {
         val sdf = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
         sdf.timeZone = TimeZone.getTimeZone("UTC")
-
-
         val date = sdf.parse(iso8601Date)
         return date?.time ?: 0
     }
 
     private suspend fun getLastMessage(chat: String): MessageEntity? {
-
         return messageViewModel.getLastMessage(chatId)
     }
 
     private fun notifyMessageDeletion(): MessageEntity {
         val createdAt = System.currentTimeMillis()
         val lastseen = Date(createdAt)
-
         val avatar = settings.getString("avatar", "avatar").toString()
-
         val user = UserEntity(
             id = myId,
             name = "You",
@@ -842,7 +645,6 @@ abstract class MainMessagesActivity : AppCompatActivity(), MessagesListAdapter.S
             online = true,
             lastSeen = lastseen
         )
-
         return MessageEntity(
             id = "DeletedMessage_${Random.Default.nextInt()}",
             chatId = chatId,
@@ -862,13 +664,10 @@ abstract class MainMessagesActivity : AppCompatActivity(), MessagesListAdapter.S
         )
     }
 
-
     private fun setEmptyMessage(groupDG: GroupDialogEntity): MessageEntity {
         val createdAt = System.currentTimeMillis()
         val lastseen = Date(createdAt)
-
         val avatar = settings.getString("avatar", "avatar").toString()
-
         val user = UserEntity(
             id = myId,
             name = "You",
@@ -876,7 +675,6 @@ abstract class MainMessagesActivity : AppCompatActivity(), MessagesListAdapter.S
             online = true,
             lastSeen = lastseen
         )
-
         return MessageEntity(
             id = "DeletedMessage_${Random.Default.nextInt()}",
             chatId = chatId,
@@ -896,7 +694,6 @@ abstract class MainMessagesActivity : AppCompatActivity(), MessagesListAdapter.S
             deleted = true
         )
     }
-
 
     companion object {
         private const val CACHE_DIR_NAME = "audio_duration_cache"
