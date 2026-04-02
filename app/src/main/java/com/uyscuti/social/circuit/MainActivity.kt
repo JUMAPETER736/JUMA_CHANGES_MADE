@@ -3136,11 +3136,10 @@ class MainActivity : AppCompatActivity(),
     override fun onSubmit(input: CharSequence?): Boolean {
         val TAG = "onSubmit"
 
-
         hideKeyboard(binding.input.inputEditText)
         val localUpdateId = generateRandomId()
-        if (!isReply) {
 
+        if (!isReply) {
             val mongoDbTimeStamp = generateMongoDBTimestamp()
 
             val profilePic2 = settings.getString("profile_pic", "").toString()
@@ -3171,77 +3170,66 @@ class MainActivity : AppCompatActivity(),
                 contentType = "text",
                 isPlaying = data?.isPlaying ?: false,
                 localUpdateId = localUpdateId
-
             )
 
-            val newCommentEntity =
-                ShortCommentEntity(
-                    postId,
-                    input.toString(),
-                    localUpdateId = localUpdateId,
-                    isFeedComment = isFeedComment
-                )
+            val newCommentEntity = ShortCommentEntity(
+                postId,
+                input.toString(),
+                localUpdateId = localUpdateId,
+                isFeedComment = isFeedComment
+            )
             shortsCommentViewModel.insertComment(newCommentEntity)
             Log.d(TAG, "onSubmit: inserted comment $newCommentEntity")
 
             listOfReplies.add(comment)
-
             Log.d(TAG, "onSubmit: comment $comment")
-//        adapter.submitItems(listOf(comment) )
-//            adapter!!.submitItem(comment, (adapter?.itemCount?.minus(1)!!))
-//            adapter!!.submitItem(commentsAndRepliesModel, adapter!!.itemCount)
 
             adapter!!.submitItem(comment, adapter!!.itemCount)
             updateUI(dataEmpty = false)
+
             if (!isFeedComment) {
                 shortToComment = shortsViewModel.mutableShortsList.find { it._id == postId }
                 Log.d(TAG, "onSubmit: count before ${shortToComment!!.comments}")
                 if (shortToComment != null) {
                     shortToComment!!.comments += 1
-                    // Update the count in the mutableShortsList
                     shortsViewModel.mutableShortsList.forEach { short ->
                         if (short._id == postId) {
                             short.comments = shortToComment!!.comments
                         }
                     }
-                    val newShortToComment =
-                        shortsViewModel.mutableShortsList.find { it._id == postId }
+                    val newShortToComment = shortsViewModel.mutableShortsList.find { it._id == postId }
                     Log.d(TAG, "onSubmit: count after ${newShortToComment!!.comments}")
                     EventBus.getDefault().post(ShortAdapterNotifyDatasetChanged())
                 }
             } else {
                 feedToComment = feedViewModel.getAllFeedData().find { it._id == postId }
-                Log.d(TAG, "onSubmit: total before feed count is ${feedToComment?.comments}")
                 myFeedToComment = feedViewModel.getMyFeedData().find { it._id == postId }
-                favoriteFeedToComment =
-                    feedViewModel.getAllFavoriteFeedData().find { it._id == postId }
+                favoriteFeedToComment = feedViewModel.getAllFavoriteFeedData().find { it._id == postId }
                 Log.d(TAG, "onSubmit: total before feed count is ${feedToComment?.comments}")
 
+                // FIX: was `myFeedToComment!!.comments + 1` (discarded), now correctly += 1
                 if (myFeedToComment != null) {
-                    myFeedToComment!!.comments + 1
-
+                    myFeedToComment!!.comments += 1
                     feedViewModel.getMyFeedData().forEach { feed ->
                         if (feed._id == postId) {
                             feed.comments = myFeedToComment!!.comments
                         }
                     }
-//                        EventBus.getDefault().post(FeedAdapterNotifyDatasetChanged(adapter!!.itemCount))
                 }
-                if (favoriteFeedToComment != null) {
-                    favoriteFeedToComment!!.comments + 1
 
+                // FIX: was `favoriteFeedToComment!!.comments + 1` (discarded), now correctly += 1
+                if (favoriteFeedToComment != null) {
+                    favoriteFeedToComment!!.comments += 1
                     feedViewModel.getAllFavoriteFeedData().forEach { feed ->
                         if (feed._id == postId) {
                             feed.comments = favoriteFeedToComment!!.comments
                         }
                     }
-//                        favoriteFeedToComment = feedViewModel.getAllFavoriteFeedData().find { it._id == postId }
-//                        Log.d(TAG, "onSubmit: total after feed count is ${favoriteFeedToComment?.comments}")
-//                        EventBus.getDefault().post(FeedAdapterNotifyDatasetChanged(adapter!!.itemCount))
                 }
-                if (feedToComment != null) {
-                    feedToComment!!.comments + 1
 
+                // FIX: was `feedToComment!!.comments + 1` (discarded), now correctly += 1
+                if (feedToComment != null) {
+                    feedToComment!!.comments += 1
                     feedViewModel.getAllFeedData().forEach { feed ->
                         if (feed._id == postId) {
                             feed.comments = feedToComment!!.comments
@@ -3249,14 +3237,13 @@ class MainActivity : AppCompatActivity(),
                     }
                     feedToComment = feedViewModel.getAllFeedData().find { it._id == postId }
                     Log.d(TAG, "onSubmit: total after feed count is ${feedToComment?.comments}")
-
                     EventBus.getDefault().post(FeedAdapterNotifyDatasetChanged(adapter!!.itemCount))
                 }
-//                feedLiveDataViewModel.incrementCounter()
+
                 feedLiveDataViewModel.setBoolean(true)
             }
-        } else {
 
+        } else {
             val profilePic2 = settings.getString("profile_pic", "").toString()
             val avatar = com.uyscuti.social.network.api.response.commentreply.allreplies.Avatar(
                 "", "", url = profilePic2
@@ -3270,17 +3257,16 @@ class MainActivity : AppCompatActivity(),
                 )
             Log.d(TAG, "onSubmit: handle reply to a comment")
             isReply = false
-            val newCommentReplyEntity =
-                ShortCommentReply(
-                    commentId,
-                    input.toString(),
-                    localUpdateId,
-                    isFeedCommentReply = isFeedComment
-                )
+
+            val newCommentReplyEntity = ShortCommentReply(
+                commentId,
+                input.toString(),
+                localUpdateId,
+                isFeedCommentReply = isFeedComment
+            )
             roomCommentReplyViewModel.insertCommentReply(newCommentReplyEntity)
             Log.d(TAG, "onSubmit: inserted comment $newCommentReplyEntity")
-            lifecycleScope.launch {
-            }
+
             val mongoDbTimeStamp = generateMongoDBTimestamp()
             val newReply = com.uyscuti.social.network.api.response.commentreply.allreplies.Comment(
                 __v = data!!.__v,
@@ -3295,53 +3281,57 @@ class MainActivity : AppCompatActivity(),
             )
 
             val replyCount = data!!.replyCount + 1
-            val commentWithReplies =
-                com.uyscuti.social.network.api.models.Comment(
-                    __v = data!!.__v,
-                    _id = data!!._id,
-                    author = data!!.author,
-                    content = data!!.content,
-                    createdAt = data!!.createdAt,
-                    isLiked = data!!.isLiked,
-                    likes = data!!.likes,
-                    postId = data!!.postId,
-                    updatedAt = data!!.updatedAt,
-                    replyCount = replyCount,
-//                replies = data!!.replies
-                    replies = data?.replies?.toMutableList()?.apply {
-                        // Assuming newReply is the new reply you want to add
-                        add(0, newReply)
-                    } ?: mutableListOf(),
-                    isRepliesVisible = true,
-                    images = data?.images ?: mutableListOf(),
-                    audios = data?.audios ?: mutableListOf(),
-                    docs = mutableListOf(),
-                    gifs = "",
-                    thumbnail = mutableListOf(),
-                    videos = data?.images ?: mutableListOf(),
-                    contentType = data?.contentType ?: "text",
-                    isPlaying = data?.isPlaying ?: false,
-                    localUpdateId = localUpdateId,
-                    replyCountVisible = false
-                )
-//            val updatedComment = commentWithReplies.copy(replies = commentReplies.toMutableList(), isRepliesVisible = isRepliesVisible)
+            val commentWithReplies = com.uyscuti.social.network.api.models.Comment(
+                __v = data!!.__v,
+                _id = data!!._id,
+                author = data!!.author,
+                content = data!!.content,
+                createdAt = data!!.createdAt,
+                isLiked = data!!.isLiked,
+                likes = data!!.likes,
+                postId = data!!.postId,
+                updatedAt = data!!.updatedAt,
+                replyCount = replyCount,
+                replies = data?.replies?.toMutableList()?.apply {
+                    add(0, newReply)
+                } ?: mutableListOf(),
+                isRepliesVisible = true,
+                images = data?.images ?: mutableListOf(),
+                audios = data?.audios ?: mutableListOf(),
+                docs = data?.docs ?: mutableListOf(),
+                gifs = data?.gifs ?: "",
+                thumbnail = data?.thumbnail ?: mutableListOf(),
+                videos = data?.videos ?: mutableListOf(),
+                contentType = data?.contentType ?: "text",
+                isPlaying = data?.isPlaying ?: false,
+                localUpdateId = localUpdateId,
+                replyCountVisible = false,
+                duration = data?.duration ?: "00:00",
+                fileName = data?.fileName ?: "unknown",
+                fileSize = data?.fileSize ?: "0B",
+                fileType = data?.fileType ?: "unknown",
+                numberOfPages = data?.numberOfPages ?: "0"
+            )
 
             listOfReplies.add(commentWithReplies)
 
-            Log.d(
-                TAG,
-                "onSubmit: comment id = data is? $commentId = ${data!!._id} on position $position"
-            )
-            Log.d(
-                TAG,
-                "onSubmit: comment id = data is? $commentId = ${data!!._id} on position $position"
-            )
+            Log.d(TAG, "onSubmit: comment id = data is? $commentId = ${data!!._id} on position $position")
             updateAdapter(commentWithReplies, position)
-//            addCommentReply(input.toString())
         }
+
         binding.replyToLayout.visibility = View.GONE
         return true
     }
+
+    private fun updateAdapter(
+        data: com.uyscuti.social.network.api.models.Comment, position: Int
+    ) {
+        val TAG = "updateAdapter"
+        Log.d("UpdateItem", "reply count visible ${data.replyCountVisible}")
+        adapter?.updateItem(position, data)
+    }
+
+
 
     //    @RequiresApi(Build.VERSION_CODES.S)
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
