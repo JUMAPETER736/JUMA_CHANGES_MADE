@@ -158,5 +158,33 @@
     <color name="colorPrimaryDark">#E55A5A</color>
     <color name="colorAccent">#4ECDC4</color>
 
+    <color name="unReadNotification">#C1D2EB</color>
+
+    <!-- WhatsApp Colors -->
+    <color name="whatsapp_green">#075E54</color>
+    <color name="whatsapp_green_light">#128C7E</color>
+    <color name="whatsapp_green_dark">#075E54</color>
+    <color name="whatsapp_teal">#25D366</color>
+    <color name="whatsapp_teal_light">#DCF8C6</color>
+
+    <color name="whatsapp_blue">#34B7F1</color>
+    <color name="whatsapp_blue_light">#E3F2FD</color>
+    <color name="whatsapp_blue_transparent">#5534B7F1</color>
+
+    <color name="whatsapp_orange">#FF9800</color>
+    <color name="whatsapp_red">#F44336</color>
+
+    <color name="whatsapp_background">#ECE5DD</color>
+    <color name="whatsapp_background_dark">#0B141A</color>
+
+    <color name="whatsapp_text_primary">#000000</color>
+    <color name="whatsapp_text_secondary">#667781</color>
+    <color name="whatsapp_text_tertiary">#8696A0</color>
+
+    <color name="whatsapp_divider">#E9EDEF</color>
+
+    <!-- Status bar -->
+    <color name="whatsapp_status_bar">#054d44</color>
+    <color name="moderator_color">#FF9800</color>
 
 </resources>
