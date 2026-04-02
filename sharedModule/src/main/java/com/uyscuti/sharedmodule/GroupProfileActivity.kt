@@ -287,5 +287,86 @@ class GroupProfileActivity : AppCompatActivity() {
         }
     }
 
+    //  Lock group toggle (NEW) ─
+    /**
+     * Visible to admin only.
+     * When locked: all non-admin members are muted → nobody except admins can send messages.
+     * When unlocked: all non-admin members are unmuted.
+     */
+    private fun setupLockGroupSection() {
+        binding.lockGroupBtn.visibility =
+            if (myGroupRole == "admin") View.VISIBLE else View.GONE
+
+        updateLockButtonLabel()
+
+        binding.lockGroupBtn.setOnClickListener {
+            val newLockState = !isGroupLocked
+            val title   = if (newLockState) "Lock Group" else "Unlock Group"
+            val message = if (newLockState)
+                "Locking the group will prevent all members from sending messages. Only admins will be able to write. Continue?"
+            else
+                "Unlocking the group will allow all members to send messages again. Continue?"
+
+            AlertDialog.Builder(this)
+                .setTitle(title)
+                .setMessage(message)
+                .setPositiveButton(if (newLockState) "Lock" else "Unlock") { _, _ ->
+                    dialog?.id?.let {
+                        groupProfileViewModel.setGroupLocked(it, newLockState, currentMembers)
+                    }
+                }
+                .setNegativeButton("Cancel", null)
+                .show()
+        }
+    }
+
+    private fun updateLockButtonLabel() {
+        binding.lockGroupBtn.text = if (isGroupLocked) "🔓 Unlock Group" else "🔒 Lock Group"
+    }
+
+    //  Description ─
+
+    private fun showDescription(desc: String) {
+        if (desc.isNotEmpty()) {
+            binding.userBioText.text       = desc
+            binding.userBioText.visibility = View.VISIBLE
+        } else {
+            binding.userBioText.text       = ""
+            binding.userBioText.visibility = View.GONE
+        }
+    }
+
+    //  Invite link ─
+
+    private fun setupInviteLinkSection() {
+        val canManageLink = myGroupRole == "admin" || myGroupRole == "moderator"
+        binding.inviteLinkCard.visibility = if (canManageLink) View.VISIBLE else View.GONE
+        binding.revokeLinkBtn.visibility  = if (myGroupRole == "admin") View.VISIBLE else View.GONE
+
+        binding.inviteLinkText.text =
+            if (currentInviteLink.isNotEmpty()) currentInviteLink else "Generating link…"
+
+        binding.copyLinkBtn.setOnClickListener {
+            if (currentInviteLink.isNotEmpty()) copyToClipboard(currentInviteLink)
+            else Toast.makeText(this, "Link not ready yet", Toast.LENGTH_SHORT).show()
+        }
+        binding.generateLinkBtn.setOnClickListener {
+            dialog?.id?.let { groupProfileViewModel.generateLink(it) }
+        }
+        binding.revokeLinkBtn.setOnClickListener {
+            AlertDialog.Builder(this)
+                .setTitle("Revoke Invite Link")
+                .setMessage("Anyone with the old link will no longer be able to join. Continue?")
+                .setPositiveButton("Revoke") { _, _ ->
+                    dialog?.id?.let { groupProfileViewModel.revokeLink(it) }
+                }
+                .setNegativeButton("Cancel", null)
+                .show()
+        }
+        binding.shareLinkBtn.setOnClickListener {
+            if (currentInviteLink.isNotEmpty()) shareLink(currentInviteLink)
+            else Toast.makeText(this, "Link not ready yet", Toast.LENGTH_SHORT).show()
+        }
+    }
 
 }
