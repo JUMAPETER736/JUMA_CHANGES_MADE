@@ -144,147 +144,148 @@ class GroupProfileActivity : AppCompatActivity() {
             }
         }
 
-    private fun viewImage(url: String, name:String){
-        val intent = Intent(this, ViewImagesActivity::class.java)
-        intent.putExtra("imageUrl", url)
-        intent.putExtra("owner", name)
-        startActivity(intent)
+    //  onCreate
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        binding = ActivityGroupProfileBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+
+        setSupportActionBar(binding.toolbar)
+
+        dialog          = intent.getParcelableExtra("Dialog_Extra")
+        groupAdminId    = intent.getStringExtra("adminId").toString()
+        groupCreatedAt  = intent.getStringExtra("createdAt").toString()
+        myGroupRole     = intent.getStringExtra("myRole") ?: "member"
+        groupInviteLink = intent.getStringExtra("inviteLink")
+
+        currentInviteLink  = groupInviteLink ?: ""
+        currentDescription = intent.getStringExtra("description") ?: ""
+
+        supportActionBar?.title = dialog?.dialogName
+
+        val admin = dialog?.users?.find { it.id == groupAdminId }
+        val roleLabel = when (myGroupRole) {
+            "admin"     -> " · You are Admin"
+            "moderator" -> " · You are Moderator"
+            else        -> ""
+        }
+        binding.groupInfo.text       = "Created by ${admin?.name}, on $groupCreatedAt$roleLabel"
+        val memberCount              = dialog?.users?.size ?: 0
+        binding.memberCountText.text = "Group · $memberCount members"
+        binding.membersCount.text    = memberCount.toString()
+
+        if (currentDescription.isNotEmpty()) showDescription(currentDescription)
+        else dialog?.id?.let { groupProfileViewModel.loadGroupDescription(it) }
+
+        setupTabs()
+        setupNavigationIcon()
+
+        binding.callTextView.setOnClickListener { showCallTypeDialog() }
+        binding.userAvatar.setOnClickListener {
+            val photo = dialog?.dialogPhoto ?: ""
+            if (photo.isNotEmpty()) viewImage(photo, dialog?.dialogName ?: "")
+        }
+
+        setupInviteLinkSection()
+        setupDeleteSection()
+        setupLeaveSection()        // ← NEW
+        setupLockGroupSection()    // ← NEW
+        observeViewModel()
+        setupAddMembersSection()
+
+        dialog?.id?.let { groupProfileViewModel.loadMembers(it) }
+
+        if (currentInviteLink.isNotEmpty()) {
+            binding.inviteLinkText.text = currentInviteLink
+        } else if (myGroupRole == "admin" || myGroupRole == "moderator") {
+            dialog?.id?.let { groupProfileViewModel.generateLink(it) }
+        }
+
+        initGroup()
     }
 
+    //  Tabs
 
-    private fun initGroup(){
-        if (dialog != null){
-            Glide.with(this)
-                .asBitmap()
-                .load(dialog?.dialogPhoto)
-                .into(object : SimpleTarget<Bitmap>() {
+    private fun setupTabs() {
+        val tabsAdapter = GroupTabsAdapter(this, supportFragmentManager)
+        val viewPager: ViewPager = binding.viewPager
+        viewPager.adapter = tabsAdapter
 
-                    override fun onResourceReady(
-                        resource: Bitmap,
-                        transition: Transition<in Bitmap>?
-                    ) {
-                        val drawable = RoundedBitmapDrawableFactory.create(resources, resource)
+        dialog?.let {
+            tabsAdapter.setDialog(it)
+            tabsAdapter.setAdminId(groupAdminId)
+            tabsAdapter.setMyRole(myGroupRole)
+        }
 
-//                        drawable.cornerRadius = resources.getDimension(R.dimen.icon_radius)
-                        drawable.isCircular = true
-
-                        val marginDrawable = InsetDrawable(drawable, 0, 0, 0, 0)
-                        binding.userAvatar.setImageDrawable(marginDrawable)
-                    }
-                })
-
-//            binding.groupNameET.text = dialog?.dialogName
+        val tabs: TabLayout = binding.tabLayout
+        tabs.setupWithViewPager(viewPager)
+        for (i in 0 until tabsAdapter.count) {
+            tabs.getTabAt(i)?.icon = tabsAdapter.getIcon(i)
         }
     }
 
-    private fun getTintedDrawable(drawableResId: Int, @ColorInt tintColor: Int): Drawable {
-        val drawable = ContextCompat.getDrawable(this, drawableResId)
-        drawable?.setTint(tintColor)
-        return drawable ?: throw IllegalArgumentException("Drawable not found")
+    //  Navigation icon ─
+
+    private fun setupNavigationIcon() {
+        val navigationIcon = ContextCompat.getDrawable(this, R.drawable.baseline_arrow_back_ios_24)
+        navigationIcon?.let {
+            it.setBounds(0, 0, it.intrinsicWidth, it.intrinsicHeight)
+            val wrapped = DrawableCompat.wrap(it)
+            DrawableCompat.setTint(wrapped, ContextCompat.getColor(this, R.color.black))
+            binding.toolbar.navigationIcon = InsetDrawable(wrapped, 0, 0, 0, 0)
+        }
+        binding.toolbar.setNavigationOnClickListener { onBackPressed() }
     }
 
-    override fun onCreateOptionsMenu(menu: Menu): Boolean {
-        menuInflater.inflate(R.menu.group_profile_menu, menu)
-        return true
-    }
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        when (item.itemId) {
-            R.id.menu_setting -> {
-                // Handle the click on this menu item
-                // For example, you can open a new activity or perform an action
-//                Toast.makeText(this, "Menu item clicked", Toast.LENGTH_SHORT).show()
-//                showAccessDeniedDialog("You cannot access this content because you are not an admin.")
+    //  Add members ─
 
-                settings = getSharedPreferences(PREFS_NAME, 0)
-                val userId = settings.getString("_id", "").toString()
+    private fun setupAddMembersSection() {
+        // Admins AND moderators can add members (backend allows it for both)
+        binding.addMembersCard.visibility =
+            if (myGroupRole == "admin" || myGroupRole == "moderator") View.VISIBLE else View.GONE
 
-
-                if (groupAdminId == userId) {
-                    val intent =
-                        Intent(this@GroupProfileActivity, GroupSettingsActivity::class.java)
-                    startActivity(intent)
-                    return true
-                } else {
-                    showAccessDeniedDialog("You are not group admin")
+        binding.addMembersBtn.setOnClickListener {
+            val existingIds = ArrayList(currentMembers.map { it.user._id })
+            val chatId      = dialog?.id ?: return@setOnClickListener
+            addMembersLauncher.launch(
+                Intent().apply {
+                    setClassName(packageName, "com.uyscuti.social.circuit.ui.AddMembersActivity")
+                    putExtra("chatId", chatId)
+                    putStringArrayListExtra("existingMemberIds", existingIds)
                 }
-
-
-            }
-
-            R.id.exit -> {
-                // Handle the click on this menu item
-                // For example, you can open a new activity or perform an action
-                showAccessDeniedDialog("You will be notified when this feature is ready.")
-
-                return true
-            }
-
-            R.id.block -> {
-                // Handle the click on this menu item
-                // For example, you can open a new activity or perform an action
-                showAccessDeniedDialog("You will be notified when this feature is ready.")
-                return true
-            }
-
-            R.id.report -> {
-                // Handle the click on this menu item
-                // For example, you can open a new activity or perform an action
-                showAccessDeniedDialog("You will be notified when this feature is ready.")
-
-                return true
-            }
-
-            // Add other cases for different menu items if needed
+            )
         }
-        return super.onOptionsItemSelected(item)
     }
-    private fun showAccessDeniedDialog(message:String) {
-        val alertDialogBuilder = AlertDialog.Builder(this)
-        alertDialogBuilder.apply {
-            setTitle("Access Denied")
-            setMessage(message)
-            setPositiveButton("OK") { dialog, which ->
-                // Handle the OK button click if needed
-                dialog.dismiss()
+
+    //  Leave group (NEW) ─
+    /**
+     * Visible to everyone EXCEPT the admin who is the sole admin.
+     * The server will auto-promote the oldest member if the last admin leaves.
+     * The server will also auto-delete the group if the last person leaves.
+     */
+    private fun setupLeaveSection() {
+        // Admins see this too — they can leave if another admin exists (server enforces the rule)
+        binding.leaveGroupBtn.visibility = View.VISIBLE
+
+        binding.leaveGroupBtn.setOnClickListener {
+            val message = if (myGroupRole == "admin") {
+                "You are the admin. If you are the only admin, the oldest member will " +
+                        "be automatically promoted. Are you sure you want to leave?"
+            } else {
+                "Are you sure you want to leave \"${dialog?.dialogName}\"?"
             }
-            // Optionally, add a cancel button or other actions
-            // setNegativeButton("Cancel") { dialog, which -> dialog.dismiss() }
+
+            AlertDialog.Builder(this)
+                .setTitle("Leave Group")
+                .setMessage(message)
+                .setPositiveButton("Leave") { _, _ ->
+                    dialog?.id?.let { groupProfileViewModel.leaveGroup(it) }
+                }
+                .setNegativeButton("Cancel", null)
+                .show()
         }
-
-        val alertDialog = alertDialogBuilder.create()
-        alertDialog.show()
-    }
-    private fun menuBlocker(message:String) {
-        val builder = AlertDialog.Builder(this)
-        builder.setTitle("Group Menu")
-        builder.setMessage(message)
-
-        val dialog = builder.create()
-        dialog.show()
     }
 
-    private fun showCallTypeDialog() {
-        val callTypes = arrayOf("Video Call", "Voice Call")
-        val builder = AlertDialog.Builder(this)
-        builder.setTitle("Select Group Call Type")
-        builder.setItems(callTypes) { dialog, which ->
-            when (which) {
-                0 -> initiateVideoCall()
-                1 -> initiateVoiceCall()
-            }
-            dialog.dismiss()
-        }
-
-        val dialog = builder.create()
-        dialog.show()
-    }
-
-    private fun initiateVideoCall() {
-        // Code to start a video call
-    }
-
-    private fun initiateVoiceCall() {
-        // Code to start a voice call
-    }
 
 }
