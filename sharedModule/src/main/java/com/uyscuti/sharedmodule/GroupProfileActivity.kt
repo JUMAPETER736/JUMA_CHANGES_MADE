@@ -62,77 +62,87 @@ class GroupProfileActivity : AppCompatActivity() {
     }
 
 
-   private lateinit var binding: ActivityGroupProfileBinding
-    private var dialog: Dialog? = null
-    private lateinit var groupAdminId: String
-    private lateinit var groupCreatedAt: String
+    @Inject
+    lateinit var retrofitInterface: RetrofitInstance
 
-    private lateinit var settings: SharedPreferences
+    private lateinit var binding:        ActivityGroupProfileBinding
+    private lateinit var groupAdminId:   String
+    private lateinit var groupCreatedAt: String
+    private lateinit var settings:       SharedPreferences
     private val PREFS_NAME = "LocalSettings"
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        binding = ActivityGroupProfileBinding.inflate(layoutInflater)
-        setContentView(binding.root)
 
-        setSupportActionBar(binding.toolbar)
+    private var dialog:             Dialog? = null
+    private var myGroupRole:        String  = "member"
+    private var groupInviteLink:    String? = null
+    private var currentInviteLink:  String  = ""
+    private var currentDescription: String  = ""
 
-        dialog = intent.getParcelableExtra("Dialog_Extra")
-        groupAdminId = intent.getStringExtra("adminId").toString()
-        groupCreatedAt = intent.getStringExtra("createdAt").toString()
+    // Tracks whether the group is currently locked (all non-admins muted)
+    private var isGroupLocked: Boolean = false
 
-        supportActionBar?.title = dialog?.dialogName
+    private val groupProfileViewModel: GroupProfileViewModel by viewModels()
+    private var currentMembers: List<com.uyscuti.social.network.api.models.GroupMember> = emptyList()
 
-        val admin = dialog?.users?.find { it.id == groupAdminId }
+    //  Launchers ─
 
-        val info = "Created by ${admin?.name}, on $groupCreatedAt"
-
-        binding.groupInfo.text = info
-
-//
-
-        val tabsAdapter = GroupTabsAdapter(this, supportFragmentManager)
-
-        val viewPager: ViewPager = binding.viewPager
-        viewPager.adapter = tabsAdapter
-
-        tabsAdapter.setDialog(dialog!!)
-        tabsAdapter.setAdminId(groupAdminId)
-
-        val tabs: TabLayout = binding.tabLayout
-        tabs.setupWithViewPager(viewPager)
-        for (i in 0 until tabsAdapter.count) {
-            tabs.getTabAt(i)?.icon = tabsAdapter.getIcon(i)
+    private val addMembersLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            if (result.resultCode == Activity.RESULT_OK) {
+                dialog?.id?.let { groupProfileViewModel.loadMembers(it) }
+                Toast.makeText(this, "Members added successfully", Toast.LENGTH_SHORT).show()
+            }
         }
 
-//        binding.toolbar.setNavigationIcon(R.drawable.back_svgrepo_com)
+    private val settingsLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            // GroupSettingsActivity sends RESULT_GROUP_DELETED when the group was deleted
+            // or the user left from within settings — just finish this screen too.
+            if (result.resultCode == GroupSettingsActivity.RESULT_GROUP_DELETED) {
+                setResult(RESULT_OK)
+                finish()
+                return@registerForActivityResult
+            }
+            if (result.resultCode == Activity.RESULT_OK) {
+                val data = result.data
 
-        val navigationIcon = ContextCompat.getDrawable(this, R.drawable.baseline_arrow_back_ios_24)
+                val newPhoto = data?.getStringExtra(GroupSettingsActivity.EXTRA_UPDATED_PHOTO)
+                if (!newPhoto.isNullOrBlank()) {
+                    dialog = dialog?.let {
+                        Dialog(it.id, it.dialogName, newPhoto, it.users, it.lastMessage, it.unreadCount)
+                    }
+                    Glide.with(this).asBitmap().load(newPhoto)
+                        .placeholder(R.drawable.baseline_groups_24)
+                        .error(R.drawable.baseline_groups_24)
+                        .into(object : SimpleTarget<Bitmap>() {
+                            override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap>?) {
+                                val drawable = RoundedBitmapDrawableFactory.create(resources, resource)
+                                drawable.isCircular = true
+                                binding.userAvatar.setImageDrawable(InsetDrawable(drawable, 0, 0, 0, 0))
+                            }
+                            override fun onLoadFailed(errorDrawable: Drawable?) {
+                                binding.userAvatar.setImageResource(R.drawable.baseline_groups_24)
+                            }
+                        })
+                }
 
-        navigationIcon?.let {
-            it.setBounds(0, 0, it.intrinsicWidth, it.intrinsicHeight)
+                val newName = data?.getStringExtra(GroupSettingsActivity.EXTRA_UPDATED_NAME)
+                if (!newName.isNullOrBlank()) {
+                    supportActionBar?.title = newName
+                    dialog = dialog?.let {
+                        Dialog(it.id, newName, it.dialogPhoto, it.users, it.lastMessage, it.unreadCount)
+                    }
+                    dialog?.id?.let { groupProfileViewModel.updateGroupNameLocally(it, newName) }
+                }
 
-            val wrappedDrawable = DrawableCompat.wrap(it)
-            DrawableCompat.setTint(wrappedDrawable, ContextCompat.getColor(this, R.color.black))
-            val drawableMargin = InsetDrawable(wrappedDrawable, 0, 0, 0, 0)
-            binding.toolbar.navigationContentDescription = "Navigate up"
-            binding.toolbar.navigationIcon = drawableMargin
+                val newDesc = data?.getStringExtra(GroupSettingsActivity.EXTRA_UPDATED_DESC)
+                if (newDesc != null) {
+                    currentDescription = newDesc
+                    showDescription(newDesc)
+                    dialog?.id?.let { groupProfileViewModel.updateGroupDescriptionLocally(it, newDesc) }
+                }
+            }
         }
-        binding.toolbar.setNavigationOnClickListener {
-            onBackPressed()
-        }
-
-//
-        binding.callTextView.setOnClickListener {
-            showCallTypeDialog()
-        }
-
-        initGroup()
-
-        binding.userAvatar.setOnClickListener {
-            viewImage(dialog!!.dialogPhoto, dialog!!.dialogName)
-        }
-    }
 
     private fun viewImage(url: String, name:String){
         val intent = Intent(this, ViewImagesActivity::class.java)
