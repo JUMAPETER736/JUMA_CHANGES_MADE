@@ -369,4 +369,84 @@ class GroupProfileActivity : AppCompatActivity() {
         }
     }
 
+    //  Delete group
+
+    private fun setupDeleteSection() {
+        binding.deleteGroupBtn.visibility =
+            if (myGroupRole == "admin") View.VISIBLE else View.GONE
+
+        binding.deleteGroupBtn.setOnClickListener {
+            AlertDialog.Builder(this)
+                .setTitle("Delete Group")
+                .setMessage(
+                    "This will permanently delete \"${dialog?.dialogName}\" " +
+                            "and remove all members. This cannot be undone."
+                )
+                .setPositiveButton("Delete") { _, _ ->
+                    dialog?.id?.let { groupProfileViewModel.deleteGroup(it) }
+                }
+                .setNegativeButton("Cancel", null)
+                .show()
+        }
+    }
+
+    //  ViewModel observers ─
+
+    private fun observeViewModel() {
+
+        groupProfileViewModel.groupDescription.observe(this) { desc ->
+            if (!desc.isNullOrEmpty() && currentDescription.isEmpty()) {
+                currentDescription = desc
+                showDescription(desc)
+            }
+        }
+
+        groupProfileViewModel.members.observe(this) { result ->
+            if (result is GroupResult.Success) {
+                currentMembers = result.data
+                val count = result.data.size
+                binding.membersCount.text = count.toString()
+                binding.memberCountText.text = "Group · $count members"
+
+                //  Derive real admin(s) from members[].role — NOT top-level admin field
+                // The top-level "admin" field is the original creator and can be stale
+                // after ownership transfers. members[].role is always current.
+                val serverAdmins = result.data.filter { it.role.name == "admin" }
+                if (serverAdmins.isNotEmpty()) {
+                    // Update groupAdminId to the first (or primary) admin from the live list
+                    groupAdminId = serverAdmins.first().user._id
+                    // Refresh the "Created by" / role label with the correct admin name
+                    val adminName = serverAdmins.first().user.username ?: "Admin"
+                    val roleLabel = when (myGroupRole) {
+                        "admin" -> " · You are Admin"
+                        "moderator" -> " · You are Moderator"
+                        else -> ""
+                    }
+                    binding.groupInfo.text = "Admin: $adminName, joined $groupCreatedAt$roleLabel"
+                }
+
+                //  Detect if group is locked (all non-admins are muted)
+                val nonAdmins = result.data.filter { it.role.name != "admin" }
+                isGroupLocked = nonAdmins.isNotEmpty() && nonAdmins.all { it.isMuted }
+                updateLockButtonLabel()
+
+                //  Re-check my own role from server in case it changed ─
+                val myId = getSharedPreferences(PREFS_NAME, 0).getString("_id", "") ?: ""
+                val me = result.data.find { it.user._id == myId }
+                if (me != null && me.role.name != myGroupRole) {
+                    myGroupRole = me.role.name
+                    setupInviteLinkSection()
+                    setupDeleteSection()
+                    setupLeaveSection()
+                    setupLockGroupSection()
+                    setupAddMembersSection()
+                    invalidateOptionsMenu()
+                }
+            }
+        }
+
+
+
+
+
 }
