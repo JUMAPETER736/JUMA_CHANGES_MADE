@@ -29,7 +29,7 @@ import com.daimajia.androidanimations.library.YoYo
 import com.uyscuti.sharedmodule.R
 import com.uyscuti.sharedmodule.adapter.notifications.AdPaginatedAdapter
 import com.uyscuti.sharedmodule.adapter.shorts.ReplyCommentAdapter
-import com.uyscuti.sharedmodule.data.model.Comment
+import com.uyscuti.social.network.api.models.Comment
 import com.uyscuti.sharedmodule.media.CommentVideoPlayerActivity
 import com.uyscuti.sharedmodule.media.ViewImagesActivity
 import com.uyscuti.sharedmodule.model.AudioPlayerHandler

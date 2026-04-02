@@ -274,7 +274,7 @@ import org.greenrobot.eventbus.ThreadMode
 import retrofit2.HttpException
 import retrofit2.Response
 import ru.nikartm.support.ImageBadgeView
-
+import com.uyscuti.social.network.api.models.Comment
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileInputStream
