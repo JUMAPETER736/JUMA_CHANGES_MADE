@@ -4242,7 +4242,7 @@ class MainActivity : AppCompatActivity(),
         Log.d(TAG, "override: likeUnLikeComment: likes count is ${data.likes}")
 
         // FIX: convert to sharedmodule Comment before passing to adapter
-        adapter?.updateItem(position, updatedComment.toSharedComment())
+        adapter?.updateItem(position, updatedComment.toSharedComment)
 
         if (isInternetAvailable(this)) {
             var result by Delegates.notNull<Boolean>()
@@ -4265,6 +4265,43 @@ class MainActivity : AppCompatActivity(),
         mainComment: com.uyscuti.social.network.api.models.Comment
     ) {
         TODO("Not yet implemented")
+    }
+
+
+    private fun likeFeedCommentReplyFromViewsActivity(event: LikeCommentReply) {
+        val TAG = "likeFeedCommentReplyFromViewsActivity"
+
+        Log.d(TAG, "likeCommentReplyFromViewsActivity: is liked count is ${event.commentReply.isLiked} is feed comment $isFeedComment")
+
+        val itemToUpdate = event.comment.replies.find { it._id == event.commentReply._id }
+        itemToUpdate!!.isLiked = event.commentReply.isLiked
+        if (event.commentReply.isLiked) {
+            itemToUpdate.likes += 1
+        } else {
+            itemToUpdate.likes -= 1
+        }
+
+        if (event.commentReply._id == itemToUpdate._id) {
+            Log.d(TAG, "likeCommentReplyFromViewsActivity: ids are equal")
+        } else {
+            Log.d(TAG, "likeCommentReplyFromViewsActivity: ids not equal")
+        }
+
+        Log.d(TAG, "likeCommentReplyFromViewsActivity: is liked count is ${event.commentReply}")
+
+        // FIX: convert to sharedmodule Comment before passing to adapter
+        adapter?.updateItem(event.position, event.comment.toSharedComment())
+
+        var result by Delegates.notNull<Boolean>()
+        if (isInternetAvailable(this)) {
+            Log.d(TAG, "likeCommentReplyFromViewsActivity: item to update id ${itemToUpdate._id} and comment reply id ${event.commentReply._id}")
+            lifecycleScope.launch {
+                result = commentReplyLikeUnLike(itemToUpdate._id)
+                Log.d(TAG, "likeCommentReplyFromViewsActivity server result: $result")
+            }
+        } else {
+            Log.d(TAG, "likeCommentReplyFromViewsActivity: cant like offline")
+        }
     }
 
     private suspend fun commentLikeUnLike(commentId: String): Boolean {
@@ -8504,54 +8541,6 @@ class MainActivity : AppCompatActivity(),
         }
     }
 
-    private fun likeFeedCommentReplyFromViewsActivity(event: LikeCommentReply) {
-
-        val TAG = "likeFeedCommentReplyFromViewsActivity"
-
-        Log.d(
-            "likeFeedCommentReplyFromViewsActivity",
-            "likeCommentReplyFromViewsActivity: is liked count is ${event.commentReply.isLiked} is feed comment $isFeedComment"
-        )
-
-        val itemToUpdate = event.comment.replies.find { it._id == event.commentReply._id }
-        itemToUpdate!!.isLiked = event.commentReply.isLiked
-        if (event.commentReply.isLiked) {
-            itemToUpdate.likes += 1
-        } else {
-            itemToUpdate.likes -= 1
-        }
-
-        if (event.commentReply._id == itemToUpdate._id) {
-            Log.d(TAG, "likeCommentReplyFromViewsActivity: ids are equal")
-        } else {
-            Log.d(TAG, "likeCommentReplyFromViewsActivity: ids not equal")
-        }
-
-
-        Log.d(
-            "likeCommentReplyFromViewsActivity",
-            "likeCommentReplyFromViewsActivity: is liked count is ${event.commentReply}"
-        )
-        adapter?.updateItem(event.position, event.comment)
-        var result by Delegates.notNull<Boolean>()
-        if (isInternetAvailable(this)) {
-            Log.d(
-                TAG,
-                "likeCommentReplyFromViewsActivity: item to update id ${itemToUpdate._id} and comment reply id ${event.commentReply._id}"
-            )
-            lifecycleScope.launch {
-                result = if (isFeedComment) {
-                    commentReplyLikeUnLike(itemToUpdate._id)
-                } else {
-                    commentReplyLikeUnLike(itemToUpdate._id)
-                }
-                Log.d(TAG, "likeCommentReplyFromViewsActivity server result: $result")
-
-            }
-        } else {
-            Log.d(TAG, "likeCommentReplyFromViewsActivity: cant like offline")
-        }
-    }
 
     private val selectGifLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
