@@ -567,7 +567,61 @@ class GroupProfileActivity : AppCompatActivity() {
     }
 
 
+    //  Options menu ─
 
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        menuInflater.inflate(R.menu.group_profile_menu, menu)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        when (item.itemId) {
+            R.id.menu_setting -> {
+                settings   = getSharedPreferences(PREFS_NAME, 0)
+                val userId = settings.getString("_id", "").toString()
+                if (groupAdminId == userId || myGroupRole == "admin" || myGroupRole == "moderator") {
+                    settingsLauncher.launch(
+                        Intent(this, GroupSettingsActivity::class.java).apply {
+                            putExtra("chatId",      dialog?.id ?: "")
+                            putExtra("myRole",      myGroupRole)
+                            putExtra("inviteLink",  currentInviteLink.ifEmpty { groupInviteLink })
+                            putExtra("groupName",   dialog?.dialogName ?: "")
+                            putExtra("memberCount", dialog?.users?.size ?: 0)
+                            putExtra("description", currentDescription)
+                        }
+                    )
+                    return true
+                } else {
+                    showInfoDialog("Access Denied", "Only admin or moderator can access group settings")
+                }
+            }
+            R.id.exit   -> showInfoDialog("Coming Soon", "You will be notified when this feature is ready.")
+            R.id.block  -> showBlockGroupDialog()
+            R.id.report -> showReportDialog()
+        }
+        return super.onOptionsItemSelected(item)
+    }
+
+    //  Navigation helper ─
+
+    private fun navigateToGroupsList() {
+        // Simply finish this activity — MainActivity is already in the back stack
+        // and will surface naturally, exactly like ConfirmGroupActivity does after
+        // group creation. No new Intent needed, no restart, no SplashScreen.
+        setResult(RESULT_OK)
+        finish()
+    }
+
+    //  Misc helpers
+
+    private fun viewImage(url: String, name: String) {
+        startActivity(Intent(this, ViewImagesActivity::class.java).apply {
+            putExtra("imageUrl", url)
+            putExtra("owner",    name)
+        })
+    }
+
+    
 
 
 }
