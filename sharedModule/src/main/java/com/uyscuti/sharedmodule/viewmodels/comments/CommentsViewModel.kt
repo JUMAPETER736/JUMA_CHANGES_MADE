@@ -2,7 +2,7 @@ package com.uyscuti.sharedmodule.viewmodels.comments
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
-import com.uyscuti.sharedmodule.data.model.Comment
+import com.uyscuti.social.network.api.models.Comment
 import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -52,7 +52,7 @@ class CommentsViewModel @Inject constructor(private val retrofitInstance: Retrof
                     )
                 }
 
-
+//                responseBody?.data?.comments ?: emptyList()
                 commentsWithReplies
             } catch (e: Exception) {
                 // Handle errors
@@ -101,7 +101,7 @@ class CommentsViewModel @Inject constructor(private val retrofitInstance: Retrof
                     )
                 }
 
-
+//                responseBody?.data?.comments ?: emptyList()
                 commentsWithReplies
             } catch (e: Exception) {
                 // Handle errors
