@@ -445,6 +445,127 @@ class GroupProfileActivity : AppCompatActivity() {
             }
         }
 
+        groupProfileViewModel.roleChange.observe(this) { result ->
+            when (result) {
+                is GroupResult.Success ->
+                    Toast.makeText(this, "Role updated", Toast.LENGTH_SHORT).show()
+                is GroupResult.Error ->
+                    Toast.makeText(this, "Failed: ${result.message}", Toast.LENGTH_LONG).show()
+                else -> {}
+            }
+        }
+
+        groupProfileViewModel.removeMember.observe(this) { result ->
+            when (result) {
+                is GroupResult.Success ->
+                    Toast.makeText(this, "Member removed", Toast.LENGTH_SHORT).show()
+                is GroupResult.Error ->
+                    Toast.makeText(this, "Remove failed: ${result.message}", Toast.LENGTH_LONG).show()
+                else -> {}
+            }
+        }
+
+        //  Leave group result
+        groupProfileViewModel.leaveResult.observe(this) { result ->
+            when (result) {
+                is GroupResult.Loading -> {
+                    binding.leaveGroupBtn.isEnabled = false
+                    binding.leaveGroupBtn.text = "Leaving…"
+                }
+                is GroupResult.Success -> {
+                    // Room entry already deleted in ViewModel.
+                    // Set RESULT_OK so the calling screen (group list) refreshes its list.
+                    setResult(RESULT_OK)
+                    Toast.makeText(this, "You left the group", Toast.LENGTH_SHORT).show()
+                    navigateToGroupsList()
+                }
+                is GroupResult.Error -> {
+                    binding.leaveGroupBtn.isEnabled = true
+                    binding.leaveGroupBtn.text = "Leave Group"
+                    Toast.makeText(this, "Could not leave: ${result.message}", Toast.LENGTH_LONG).show()
+                }
+            }
+        }
+
+        //  Lock group result (NEW) ─
+        groupProfileViewModel.lockGroupResult.observe(this) { result ->
+            when (result) {
+                is GroupResult.Loading -> {
+                    binding.lockGroupBtn.isEnabled = false
+                    binding.lockGroupBtn.text      = "Please wait…"
+                }
+                is GroupResult.Success -> {
+                    binding.lockGroupBtn.isEnabled = true
+                    // isGroupLocked is updated via members observer after loadMembers()
+                    Toast.makeText(this, result.data, Toast.LENGTH_SHORT).show()
+                }
+                is GroupResult.Error -> {
+                    binding.lockGroupBtn.isEnabled = true
+                    updateLockButtonLabel()
+                    Toast.makeText(this, "Error: ${result.message}", Toast.LENGTH_LONG).show()
+                }
+            }
+        }
+
+        //  Mute single member result
+        groupProfileViewModel.reportResult.observe(this) { result ->
+            when (result) {
+                is GroupResult.Success ->
+                    Toast.makeText(this, "Report submitted. Thank you.", Toast.LENGTH_SHORT).show()
+                is GroupResult.Error ->
+                    Toast.makeText(this, "Failed to submit report: ${result.message}", Toast.LENGTH_LONG).show()
+                else -> {}
+            }
+        }
+
+        groupProfileViewModel.deleteGroup.observe(this) { result ->
+            when (result) {
+                is GroupResult.Loading -> binding.deleteGroupBtn.isEnabled = false
+                is GroupResult.Success -> {
+                    binding.deleteGroupBtn.isEnabled = true
+                    Toast.makeText(this, "Group deleted", Toast.LENGTH_SHORT).show()
+                    // Just finish — MainActivity is already in the back stack
+                    setResult(RESULT_OK)
+                    finish()
+                }
+                is GroupResult.Error -> {
+                    binding.deleteGroupBtn.isEnabled = true
+                    Toast.makeText(this, "Delete failed: ${result.message}", Toast.LENGTH_LONG).show()
+                }
+            }
+        }
+
+        groupProfileViewModel.inviteLink.observe(this) { result ->
+            when (result) {
+                is GroupResult.Success -> {
+                    currentInviteLink           = result.data.inviteLink
+                    binding.inviteLinkText.text = currentInviteLink
+                    Toast.makeText(this, "Invite link ready", Toast.LENGTH_SHORT).show()
+                }
+                is GroupResult.Error -> {
+                    if (currentInviteLink.isEmpty())
+                        binding.inviteLinkText.text = "No active link — tap Generate"
+                    if (result.message != "Link revoked")
+                        Toast.makeText(this, "Failed to generate link: ${result.message}", Toast.LENGTH_LONG).show()
+                }
+                else -> {}
+            }
+        }
+
+        groupProfileViewModel.revokeResult.observe(this) { result ->
+            when (result) {
+                is GroupResult.Success -> {
+                    currentInviteLink           = ""
+                    binding.inviteLinkText.text = "No active link — tap Generate"
+                    Toast.makeText(this, "Link revoked", Toast.LENGTH_SHORT).show()
+                }
+                is GroupResult.Error ->
+                    Toast.makeText(this, "Revoke failed: ${result.message}", Toast.LENGTH_LONG).show()
+                else -> {}
+            }
+        }
+    }
+
 
 
 
