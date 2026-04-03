@@ -112,5 +112,52 @@ class GroupProfileViewModel @Inject constructor(
         }
     }
 
+    //  Members
+
+    //  Single loadMembers — fetches from server, caches in Room,
+    //    falls back to Room cache if server rejects (e.g. user was removed)
+    fun loadMembers(chatId: String) {
+        _members.value = GroupResult.Loading
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val response = retrofit.apiService.getGroupMembers(chatId)
+                if (response.isSuccessful) {
+                    val list = response.body()?.data ?: emptyList()
+                    saveMembersToCache(chatId, list)
+                    withContext(Dispatchers.Main) {
+                        _members.value = GroupResult.Success(list)
+                    }
+                } else {
+                    // Try JSON cache first
+                    var cached = loadMembersFromCache(chatId)
+
+                    // ← NEW: fall back to GroupDialogEntity.users if cache is empty
+                    if (cached.isEmpty()) {
+                        cached = loadMembersFromGroupDialog(chatId)
+                    }
+
+                    withContext(Dispatchers.Main) {
+                        _members.value = if (cached.isNotEmpty()) {
+                            GroupResult.Success(cached)
+                        } else {
+                            GroupResult.Error(response.errorBody()?.string() ?: "Unknown error")
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                var cached = loadMembersFromCache(chatId)
+                if (cached.isEmpty()) {
+                    cached = loadMembersFromGroupDialog(chatId)
+                }
+                withContext(Dispatchers.Main) {
+                    _members.value = if (cached.isNotEmpty()) {
+                        GroupResult.Success(cached)
+                    } else {
+                        GroupResult.Error(e.message ?: "Network error")
+                    }
+                }
+            }
+        }
+    }
 
 }
