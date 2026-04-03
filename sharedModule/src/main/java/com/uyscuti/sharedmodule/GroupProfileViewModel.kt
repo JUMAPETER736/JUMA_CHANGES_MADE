@@ -88,6 +88,29 @@ class GroupProfileViewModel @Inject constructor(
     private val _reportResult = MutableLiveData<GroupResult<String>>()
     val reportResult: LiveData<GroupResult<String>> = _reportResult
 
-    
+    //  Cache helpers
+
+    //  Save members list as JSON into Room so removed users can still see them
+    private suspend fun saveMembersToCache(chatId: String, members: List<GroupMember>) {
+        try {
+            val json = gson.toJson(members)
+            groupDialogDao.updateCachedMembers(chatId, json)
+        } catch (e: Exception) {
+            Log.e("GroupProfileViewModel", "Failed to cache members", e)
+        }
+    }
+
+    //  Load members from Room cache — used when server rejects us (removed)
+    private suspend fun loadMembersFromCache(chatId: String): List<GroupMember> {
+        return try {
+            val json = groupDialogDao.getCachedMembers(chatId) ?: return emptyList()
+            val type = object : TypeToken<List<GroupMember>>() {}.type
+            gson.fromJson(json, type) ?: emptyList()
+        } catch (e: Exception) {
+            Log.e("GroupProfileViewModel", "Failed to load cached members", e)
+            emptyList()
+        }
+    }
+
 
 }
