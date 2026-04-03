@@ -206,4 +206,30 @@ class GroupProfileViewModel @Inject constructor(
         }
     }
 
+    //  Add members
+
+    fun addMembers(chatId: String, userIds: List<String>) {
+        _addMembersResult.value = GroupResult.Loading
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val response = retrofit.apiService.addMembersToGroup(
+                    chatId, AddMembersRequest(participants = userIds)
+                )
+                if (response.isSuccessful) {
+                    withContext(Dispatchers.Main) {
+                        _addMembersResult.value = GroupResult.Success("Members added")
+                        loadMembers(chatId)
+                    }
+                } else {
+                    val err = response.errorBody()?.string() ?: "Unknown error (${response.code()})"
+                    withContext(Dispatchers.Main) { _addMembersResult.value = GroupResult.Error(err) }
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    _addMembersResult.value = GroupResult.Error(e.message ?: "Network error")
+                }
+            }
+        }
+    }
+
 }
