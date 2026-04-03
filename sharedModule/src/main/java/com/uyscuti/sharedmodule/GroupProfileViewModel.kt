@@ -9,6 +9,7 @@ import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.uyscuti.social.core.common.data.room.dao.GroupDialogDao
 import com.uyscuti.social.network.api.request.group.GroupChatDetail
+import com.uyscuti.social.network.api.request.group.GroupLinkData
 import com.uyscuti.social.network.api.request.group.GroupMember
 import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
 import com.uyscuti.social.network.utils.LocalStorage
@@ -51,7 +52,20 @@ class GroupProfileViewModel @Inject constructor(
     private val _renameResult = MutableLiveData<GroupResult<String>>()
     val renameResult: LiveData<GroupResult<String>> = _renameResult
 
+    private val _leaveResult = MutableLiveData<GroupResult<String>>()
+    val leaveResult: LiveData<GroupResult<String>> = _leaveResult
 
+    private val _deleteGroup = MutableLiveData<GroupResult<String>>()
+    val deleteGroup: LiveData<GroupResult<String>> = _deleteGroup
+
+    private val _inviteLink = MutableLiveData<GroupResult<GroupLinkData>>()
+    val inviteLink: LiveData<GroupResult<GroupLinkData>> = _inviteLink
+
+    private val _revokeResult = MutableLiveData<GroupResult<String>>()
+    val revokeResult: LiveData<GroupResult<String>> = _revokeResult
+
+    private val _joinResult = MutableLiveData<GroupResult<GroupChatDetail>>()
+    val joinResult: LiveData<GroupResult<GroupChatDetail>> = _joinResult
 
 
 
