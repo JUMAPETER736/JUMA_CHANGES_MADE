@@ -8,14 +8,7 @@ import androidx.lifecycle.viewModelScope
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.uyscuti.social.core.common.data.room.dao.GroupDialogDao
-import com.uyscuti.social.network.api.models.AddMembersRequest
-import com.uyscuti.social.network.api.models.AvatarData
-import com.uyscuti.social.network.api.models.ChangeRoleRequest
-import com.uyscuti.social.network.api.models.GroupChatDetail
-import com.uyscuti.social.network.api.models.GroupLinkData
-import com.uyscuti.social.network.api.models.GroupMember
-import com.uyscuti.social.network.api.models.GroupMemberUser
-import com.uyscuti.social.network.api.models.GroupRole
+import com.uyscuti.social.network.api.request.group.GroupMember
 import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
 import com.uyscuti.social.network.utils.LocalStorage
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -38,6 +31,14 @@ class GroupProfileViewModel @Inject constructor(
     private val localStorage: LocalStorage
 ) : ViewModel() {
 
+
+    private val gson = Gson()
+
+    private val _avatarResult = MutableLiveData<GroupResult<String>>()
+    val avatarResult: LiveData<GroupResult<String>> = _avatarResult
+
+    private val _members = MutableLiveData<GroupResult<List<GroupMember>>>()
+    val members: LiveData<GroupResult<List<GroupMember>>> = _members
 
 
 
