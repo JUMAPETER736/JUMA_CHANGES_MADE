@@ -67,6 +67,27 @@ class GroupProfileViewModel @Inject constructor(
     private val _joinResult = MutableLiveData<GroupResult<GroupChatDetail>>()
     val joinResult: LiveData<GroupResult<GroupChatDetail>> = _joinResult
 
+    private val _descriptionResult = MutableLiveData<GroupResult<String>>()
+    val descriptionResult: LiveData<GroupResult<String>> = _descriptionResult
 
+    private val _groupDescription = MutableLiveData<String?>()
+    val groupDescription: LiveData<String?> = _groupDescription
+
+    private val _addMembersResult = MutableLiveData<GroupResult<String>>()
+    val addMembersResult: LiveData<GroupResult<String>> = _addMembersResult
+
+    private val _groupDetail = MutableLiveData<GroupResult<GroupChatDetail>>()
+    val groupDetail: LiveData<GroupResult<GroupChatDetail>> = _groupDetail
+
+    private val _muteMemberResult = MutableLiveData<GroupResult<String>>()
+    val muteMemberResult: LiveData<GroupResult<String>> = _muteMemberResult
+
+    private val _lockGroupResult = MutableLiveData<GroupResult<String>>()
+    val lockGroupResult: LiveData<GroupResult<String>> = _lockGroupResult
+
+    private val _reportResult = MutableLiveData<GroupResult<String>>()
+    val reportResult: LiveData<GroupResult<String>> = _reportResult
+
+    
 
 }
