@@ -261,4 +261,45 @@ class GroupProfileViewModel @Inject constructor(
         }
     }
 
+    //  Description
+
+    fun loadGroupDescription(chatId: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val group = groupDialogDao.checkGroup(chatId)
+            _groupDescription.postValue(group?.description ?: "")
+        }
+    }
+
+    fun updateGroupDescriptionLocally(chatId: String, description: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            groupDialogDao.updateGroupDescription(chatId, description)
+        }
+    }
+
+    fun updateDescription(chatId: String, description: String) {
+        _descriptionResult.value = GroupResult.Loading
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val response = retrofit.apiService.updateGroupDescription(
+                    chatId, mapOf("description" to description)
+                )
+                if (response.isSuccessful) {
+                    groupDialogDao.updateGroupDescription(chatId, description)
+                    withContext(Dispatchers.Main) {
+                        _descriptionResult.value = GroupResult.Success(description)
+                    }
+                } else {
+                    val err = response.errorBody()?.string() ?: "Unknown error"
+                    withContext(Dispatchers.Main) {
+                        _descriptionResult.value = GroupResult.Error(err)
+                    }
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    _descriptionResult.value = GroupResult.Error(e.message ?: "Network error")
+                }
+            }
+        }
+    }
+
 }
