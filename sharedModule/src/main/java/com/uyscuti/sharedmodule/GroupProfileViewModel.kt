@@ -160,6 +160,29 @@ class GroupProfileViewModel @Inject constructor(
         }
     }
 
-    
+    //  Group detail
+
+    fun loadGroupDetail(chatId: String) {
+        _groupDetail.value = GroupResult.Loading
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val response = retrofit.apiService.getGroupChatDetails(chatId)
+                if (response.isSuccessful) {
+                    val detail = response.body()?.data
+                    withContext(Dispatchers.Main) {
+                        if (detail != null) _groupDetail.value = GroupResult.Success(detail)
+                        else _groupDetail.value = GroupResult.Error("Empty response")
+                    }
+                } else {
+                    val err = response.errorBody()?.string() ?: "Unknown error"
+                    withContext(Dispatchers.Main) { _groupDetail.value = GroupResult.Error(err) }
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    _groupDetail.value = GroupResult.Error(e.message ?: "Network error")
+                }
+            }
+        }
+    }
 
 }
