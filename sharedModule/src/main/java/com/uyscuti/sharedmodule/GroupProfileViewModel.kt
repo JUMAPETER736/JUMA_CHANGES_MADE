@@ -160,6 +160,27 @@ class GroupProfileViewModel @Inject constructor(
         }
     }
 
+    //  Report
+
+    fun reportGroup(chatId: String, reason: String) {
+        viewModelScope.launch {
+            _reportResult.value = GroupResult.Loading
+            try {
+                val response = retrofit.apiService.reportGroup(
+                    chatId,
+                    mapOf("reason" to reason, "targetType" to "group")
+                )
+                if (response.isSuccessful) {
+                    _reportResult.value = GroupResult.Success("Report submitted")
+                } else {
+                    _reportResult.value = GroupResult.Error("Failed: ${response.code()}")
+                }
+            } catch (e: Exception) {
+                _reportResult.value = GroupResult.Error(e.message ?: "Unknown error")
+            }
+        }
+    }
+
     //  Group detail
 
     fun loadGroupDetail(chatId: String) {
