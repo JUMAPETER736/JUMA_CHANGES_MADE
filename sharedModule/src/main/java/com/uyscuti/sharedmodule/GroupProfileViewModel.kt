@@ -30,3 +30,18 @@ sealed class GroupResult<out T> {
     object Loading : GroupResult<Nothing>()
 }
 
+
+@HiltViewModel
+class GroupProfileViewModel @Inject constructor(
+    private val retrofit: RetrofitInstance,
+    private val groupDialogDao: GroupDialogDao,
+    private val localStorage: LocalStorage
+) : ViewModel() {
+
+
+
+
+
+
+
+}
