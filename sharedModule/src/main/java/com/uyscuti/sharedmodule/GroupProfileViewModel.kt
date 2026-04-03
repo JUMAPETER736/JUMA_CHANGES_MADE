@@ -302,4 +302,35 @@ class GroupProfileViewModel @Inject constructor(
         }
     }
 
+
+    //  Name
+
+    fun updateGroupNameLocally(chatId: String, name: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            groupDialogDao.updateGroupName(chatId, name)
+        }
+    }
+
+    fun renameGroup(chatId: String, newName: String) {
+        _renameResult.value = GroupResult.Loading
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val response = retrofit.apiService.renameGroupChat(chatId, mapOf("name" to newName))
+                if (response.isSuccessful) {
+                    groupDialogDao.updateGroupName(chatId, newName)
+                    withContext(Dispatchers.Main) {
+                        _renameResult.value = GroupResult.Success(newName)
+                    }
+                } else {
+                    val err = response.errorBody()?.string() ?: "Unknown error"
+                    withContext(Dispatchers.Main) { _renameResult.value = GroupResult.Error(err) }
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    _renameResult.value = GroupResult.Error(e.message ?: "Network error")
+                }
+            }
+        }
+    }
+
 }
