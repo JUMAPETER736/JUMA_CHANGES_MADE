@@ -504,4 +504,91 @@ class GroupProfileViewModel @Inject constructor(
         }
     }
 
+    //  Mute single member
+
+    fun setMemberMuteStatus(chatId: String, userId: String, isMuted: Boolean) {
+        _muteMemberResult.value = GroupResult.Loading
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val response = retrofit.apiService.setMemberMuteStatus(
+                    chatId, userId, mapOf("isMuted" to isMuted)
+                )
+                if (response.isSuccessful) {
+                    withContext(Dispatchers.Main) {
+                        _muteMemberResult.value = GroupResult.Success(
+                            if (isMuted) "Member muted" else "Member unmuted"
+                        )
+                        loadMembers(chatId)
+                    }
+                } else {
+                    val err = response.errorBody()?.string() ?: "Unknown error"
+                    withContext(Dispatchers.Main) {
+                        _muteMemberResult.value = GroupResult.Error(err)
+                    }
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    _muteMemberResult.value = GroupResult.Error(e.message ?: "Network error")
+                }
+            }
+        }
+    }
+
+    //  Lock / unlock whole group
+
+    fun setGroupLocked(chatId: String, lock: Boolean, members: List<GroupMember>) {
+        _lockGroupResult.value = GroupResult.Loading
+        viewModelScope.launch(Dispatchers.IO) {
+            val nonAdmins = members.filter { it.role.name != "admin" }
+            var failCount = 0
+            nonAdmins.forEach { member ->
+                try {
+                    val response = retrofit.apiService.setMemberMuteStatus(
+                        chatId, member.user._id, mapOf("isMuted" to lock)
+                    )
+                    if (!response.isSuccessful) failCount++
+                } catch (e: Exception) {
+                    failCount++
+                }
+            }
+            withContext(Dispatchers.Main) {
+                _lockGroupResult.value = if (failCount == 0) {
+                    GroupResult.Success(if (lock) "Group locked" else "Group unlocked")
+                } else {
+                    GroupResult.Error("$failCount member(s) could not be updated")
+                }
+                loadMembers(chatId)
+            }
+        }
+    }
+
+    private  fun loadMembersFromGroupDialog(chatId: String): List<GroupMember> {
+        return try {
+            val dialog = groupDialogDao.checkGroup(chatId) ?: return emptyList()
+            val myId = localStorage.getUserId()
+
+            dialog.users
+                .filter { it.id != myId }
+                .map { userEntity ->
+                    GroupMember(
+                        user = GroupMemberUser(
+                            _id       = userEntity.id,
+                            username  = userEntity.name,
+                            fullName  = userEntity.name,
+                            avatar    = AvatarData(url = userEntity.avatar, localPath = null),
+                            email     = null
+                        ),
+                        role       = GroupRole.member,
+                        joinedAt   = null,
+                        promotedBy = null,
+                        isMuted    = false
+                    )
+                }
+        } catch (e: Exception) {
+            Log.e("GroupProfileViewModel", "Failed to load members from dialog entity", e)
+            emptyList()
+        }
+    }
+
+
 }
