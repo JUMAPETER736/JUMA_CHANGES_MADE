@@ -232,4 +232,33 @@ class GroupProfileViewModel @Inject constructor(
         }
     }
 
+    //  Avatar
+
+    fun updateGroupAvatarLocally(chatId: String, avatarUrl: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            groupDialogDao.updateGroupAvatar(chatId, avatarUrl)
+        }
+    }
+
+    fun updateAvatar(chatId: String, avatarPart: okhttp3.MultipartBody.Part) {
+        _avatarResult.value = GroupResult.Loading
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val response = retrofit.apiService.updateGroupAvatar(chatId, avatarPart)
+                if (response.isSuccessful) {
+                    withContext(Dispatchers.Main) {
+                        _avatarResult.value = GroupResult.Success("Avatar updated")
+                    }
+                } else {
+                    val err = response.errorBody()?.string() ?: "Unknown error"
+                    withContext(Dispatchers.Main) { _avatarResult.value = GroupResult.Error(err) }
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    _avatarResult.value = GroupResult.Error(e.message ?: "Network error")
+                }
+            }
+        }
+    }
+
 }
