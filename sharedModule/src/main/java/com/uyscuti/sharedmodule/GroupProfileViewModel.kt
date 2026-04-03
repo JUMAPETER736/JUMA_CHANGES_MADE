@@ -333,4 +333,57 @@ class GroupProfileViewModel @Inject constructor(
         }
     }
 
+    fun changeMemberRole(chatId: String, userId: String, newRole: String) {
+        _roleChange.value = GroupResult.Loading
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val response = retrofit.apiService.changeMemberRole(
+                    chatId, userId, ChangeRoleRequest(newRole)
+                )
+                if (response.isSuccessful) {
+                    val updated = response.body()?.data
+                    withContext(Dispatchers.Main) {
+                        if (updated != null) {
+                            _roleChange.value = GroupResult.Success(updated)
+                            loadMembers(chatId)
+                        } else {
+                            _roleChange.value = GroupResult.Error("Empty response")
+                        }
+                    }
+                } else {
+                    val err = response.errorBody()?.string() ?: "Unknown error"
+                    withContext(Dispatchers.Main) { _roleChange.value = GroupResult.Error(err) }
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    _roleChange.value = GroupResult.Error(e.message ?: "Network error")
+                }
+            }
+        }
+    }
+
+    //  Remove member
+
+    fun removeMember(chatId: String, userId: String) {
+        _removeMember.value = GroupResult.Loading
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val response = retrofit.apiService.removeMember(chatId, userId)
+                if (response.isSuccessful) {
+                    withContext(Dispatchers.Main) {
+                        _removeMember.value = GroupResult.Success("Member removed")
+                        loadMembers(chatId)
+                    }
+                } else {
+                    val err = response.errorBody()?.string() ?: "Unknown error"
+                    withContext(Dispatchers.Main) { _removeMember.value = GroupResult.Error(err) }
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    _removeMember.value = GroupResult.Error(e.message ?: "Network error")
+                }
+            }
+        }
+    }
+
 }
