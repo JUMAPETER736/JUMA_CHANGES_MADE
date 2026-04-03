@@ -8,6 +8,7 @@ import androidx.lifecycle.viewModelScope
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.uyscuti.social.core.common.data.room.dao.GroupDialogDao
+import com.uyscuti.social.network.api.request.group.GroupChatDetail
 import com.uyscuti.social.network.api.request.group.GroupMember
 import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
 import com.uyscuti.social.network.utils.LocalStorage
@@ -40,6 +41,15 @@ class GroupProfileViewModel @Inject constructor(
     private val _members = MutableLiveData<GroupResult<List<GroupMember>>>()
     val members: LiveData<GroupResult<List<GroupMember>>> = _members
 
+
+    private val _roleChange = MutableLiveData<GroupResult<GroupChatDetail>>()
+    val roleChange: LiveData<GroupResult<GroupChatDetail>> = _roleChange
+
+    private val _removeMember = MutableLiveData<GroupResult<String>>()
+    val removeMember: LiveData<GroupResult<String>> = _removeMember
+
+    private val _renameResult = MutableLiveData<GroupResult<String>>()
+    val renameResult: LiveData<GroupResult<String>> = _renameResult
 
 
 
