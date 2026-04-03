@@ -386,4 +386,52 @@ class GroupProfileViewModel @Inject constructor(
         }
     }
 
+    //  Leave
+
+    fun leaveGroup(chatId: String) {
+        _leaveResult.value = GroupResult.Loading
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val response = retrofit.apiService.leaveGroup(chatId)
+                if (response.isSuccessful) {
+                    groupDialogDao.deleteGroupDialogById(chatId)
+                    withContext(Dispatchers.Main) {
+                        _leaveResult.value = GroupResult.Success("Left group")
+                    }
+                } else {
+                    val err = response.errorBody()?.string() ?: "Unknown error"
+                    withContext(Dispatchers.Main) { _leaveResult.value = GroupResult.Error(err) }
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    _leaveResult.value = GroupResult.Error(e.message ?: "Network error")
+                }
+            }
+        }
+    }
+
+    //  Delete
+
+    fun deleteGroup(chatId: String) {
+        _deleteGroup.value = GroupResult.Loading
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val response = retrofit.apiService.deleteGroup(chatId)
+                if (response.isSuccessful) {
+                    groupDialogDao.deleteGroupDialogById(chatId)
+                    withContext(Dispatchers.Main) {
+                        _deleteGroup.value = GroupResult.Success("Group deleted")
+                    }
+                } else {
+                    val err = response.errorBody()?.string() ?: "Unknown error (${response.code()})"
+                    withContext(Dispatchers.Main) { _deleteGroup.value = GroupResult.Error(err) }
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    _deleteGroup.value = GroupResult.Error(e.message ?: "Network error")
+                }
+            }
+        }
+    }
+
 }
