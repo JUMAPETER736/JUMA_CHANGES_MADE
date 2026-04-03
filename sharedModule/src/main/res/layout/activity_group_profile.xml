@@ -24,8 +24,52 @@
         android:layout_height="match_parent"
         android:layout_marginTop="?attr/actionBarSize"
         android:fillViewport="true">
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
 
-   
+        <!-- ═══ Hero header ═══════════════════════════════════════════════ -->
+        <LinearLayout
+            android:id="@+id/userProfileBox"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/bluejeans"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:paddingTop="24dp"
+            android:paddingBottom="24dp">
+
+            <ImageView
+                android:id="@+id/userAvatar"
+                android:layout_width="104dp"
+                android:layout_height="104dp"
+                android:layout_marginBottom="12dp"
+                android:scaleType="centerCrop"
+                app:srcCompat="@drawable/user"
+                tools:ignore="ContentDescription" />
+
+            <TextView
+                android:id="@+id/memberCountText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="Group · 0 members"
+                android:textColor="#CCE3FF"
+                android:textSize="13sp" />
+
+            <androidx.appcompat.widget.AppCompatTextView
+                android:id="@+id/groupInfo"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:background="@android:color/transparent"
+                android:text="Created by — on --/--/----"
+                android:textColor="#99C2FF"
+                android:textSize="12sp" />
+
+        </LinearLayout>
+
     </androidx.core.widget.NestedScrollView>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
