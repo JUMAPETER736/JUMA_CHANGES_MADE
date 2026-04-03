@@ -434,4 +434,74 @@ class GroupProfileViewModel @Inject constructor(
         }
     }
 
+    //  Invite link
+
+    fun generateLink(chatId: String) {
+        _inviteLink.value = GroupResult.Loading
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val response = retrofit.apiService.generateGroupLink(chatId)
+                if (response.isSuccessful) {
+                    val data = response.body()?.data
+                    withContext(Dispatchers.Main) {
+                        if (data != null) _inviteLink.value = GroupResult.Success(data)
+                        else _inviteLink.value = GroupResult.Error("Empty response")
+                    }
+                } else {
+                    val err = response.errorBody()?.string() ?: "Unknown error"
+                    withContext(Dispatchers.Main) { _inviteLink.value = GroupResult.Error(err) }
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    _inviteLink.value = GroupResult.Error(e.message ?: "Network error")
+                }
+            }
+        }
+    }
+
+    fun revokeLink(chatId: String) {
+        _revokeResult.value = GroupResult.Loading
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val response = retrofit.apiService.revokeGroupLink(chatId)
+                if (response.isSuccessful) {
+                    withContext(Dispatchers.Main) {
+                        _revokeResult.value = GroupResult.Success("Link revoked")
+                        _inviteLink.value   = GroupResult.Error("Link revoked")
+                    }
+                } else {
+                    val err = response.errorBody()?.string() ?: "Unknown error"
+                    withContext(Dispatchers.Main) { _revokeResult.value = GroupResult.Error(err) }
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    _revokeResult.value = GroupResult.Error(e.message ?: "Network error")
+                }
+            }
+        }
+    }
+
+    fun joinGroupViaLink(inviteToken: String) {
+        _joinResult.value = GroupResult.Loading
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val response = retrofit.apiService.joinGroupViaLink(inviteToken)
+                if (response.isSuccessful) {
+                    val data = response.body()?.data
+                    withContext(Dispatchers.Main) {
+                        if (data != null) _joinResult.value = GroupResult.Success(data)
+                        else _joinResult.value = GroupResult.Error("Empty response")
+                    }
+                } else {
+                    val err = response.errorBody()?.string() ?: "Unknown error"
+                    withContext(Dispatchers.Main) { _joinResult.value = GroupResult.Error(err) }
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    _joinResult.value = GroupResult.Error(e.message ?: "Network error")
+                }
+            }
+        }
+    }
+
 }
