@@ -131,7 +131,7 @@ class GroupProfileViewModel @Inject constructor(
                     // Try JSON cache first
                     var cached = loadMembersFromCache(chatId)
 
-                    // ← NEW: fall back to GroupDialogEntity.users if cache is empty
+                    //  fall back to GroupDialogEntity.users if cache is empty
                     if (cached.isEmpty()) {
                         cached = loadMembersFromGroupDialog(chatId)
                     }
@@ -159,5 +159,7 @@ class GroupProfileViewModel @Inject constructor(
             }
         }
     }
+
+    
 
 }
