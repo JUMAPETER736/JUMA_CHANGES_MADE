@@ -122,6 +122,10 @@
 
             </LinearLayout>
 
-            
+            <!-- 8dp gap -->
+            <View android:layout_width="match_parent"
+                android:layout_height="8dp"
+                android:background="#F7F8FA" />
+
 
 
