@@ -489,4 +489,31 @@
                             android:textSize="15sp"
                             android:textStyle="bold" />
 
+                        <TextView
+                            android:id="@+id/editInfoSwitchLabel"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="All members can edit group info"
+                            android:textColor="#BBBBBB"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+
+                    <androidx.appcompat.widget.SwitchCompat
+                        android:id="@+id/editInfoSwitch"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+            <View
+                android:id="@+id/permissionsDivider"
+                android:layout_width="match_parent"
+                android:layout_height="8dp"
+                android:background="#F7F8FA"
+                android:visibility="gone" />
+
+            
+
 
