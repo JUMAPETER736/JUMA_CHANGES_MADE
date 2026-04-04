@@ -397,7 +397,34 @@
                         app:iconSize="15dp"
                         app:iconTint="@color/bluejeans" />
 
-                    
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/revokeLinkBtn"
+                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="40dp"
+                        android:text="Reset"
+                        android:textAllCaps="false"
+                        android:textSize="13sp"
+                        android:textColor="#E53935"
+                        app:strokeColor="#E53935"
+                        app:cornerRadius="10dp"
+                        app:icon="@drawable/share_svgrepo_com"
+                        app:iconSize="15dp"
+                        app:iconTint="#E53935"
+                        android:visibility="gone" />
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+            <View
+                android:id="@+id/inviteLinkDivider"
+                android:layout_width="match_parent"
+                android:layout_height="8dp"
+                android:background="#F7F8FA"
+                android:visibility="gone" />
+
 
 
 
