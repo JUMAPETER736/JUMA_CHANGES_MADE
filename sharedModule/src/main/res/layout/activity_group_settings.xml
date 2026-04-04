@@ -425,6 +425,32 @@
                 android:background="#F7F8FA"
                 android:visibility="gone" />
 
+            <!-- ══════════════════════════════════════════
+SECTION: Group Permissions  (admin only)
+══════════════════════════════════════════ -->
+            <TextView
+                android:id="@+id/permissionsSectionLabel"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:paddingTop="14dp"
+                android:paddingBottom="6dp"
+                android:text="GROUP PERMISSIONS"
+                android:textColor="#999999"
+                android:textSize="11sp"
+                android:letterSpacing="0.08"
+                android:textStyle="bold"
+                android:visibility="gone" />
+
+            <LinearLayout
+                android:id="@+id/permissionsSection"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="#FFFFFF"
+                android:orientation="vertical"
+                android:visibility="gone">
+
 
 
 
