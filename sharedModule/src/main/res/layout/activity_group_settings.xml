@@ -70,4 +70,13 @@
                         app:cardCornerRadius="44dp"
                         app:cardElevation="0dp">
 
-                        
+                        <ImageView
+                            android:id="@+id/userAvatar"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:scaleType="centerCrop"
+                            app:srcCompat="@drawable/baseline_groups_24" />
+                    </androidx.cardview.widget.CardView>
+
+                    
+
