@@ -50,3 +50,24 @@
                 android:orientation="vertical"
                 android:paddingTop="28dp"
                 android:paddingBottom="20dp">
+
+                <!-- Avatar ring -->
+                <RelativeLayout
+                    android:layout_width="100dp"
+                    android:layout_height="100dp">
+
+                    <!-- Outer ring -->
+                    <View
+                        android:layout_width="100dp"
+                        android:layout_height="100dp"
+                        android:background="@drawable/circle_ring_blue"
+                        android:layout_centerInParent="true" />
+
+                    <androidx.cardview.widget.CardView
+                        android:layout_width="88dp"
+                        android:layout_height="88dp"
+                        android:layout_centerInParent="true"
+                        app:cardCornerRadius="44dp"
+                        app:cardElevation="0dp">
+
+                        
