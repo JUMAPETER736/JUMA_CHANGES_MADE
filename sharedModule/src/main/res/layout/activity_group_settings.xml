@@ -359,5 +359,45 @@
 
                 </LinearLayout>
 
+                <!-- Action buttons -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/copyLinkBtn"
+                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="40dp"
+                        android:layout_marginEnd="6dp"
+                        android:text="Copy"
+                        android:textAllCaps="false"
+                        android:textSize="13sp"
+                        app:strokeColor="@color/bluejeans"
+                        app:cornerRadius="10dp"
+                        app:icon="@drawable/copy"
+                        app:iconSize="15dp"
+                        app:iconTint="@color/bluejeans" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/shareLinkBtn"
+                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="40dp"
+                        android:layout_marginEnd="6dp"
+                        android:text="Share"
+                        android:textAllCaps="false"
+                        android:textSize="13sp"
+                        app:strokeColor="@color/bluejeans"
+                        app:cornerRadius="10dp"
+                        app:icon="@drawable/baseline_share_24"
+                        app:iconSize="15dp"
+                        app:iconTint="@color/bluejeans" />
+
+                    
+
 
 
