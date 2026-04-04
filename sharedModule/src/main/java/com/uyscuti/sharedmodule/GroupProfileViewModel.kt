@@ -8,9 +8,14 @@ import androidx.lifecycle.viewModelScope
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.uyscuti.social.core.common.data.room.dao.GroupDialogDao
+import com.uyscuti.social.network.api.request.group.AddMembersRequest
+import com.uyscuti.social.network.api.request.group.AvatarData
+import com.uyscuti.social.network.api.request.group.ChangeRoleRequest
 import com.uyscuti.social.network.api.request.group.GroupChatDetail
 import com.uyscuti.social.network.api.request.group.GroupLinkData
 import com.uyscuti.social.network.api.request.group.GroupMember
+import com.uyscuti.social.network.api.request.group.GroupMemberUser
+import com.uyscuti.social.network.api.request.group.GroupRole
 import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
 import com.uyscuti.social.network.utils.LocalStorage
 import dagger.hilt.android.lifecycle.HiltViewModel

@@ -31,6 +31,7 @@ import com.uyscuti.sharedmodule.adapter.GroupTabsAdapter
 import com.uyscuti.sharedmodule.databinding.ActivityGroupProfileBinding
 import com.uyscuti.sharedmodule.media.ViewImagesActivity
 import com.uyscuti.social.core.models.data.Dialog
+import com.uyscuti.social.network.api.request.group.GroupMember
 import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
@@ -82,7 +83,7 @@ class GroupProfileActivity : AppCompatActivity() {
     private var isGroupLocked: Boolean = false
 
     private val groupProfileViewModel: GroupProfileViewModel by viewModels()
-    private var currentMembers: List<com.uyscuti.social.network.api.models.GroupMember> = emptyList()
+    private var currentMembers: List<GroupMember> = emptyList()
 
     //  Launchers ─
 
