@@ -78,5 +78,27 @@
                             app:srcCompat="@drawable/baseline_groups_24" />
                     </androidx.cardview.widget.CardView>
 
-                    
+                    <!-- Camera badge -->
+                    <androidx.cardview.widget.CardView
+                        android:id="@+id/addPhotoWrapper"
+                        android:layout_width="28dp"
+                        android:layout_height="28dp"
+                        android:layout_alignParentEnd="true"
+                        android:layout_alignParentBottom="true"
+                        app:cardCornerRadius="14dp"
+                        app:cardElevation="4dp">
+
+                        <ImageView
+                            android:id="@+id/addPhoto"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:background="@color/bluejeans"
+                            android:padding="5dp"
+                            android:scaleType="centerInside"
+                            app:srcCompat="@drawable/baseline_camera_alt_24"
+                            app:tint="#FFFFFF" />
+                    </androidx.cardview.widget.CardView>
+                </RelativeLayout>
+                
+
 
