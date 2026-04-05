@@ -304,7 +304,29 @@ class GroupSettingsActivity : AppCompatActivity() {
 
         if (inviteLink.isNotEmpty()) binding.inviteLinkText.text = inviteLink
         else if (canManage) viewModel.generateLink(chatId)
+        binding.copyLinkBtn.setOnClickListener {
+            val link = binding.inviteLinkText.text.toString()
+            if (link.isNotEmpty() && link != "Generating..." && link != "No active link")
+                copyToClipboard(link)
+            else Toast.makeText(this, "Link not ready yet", Toast.LENGTH_SHORT).show()
+        }
+        binding.shareLinkBtn.setOnClickListener {
+            val link = binding.inviteLinkText.text.toString()
+            if (link.isNotEmpty() && link != "Generating..." && link != "No active link")
+                shareLink(link)
+            else Toast.makeText(this, "Link not ready yet", Toast.LENGTH_SHORT).show()
+        }
+        binding.revokeLinkBtn.setOnClickListener {
+            AlertDialog.Builder(this)
+                .setTitle("Reset Invite Link")
+                .setMessage("The old link will stop working. Continue?")
+                .setPositiveButton("Reset") { _, _ -> viewModel.revokeLink(chatId) }
+                .setNegativeButton("Cancel", null)
+                .show()
+        }
+    }
 
+    
 
 
 
