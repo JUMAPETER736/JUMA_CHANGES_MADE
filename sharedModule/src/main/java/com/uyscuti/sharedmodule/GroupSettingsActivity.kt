@@ -87,6 +87,28 @@ class GroupSettingsActivity : AppCompatActivity() {
             }
         }
 
+    //  onCreate
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        binding = ActivityGroupSettingsBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+
+        chatId         = intent.getStringExtra("chatId")         ?: ""
+        myRole         = intent.getStringExtra("myRole")         ?: "member"
+        inviteLink     = intent.getStringExtra("inviteLink")     ?: ""
+        groupName      = intent.getStringExtra("groupName")      ?: ""
+        memberCount    = intent.getIntExtra("memberCount", 0)
+        editInfoLocked = intent.getBooleanExtra("editInfoLocked", false)
+
+        val savedDescription = intent.getStringExtra("description") ?: ""
+        if (savedDescription.isNotEmpty()) {
+            binding.myLastNameTV.text = savedDescription
+            binding.myLastNameTV.setTextColor(ContextCompat.getColor(this, R.color.black))
+        }
+
+        
+
 
 
 
