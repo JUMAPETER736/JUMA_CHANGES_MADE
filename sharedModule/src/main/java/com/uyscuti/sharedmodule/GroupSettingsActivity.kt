@@ -461,6 +461,45 @@ class GroupSettingsActivity : AppCompatActivity() {
             }
         }
 
+        viewModel.members.observe(this) { result ->
+            if (result is GroupResult.Success) {
+                memberCount = result.data.size
+                binding.memberCountTV.text = "$memberCount members"
+            }
+        }
+
+        viewModel.renameResult.observe(this) { result ->
+            when (result) {
+                is GroupResult.Success -> {
+                    renamePending = false
+                    checkAndFinishWithResult()
+                }
+                is GroupResult.Error -> {
+                    renamePending = false
+                    binding.saveChangesBtn.isEnabled = true
+                    binding.saveChangesBtn.text      = "Save Changes"
+                    Toast.makeText(this, "Failed to save name: ${result.message}", Toast.LENGTH_LONG).show()
+                }
+                else -> {}
+            }
+        }
+
+        viewModel.descriptionResult.observe(this) { result ->
+            when (result) {
+                is GroupResult.Success -> {
+                    descriptionPending = false
+                    checkAndFinishWithResult()
+                }
+                is GroupResult.Error -> {
+                    descriptionPending = false
+                    binding.saveChangesBtn.isEnabled = true
+                    binding.saveChangesBtn.text      = "Save Changes"
+                    Toast.makeText(this, "Failed to save description: ${result.message}", Toast.LENGTH_LONG).show()
+                }
+                else -> {}
+            }
+        }
+        
 
 
 
