@@ -326,7 +326,41 @@ class GroupSettingsActivity : AppCompatActivity() {
         }
     }
 
-    
+    //  Save button ─
+
+    private fun setupSaveButton() {
+        val canEdit = myRole == "admin" || (!editInfoLocked && myRole == "moderator")
+        binding.saveChangesBtn.visibility = if (canEdit) View.VISIBLE else View.GONE
+
+        binding.saveChangesBtn.setOnClickListener {
+            if (isEditingName)        binding.myNameEditBtn.performClick()
+            if (isEditingDescription) binding.descriptionEditBtn.performClick()
+
+            val newName = binding.myNameTV.text.toString().trim()
+            val newDesc = binding.myLastNameTV.text.toString().let {
+                if (it == "Add a description...") "" else it.trim()
+            }
+
+            if (newName.isEmpty()) {
+                Toast.makeText(this, "Group name cannot be empty", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            binding.saveChangesBtn.isEnabled = false
+            binding.saveChangesBtn.text      = "Saving..."
+
+            pendingName = newName
+            pendingDesc = newDesc
+
+            val originalDesc   = intent.getStringExtra("description") ?: ""
+            val descChanged    = newDesc != originalDesc
+            renamePending      = true
+            descriptionPending = descChanged
+
+            viewModel.renameGroup(chatId, newName)
+            if (descChanged) viewModel.updateDescription(chatId, newDesc)
+        }
+    }
 
 
 
