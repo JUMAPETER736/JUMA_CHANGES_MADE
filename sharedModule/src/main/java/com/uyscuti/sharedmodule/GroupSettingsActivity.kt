@@ -1,39 +1,95 @@
 package com.uyscuti.sharedmodule
 
+import android.content.Context
+import android.content.Intent
 import android.graphics.drawable.InsetDrawable
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.DrawableCompat
 import com.uyscuti.sharedmodule.databinding.ActivityGroupSettingsBinding
+import dagger.hilt.android.AndroidEntryPoint
 
+
+@AndroidEntryPoint
 class GroupSettingsActivity : AppCompatActivity() {
 
-    private lateinit var binding: ActivityGroupSettingsBinding
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        binding = ActivityGroupSettingsBinding.inflate(layoutInflater)
-        setContentView(binding.root)
+    companion object {
+        const val RESULT_GROUP_DELETED = 100
+        const val EXTRA_UPDATED_NAME = "updated_name"
+        const val EXTRA_UPDATED_DESC = "updated_description"
+        const val EXTRA_UPDATED_PHOTO = "updated_photo"
 
-        setSupportActionBar(binding.toolbar)
-
-
-
-        val navigationIcon = ContextCompat.getDrawable(this, R.drawable.baseline_arrow_back_ios_24)
-
-        navigationIcon?.let {
-            it.setBounds(0, 0, it.intrinsicWidth, it.intrinsicHeight)
-
-            val wrappedDrawable = DrawableCompat.wrap(it)
-            DrawableCompat.setTint(wrappedDrawable, ContextCompat.getColor(this, R.color.black))
-            val drawableMargin = InsetDrawable(wrappedDrawable, 0, 0, 0, 0)
-            binding.toolbar.navigationContentDescription = "Navigate up"
-            binding.toolbar.navigationIcon = drawableMargin
-        }
-
-
-        binding.toolbar.setNavigationOnClickListener {
-            onBackPressed()
+        fun open(
+            context: Context,
+            chatId: String,
+            myRole: String,
+            inviteLink: String?,
+            groupName: String,
+            memberCount: Int,
+            description: String = "",
+            editInfoLocked: Boolean = false
+        ) {
+            context.startActivity(
+                Intent(context, GroupSettingsActivity::class.java).apply {
+                    putExtra("chatId", chatId)
+                    putExtra("myRole", myRole)
+                    putExtra("inviteLink", inviteLink ?: "")
+                    putExtra("groupName", groupName)
+                    putExtra("memberCount", memberCount)
+                    putExtra("description", description)
+                    putExtra("editInfoLocked", editInfoLocked)
+                }
+            )
         }
     }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+
+
 }
