@@ -248,7 +248,11 @@ class GroupSettingsActivity : AppCompatActivity() {
         }
     }
 
-
+    // Determines if the name edit button should show based on role + lock state
+    private fun applyNameEditVisibility() {
+        val canEdit = myRole == "admin" || (!editInfoLocked && myRole == "moderator")
+        binding.myNameEditBtn.visibility = if (canEdit) View.VISIBLE else View.GONE
+    }
 
 
 
