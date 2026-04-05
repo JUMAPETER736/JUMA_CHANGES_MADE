@@ -1,6 +1,8 @@
 package com.uyscuti.sharedmodule
 
 import android.app.Activity
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
@@ -11,6 +13,7 @@ import android.os.Bundle
 import android.provider.MediaStore
 import android.util.Log
 import android.view.View
+import android.widget.CompoundButton
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
@@ -590,6 +593,67 @@ class GroupSettingsActivity : AppCompatActivity() {
         setResult(RESULT_GROUP_DELETED)
         finish()
     }
+
+
+
+    //  Helpers ─
+
+    private fun copyToClipboard(text: String) {
+        val cb = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+        cb.setPrimaryClip(ClipData.newPlainText("Invite Link", text))
+        Toast.makeText(this, "Link copied!", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun shareLink(link: String) {
+        startActivity(Intent.createChooser(
+            Intent(Intent.ACTION_SEND).apply {
+                type = "text/plain"
+                putExtra(Intent.EXTRA_TEXT, "Join my group on Circuit!\n$link")
+            }, "Share invite link"
+        ))
+    }
+
+    private val editInfoSwitchListener: CompoundButton.OnCheckedChangeListener =
+        CompoundButton.OnCheckedChangeListener { _, isChecked ->
+            updateEditInfoLabel(isChecked)
+            binding.editInfoSwitch.isEnabled = false
+
+            CoroutineScope(Dispatchers.IO).launch {
+                try {
+                    val response = retrofitInterface.apiService.updateGroupPermissions(
+                        chatId,
+                        mapOf("editInfoLocked" to isChecked)
+                    )
+                    withContext(Dispatchers.Main) {
+                        binding.editInfoSwitch.isEnabled = true
+                        if (response.isSuccessful) {
+                            editInfoLocked = isChecked
+                            applyNameEditVisibility()
+                            applyDescriptionEditVisibility()
+                            val canEdit = myRole == "admin" || (!editInfoLocked && myRole == "moderator")
+                            binding.saveChangesBtn.visibility = if (canEdit) View.VISIBLE else View.GONE
+                        } else {
+                            binding.editInfoSwitch.setOnCheckedChangeListener(null)
+                            binding.editInfoSwitch.isChecked = !isChecked
+                            updateEditInfoLabel(!isChecked)
+                            binding.editInfoSwitch.setOnCheckedChangeListener(editInfoSwitchListener)
+                            Toast.makeText(this@GroupSettingsActivity, "Failed to update permissions", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                } catch (e: Exception) {
+                    withContext(Dispatchers.Main) {
+                        binding.editInfoSwitch.isEnabled = true
+                        binding.editInfoSwitch.setOnCheckedChangeListener(null)
+                        binding.editInfoSwitch.isChecked = !isChecked
+                        updateEditInfoLabel(!isChecked)
+                        binding.editInfoSwitch.setOnCheckedChangeListener(editInfoSwitchListener)
+                        Toast.makeText(this@GroupSettingsActivity, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+        }
+
+    
 
 
 
