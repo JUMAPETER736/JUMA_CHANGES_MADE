@@ -363,7 +363,43 @@ class GroupSettingsActivity : AppCompatActivity() {
     }
 
 
+    //  Danger zone (delete + leave)
 
+    private fun setupDangerZone() {
+        binding.deleteGroupBtn.visibility = if (myRole == "admin") View.VISIBLE else View.GONE
+
+        binding.deleteGroupBtn.setOnClickListener {
+            if (isDeleting) return@setOnClickListener
+            deleteDialog = AlertDialog.Builder(this)
+                .setTitle("Delete Group")
+                .setMessage(
+                    "This will permanently delete the group and remove all members. " +
+                            "This cannot be undone."
+                )
+                .setPositiveButton("Delete") { _, _ -> viewModel.deleteGroup(chatId) }
+                .setNegativeButton("Cancel", null)
+                .create()
+            deleteDialog?.show()
+        }
+
+        binding.leaveGroupBtn.visibility = View.VISIBLE
+
+        binding.leaveGroupBtn.setOnClickListener {
+            val message = if (myRole == "admin") {
+                "You are the admin. If you are the only admin, the oldest member will be " +
+                        "automatically promoted to admin. Are you sure you want to leave?"
+            } else {
+                "Are you sure you want to leave this group?"
+            }
+
+            AlertDialog.Builder(this)
+                .setTitle("Leave Group")
+                .setMessage(message)
+                .setPositiveButton("Leave") { _, _ -> viewModel.leaveGroup(chatId) }
+                .setNegativeButton("Cancel", null)
+                .show()
+        }
+    }
 
 
 
