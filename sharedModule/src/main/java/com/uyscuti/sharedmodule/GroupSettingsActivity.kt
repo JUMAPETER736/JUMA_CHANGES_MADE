@@ -255,7 +255,34 @@ class GroupSettingsActivity : AppCompatActivity() {
     }
 
 
+    //  Description field ─
 
+    private fun setupDescriptionField() {
+        applyDescriptionEditVisibility()
+
+        binding.descriptionEditBtn.setOnClickListener {
+            isEditingDescription = !isEditingDescription
+            if (isEditingDescription) {
+                binding.myLastNameTV.visibility = View.GONE
+                binding.myLastNameET.visibility = View.VISIBLE
+                val current = binding.myLastNameTV.text.toString()
+                binding.myLastNameET.setText(if (current == "Add a description...") "" else current)
+                binding.myLastNameET.requestFocus()
+                binding.descriptionEditBtn.setImageResource(R.drawable.baseline_check_24)
+            } else {
+                val newDesc = binding.myLastNameET.text.toString().trim()
+                binding.myLastNameTV.text =
+                    if (newDesc.isNotEmpty()) newDesc else "Add a description..."
+                binding.myLastNameTV.setTextColor(
+                    if (newDesc.isNotEmpty()) ContextCompat.getColor(this, R.color.black)
+                    else ContextCompat.getColor(this, android.R.color.darker_gray)
+                )
+                binding.myLastNameET.visibility = View.GONE
+                binding.myLastNameTV.visibility = View.VISIBLE
+                binding.descriptionEditBtn.setImageResource(R.drawable.baseline_edit_24)
+            }
+        }
+    }
 
 
 
