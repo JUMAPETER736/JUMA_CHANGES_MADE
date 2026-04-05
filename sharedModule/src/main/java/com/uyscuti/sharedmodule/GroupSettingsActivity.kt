@@ -123,6 +123,21 @@ class GroupSettingsActivity : AppCompatActivity() {
         }
     }
 
+    //  Toolbar ─
+
+    private fun setupToolbar() {
+        setSupportActionBar(binding.toolbar)
+        val nav = ContextCompat.getDrawable(this, R.drawable.baseline_arrow_back_ios_24)
+        nav?.let {
+            it.setBounds(0, 0, it.intrinsicWidth, it.intrinsicHeight)
+            val wrapped = DrawableCompat.wrap(it)
+            DrawableCompat.setTint(wrapped, ContextCompat.getColor(this, R.color.black))
+            binding.toolbar.navigationIcon = InsetDrawable(wrapped, 0, 0, 0, 0)
+        }
+        binding.toolbar.setNavigationOnClickListener { onBackPressed() }
+    }
+
+    
 
 
 
