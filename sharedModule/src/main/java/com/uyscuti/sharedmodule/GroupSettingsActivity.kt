@@ -519,6 +519,30 @@ class GroupSettingsActivity : AppCompatActivity() {
             }
         }
 
+        viewModel.deleteGroup.observe(this) { result ->
+            when (result) {
+                is GroupResult.Loading -> {
+                    isDeleting = true
+                    deleteDialog?.dismiss()
+                    binding.deleteGroupBtn.isClickable = false
+                    binding.deleteGroupBtn.alpha = 0.4f
+                }
+                is GroupResult.Success -> {
+                    isDeleting = false
+                    binding.deleteGroupBtn.isClickable = true
+                    binding.deleteGroupBtn.alpha = 1f
+                    Toast.makeText(this, "Group deleted", Toast.LENGTH_SHORT).show()
+                    navigateToGroupsList()
+                }
+                is GroupResult.Error -> {
+                    isDeleting = false
+                    binding.deleteGroupBtn.isClickable = true
+                    binding.deleteGroupBtn.alpha = 1f
+                    Toast.makeText(this, "Delete failed: ${result.message}", Toast.LENGTH_LONG).show()
+                }
+            }
+        }
+
 
 
 
