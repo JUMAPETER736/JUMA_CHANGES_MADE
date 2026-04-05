@@ -499,7 +499,25 @@ class GroupSettingsActivity : AppCompatActivity() {
                 else -> {}
             }
         }
-        
+
+        viewModel.leaveResult.observe(this) { result ->
+            when (result) {
+                is GroupResult.Loading -> {
+                    binding.leaveGroupBtn.isClickable = false
+                    binding.leaveGroupBtn.alpha = 0.5f
+                }
+                is GroupResult.Success -> {
+                    setResult(RESULT_OK)
+                    Toast.makeText(this, "You left the group", Toast.LENGTH_SHORT).show()
+                    navigateToGroupsList()
+                }
+                is GroupResult.Error -> {
+                    binding.leaveGroupBtn.isClickable = true
+                    binding.leaveGroupBtn.alpha = 1f
+                    Toast.makeText(this, "Could not leave: ${result.message}", Toast.LENGTH_LONG).show()
+                }
+            }
+        }
 
 
 
