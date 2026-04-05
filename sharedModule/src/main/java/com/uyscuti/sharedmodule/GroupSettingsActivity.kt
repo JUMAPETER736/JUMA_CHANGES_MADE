@@ -401,6 +401,31 @@ class GroupSettingsActivity : AppCompatActivity() {
         }
     }
 
+    private fun observeViewModel() {
+
+        viewModel.groupDetail.observe(this) { result ->
+            when (result) {
+                is GroupResult.Success -> {
+                    val detail = result.data
+                    binding.groupNameHeaderTV.text = detail.name
+                    binding.myNameTV.text          = detail.name
+
+                    val desc = detail.description ?: ""
+                    if (desc.isNotEmpty()) {
+                        binding.myLastNameTV.text = desc
+                        binding.myLastNameTV.setTextColor(ContextCompat.getColor(this, R.color.black))
+                    }
+
+                    // Sync editInfoLocked from server in case it changed
+                    editInfoLocked = detail.editInfoLocked
+                    if (myRole == "admin") {
+                        binding.editInfoSwitch.isChecked = editInfoLocked
+                        binding.editInfoSwitchLabel.text = if (editInfoLocked)
+                            "Only admins can edit group info"
+                        else
+                            "All members can edit group info"
+                    }
+
 
 
 
