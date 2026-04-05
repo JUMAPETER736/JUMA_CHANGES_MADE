@@ -5,7 +5,9 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
+import android.content.res.ColorStateList
 import android.graphics.Bitmap
+import android.graphics.Color
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.InsetDrawable
 import android.net.Uri
@@ -79,26 +81,26 @@ class GroupSettingsActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityGroupSettingsBinding
 
-    private var chatId:          String  = ""
-    private var myRole:          String  = "member"
-    private var inviteLink:      String  = ""
-    private var groupName:       String  = ""
-    private var memberCount:     Int     = 0
-    private var pendingName:     String  = ""
-    private var pendingDesc:     String  = ""
-    private var pendingPhotoUrl: String  = ""
-    private var editInfoLocked:  Boolean = false
+    private var chatId: String = ""
+    private var myRole: String = "member"
+    private var inviteLink: String = ""
+    private var groupName: String = ""
+    private var memberCount: Int = 0
+    private var pendingName: String = ""
+    private var pendingDesc: String = ""
+    private var pendingPhotoUrl: String = ""
+    private var editInfoLocked: Boolean = false
 
 
-    private var renamePending:      Boolean = false
+    private var renamePending: Boolean = false
     private var descriptionPending: Boolean = false
 
     private val viewModel: GroupProfileViewModel by viewModels()
 
-    private var isEditingName:        Boolean      = false
-    private var isEditingDescription: Boolean      = false
-    private var deleteDialog:         AlertDialog? = null
-    private var isDeleting:           Boolean      = false
+    private var isEditingName: Boolean = false
+    private var isEditingDescription: Boolean = false
+    private var deleteDialog: AlertDialog? = null
+    private var isDeleting: Boolean = false
 
     private val imagePickerLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -115,11 +117,11 @@ class GroupSettingsActivity : AppCompatActivity() {
         binding = ActivityGroupSettingsBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        chatId         = intent.getStringExtra("chatId")         ?: ""
-        myRole         = intent.getStringExtra("myRole")         ?: "member"
-        inviteLink     = intent.getStringExtra("inviteLink")     ?: ""
-        groupName      = intent.getStringExtra("groupName")      ?: ""
-        memberCount    = intent.getIntExtra("memberCount", 0)
+        chatId = intent.getStringExtra("chatId") ?: ""
+        myRole = intent.getStringExtra("myRole") ?: "member"
+        inviteLink = intent.getStringExtra("inviteLink") ?: ""
+        groupName = intent.getStringExtra("groupName") ?: ""
+        memberCount = intent.getIntExtra("memberCount", 0)
         editInfoLocked = intent.getBooleanExtra("editInfoLocked", false)
 
         val savedDescription = intent.getStringExtra("description") ?: ""
@@ -162,7 +164,7 @@ class GroupSettingsActivity : AppCompatActivity() {
 
     private fun setupHeader() {
         binding.groupNameHeaderTV.text = groupName.ifBlank { "Group" }
-        binding.memberCountTV.text     = "$memberCount members"
+        binding.memberCountTV.text = "$memberCount members"
 
         // Avatar edit only available to admins regardless of editInfoLocked
         val isAdmin = myRole == "admin"
@@ -184,7 +186,7 @@ class GroupSettingsActivity : AppCompatActivity() {
             try {
 
                 val inputStream = contentResolver.openInputStream(uri) ?: return@launch
-                val tempFile    = File.createTempFile("group_avatar_", ".jpg", cacheDir)
+                val tempFile = File.createTempFile("group_avatar_", ".jpg", cacheDir)
                 tempFile.outputStream().use { inputStream.copyTo(it) }
 
                 val requestBody = tempFile.asRequestBody("image/jpeg".toMediaTypeOrNull())
@@ -205,7 +207,11 @@ class GroupSettingsActivity : AppCompatActivity() {
 
                         if (newAvatarUrl.isNotEmpty())
                             viewModel.updateGroupAvatarLocally(chatId, newAvatarUrl)
-                        Toast.makeText(this@GroupSettingsActivity, "Group photo updated", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(
+                            this@GroupSettingsActivity,
+                            "Group photo updated",
+                            Toast.LENGTH_SHORT
+                        ).show()
 
                     } else {
                         Toast.makeText(
@@ -221,7 +227,11 @@ class GroupSettingsActivity : AppCompatActivity() {
             } catch (e: Exception) {
                 Log.e("GroupSettings", "uploadGroupAvatar error: ${e.message}")
                 withContext(Dispatchers.Main) {
-                    Toast.makeText(this@GroupSettingsActivity, "Error uploading photo: ${e.message}", Toast.LENGTH_LONG).show()
+                    Toast.makeText(
+                        this@GroupSettingsActivity,
+                        "Error uploading photo: ${e.message}",
+                        Toast.LENGTH_LONG
+                    ).show()
                 }
             }
         }
@@ -246,7 +256,7 @@ class GroupSettingsActivity : AppCompatActivity() {
             } else {
                 val newName = binding.myNameET.text.toString().trim()
                 if (newName.isNotEmpty()) {
-                    binding.myNameTV.text          = newName
+                    binding.myNameTV.text = newName
                     binding.groupNameHeaderTV.text = newName
                 }
                 binding.myNameET.visibility = View.GONE
@@ -306,9 +316,9 @@ class GroupSettingsActivity : AppCompatActivity() {
         val canManage = myRole == "admin" || myRole == "moderator"
 
         binding.inviteSectionLabel.visibility = if (canManage) View.VISIBLE else View.GONE
-        binding.inviteLinkSection.visibility  = if (canManage) View.VISIBLE else View.GONE
-        binding.inviteLinkDivider.visibility  = if (canManage) View.VISIBLE else View.GONE
-        binding.revokeLinkBtn.visibility      = if (myRole == "admin") View.VISIBLE else View.GONE
+        binding.inviteLinkSection.visibility = if (canManage) View.VISIBLE else View.GONE
+        binding.inviteLinkDivider.visibility = if (canManage) View.VISIBLE else View.GONE
+        binding.revokeLinkBtn.visibility = if (myRole == "admin") View.VISIBLE else View.GONE
 
         if (inviteLink.isNotEmpty()) binding.inviteLinkText.text = inviteLink
         else if (canManage) viewModel.generateLink(chatId)
@@ -341,7 +351,7 @@ class GroupSettingsActivity : AppCompatActivity() {
         binding.saveChangesBtn.visibility = if (canEdit) View.VISIBLE else View.GONE
 
         binding.saveChangesBtn.setOnClickListener {
-            if (isEditingName)        binding.myNameEditBtn.performClick()
+            if (isEditingName) binding.myNameEditBtn.performClick()
             if (isEditingDescription) binding.descriptionEditBtn.performClick()
 
             val newName = binding.myNameTV.text.toString().trim()
@@ -355,14 +365,14 @@ class GroupSettingsActivity : AppCompatActivity() {
             }
 
             binding.saveChangesBtn.isEnabled = false
-            binding.saveChangesBtn.text      = "Saving..."
+            binding.saveChangesBtn.text = "Saving..."
 
             pendingName = newName
             pendingDesc = newDesc
 
-            val originalDesc   = intent.getStringExtra("description") ?: ""
-            val descChanged    = newDesc != originalDesc
-            renamePending      = true
+            val originalDesc = intent.getStringExtra("description") ?: ""
+            val descChanged = newDesc != originalDesc
+            renamePending = true
             descriptionPending = descChanged
 
             viewModel.renameGroup(chatId, newName)
@@ -416,12 +426,17 @@ class GroupSettingsActivity : AppCompatActivity() {
                 is GroupResult.Success -> {
                     val detail = result.data
                     binding.groupNameHeaderTV.text = detail.name
-                    binding.myNameTV.text          = detail.name
+                    binding.myNameTV.text = detail.name
 
                     val desc = detail.description ?: ""
                     if (desc.isNotEmpty()) {
                         binding.myLastNameTV.text = desc
-                        binding.myLastNameTV.setTextColor(ContextCompat.getColor(this, R.color.black))
+                        binding.myLastNameTV.setTextColor(
+                            ContextCompat.getColor(
+                                this,
+                                R.color.black
+                            )
+                        )
                     }
 
                     // Sync editInfoLocked from server in case it changed
@@ -446,11 +461,24 @@ class GroupSettingsActivity : AppCompatActivity() {
                             .placeholder(R.drawable.baseline_groups_24)
                             .error(R.drawable.baseline_groups_24)
                             .into(object : SimpleTarget<Bitmap>() {
-                                override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap>?) {
-                                    val drawable = RoundedBitmapDrawableFactory.create(resources, resource)
+                                override fun onResourceReady(
+                                    resource: Bitmap,
+                                    transition: Transition<in Bitmap>?
+                                ) {
+                                    val drawable =
+                                        RoundedBitmapDrawableFactory.create(resources, resource)
                                     drawable.isCircular = true
-                                    binding.userAvatar.setImageDrawable(InsetDrawable(drawable, 0, 0, 0, 0))
+                                    binding.userAvatar.setImageDrawable(
+                                        InsetDrawable(
+                                            drawable,
+                                            0,
+                                            0,
+                                            0,
+                                            0
+                                        )
+                                    )
                                 }
+
                                 override fun onLoadFailed(errorDrawable: Drawable?) {
                                     binding.userAvatar.setImageResource(R.drawable.baseline_groups_24)
                                 }
@@ -459,7 +487,8 @@ class GroupSettingsActivity : AppCompatActivity() {
                         binding.userAvatar.setImageResource(R.drawable.baseline_groups_24)
                     }
                 }
-                is GroupResult.Error   -> Log.w("GroupSettings", "loadGroupDetail: ${result.message}")
+
+                is GroupResult.Error -> Log.w("GroupSettings", "loadGroupDetail: ${result.message}")
                 is GroupResult.Loading -> {}
             }
         }
@@ -477,12 +506,18 @@ class GroupSettingsActivity : AppCompatActivity() {
                     renamePending = false
                     checkAndFinishWithResult()
                 }
+
                 is GroupResult.Error -> {
                     renamePending = false
                     binding.saveChangesBtn.isEnabled = true
-                    binding.saveChangesBtn.text      = "Save Changes"
-                    Toast.makeText(this, "Failed to save name: ${result.message}", Toast.LENGTH_LONG).show()
+                    binding.saveChangesBtn.text = "Save Changes"
+                    Toast.makeText(
+                        this,
+                        "Failed to save name: ${result.message}",
+                        Toast.LENGTH_LONG
+                    ).show()
                 }
+
                 else -> {}
             }
         }
@@ -493,12 +528,18 @@ class GroupSettingsActivity : AppCompatActivity() {
                     descriptionPending = false
                     checkAndFinishWithResult()
                 }
+
                 is GroupResult.Error -> {
                     descriptionPending = false
                     binding.saveChangesBtn.isEnabled = true
-                    binding.saveChangesBtn.text      = "Save Changes"
-                    Toast.makeText(this, "Failed to save description: ${result.message}", Toast.LENGTH_LONG).show()
+                    binding.saveChangesBtn.text = "Save Changes"
+                    Toast.makeText(
+                        this,
+                        "Failed to save description: ${result.message}",
+                        Toast.LENGTH_LONG
+                    ).show()
                 }
+
                 else -> {}
             }
         }
@@ -509,15 +550,18 @@ class GroupSettingsActivity : AppCompatActivity() {
                     binding.leaveGroupBtn.isClickable = false
                     binding.leaveGroupBtn.alpha = 0.5f
                 }
+
                 is GroupResult.Success -> {
                     setResult(RESULT_OK)
                     Toast.makeText(this, "You left the group", Toast.LENGTH_SHORT).show()
                     navigateToGroupsList()
                 }
+
                 is GroupResult.Error -> {
                     binding.leaveGroupBtn.isClickable = true
                     binding.leaveGroupBtn.alpha = 1f
-                    Toast.makeText(this, "Could not leave: ${result.message}", Toast.LENGTH_LONG).show()
+                    Toast.makeText(this, "Could not leave: ${result.message}", Toast.LENGTH_LONG)
+                        .show()
                 }
             }
         }
@@ -530,6 +574,7 @@ class GroupSettingsActivity : AppCompatActivity() {
                     binding.deleteGroupBtn.isClickable = false
                     binding.deleteGroupBtn.alpha = 0.4f
                 }
+
                 is GroupResult.Success -> {
                     isDeleting = false
                     binding.deleteGroupBtn.isClickable = true
@@ -537,11 +582,13 @@ class GroupSettingsActivity : AppCompatActivity() {
                     Toast.makeText(this, "Group deleted", Toast.LENGTH_SHORT).show()
                     navigateToGroupsList()
                 }
+
                 is GroupResult.Error -> {
                     isDeleting = false
                     binding.deleteGroupBtn.isClickable = true
                     binding.deleteGroupBtn.alpha = 1f
-                    Toast.makeText(this, "Delete failed: ${result.message}", Toast.LENGTH_LONG).show()
+                    Toast.makeText(this, "Delete failed: ${result.message}", Toast.LENGTH_LONG)
+                        .show()
                 }
             }
         }
@@ -550,9 +597,10 @@ class GroupSettingsActivity : AppCompatActivity() {
             when (result) {
                 is GroupResult.Loading -> binding.inviteLinkText.text = "Generating..."
                 is GroupResult.Success -> {
-                    inviteLink                  = result.data.inviteLink
+                    inviteLink = result.data.inviteLink
                     binding.inviteLinkText.text = inviteLink
                 }
+
                 is GroupResult.Error -> {
                     binding.inviteLinkText.text =
                         if (result.message == "Link revoked") "No active link" else "Could not load link"
@@ -567,8 +615,11 @@ class GroupSettingsActivity : AppCompatActivity() {
                     Toast.makeText(this, "Generating new link...", Toast.LENGTH_SHORT).show()
                     viewModel.generateLink(chatId)
                 }
+
                 is GroupResult.Error ->
-                    Toast.makeText(this, "Reset failed: ${result.message}", Toast.LENGTH_LONG).show()
+                    Toast.makeText(this, "Reset failed: ${result.message}", Toast.LENGTH_LONG)
+                        .show()
+
                 else -> {}
             }
         }
@@ -580,8 +631,8 @@ class GroupSettingsActivity : AppCompatActivity() {
         if (renamePending || descriptionPending) return
         Toast.makeText(this, "Changes saved", Toast.LENGTH_SHORT).show()
         setResult(Activity.RESULT_OK, Intent().apply {
-            putExtra(EXTRA_UPDATED_NAME,  pendingName)
-            putExtra(EXTRA_UPDATED_DESC,  pendingDesc)
+            putExtra(EXTRA_UPDATED_NAME, pendingName)
+            putExtra(EXTRA_UPDATED_DESC, pendingDesc)
             putExtra(EXTRA_UPDATED_PHOTO, pendingPhotoUrl)
         })
         finish()
@@ -595,7 +646,6 @@ class GroupSettingsActivity : AppCompatActivity() {
     }
 
 
-
     //  Helpers ─
 
     private fun copyToClipboard(text: String) {
@@ -605,12 +655,14 @@ class GroupSettingsActivity : AppCompatActivity() {
     }
 
     private fun shareLink(link: String) {
-        startActivity(Intent.createChooser(
-            Intent(Intent.ACTION_SEND).apply {
-                type = "text/plain"
-                putExtra(Intent.EXTRA_TEXT, "Join my group on Circuit!\n$link")
-            }, "Share invite link"
-        ))
+        startActivity(
+            Intent.createChooser(
+                Intent(Intent.ACTION_SEND).apply {
+                    type = "text/plain"
+                    putExtra(Intent.EXTRA_TEXT, "Join my group on Circuit!\n$link")
+                }, "Share invite link"
+            )
+        )
     }
 
     private val editInfoSwitchListener: CompoundButton.OnCheckedChangeListener =
@@ -630,14 +682,20 @@ class GroupSettingsActivity : AppCompatActivity() {
                             editInfoLocked = isChecked
                             applyNameEditVisibility()
                             applyDescriptionEditVisibility()
-                            val canEdit = myRole == "admin" || (!editInfoLocked && myRole == "moderator")
-                            binding.saveChangesBtn.visibility = if (canEdit) View.VISIBLE else View.GONE
+                            val canEdit =
+                                myRole == "admin" || (!editInfoLocked && myRole == "moderator")
+                            binding.saveChangesBtn.visibility =
+                                if (canEdit) View.VISIBLE else View.GONE
                         } else {
                             binding.editInfoSwitch.setOnCheckedChangeListener(null)
                             binding.editInfoSwitch.isChecked = !isChecked
                             updateEditInfoLabel(!isChecked)
                             binding.editInfoSwitch.setOnCheckedChangeListener(editInfoSwitchListener)
-                            Toast.makeText(this@GroupSettingsActivity, "Failed to update permissions", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(
+                                this@GroupSettingsActivity,
+                                "Failed to update permissions",
+                                Toast.LENGTH_SHORT
+                            ).show()
                         }
                     }
                 } catch (e: Exception) {
@@ -647,38 +705,57 @@ class GroupSettingsActivity : AppCompatActivity() {
                         binding.editInfoSwitch.isChecked = !isChecked
                         updateEditInfoLabel(!isChecked)
                         binding.editInfoSwitch.setOnCheckedChangeListener(editInfoSwitchListener)
-                        Toast.makeText(this@GroupSettingsActivity, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(
+                            this@GroupSettingsActivity,
+                            "Error: ${e.message}",
+                            Toast.LENGTH_SHORT
+                        ).show()
                     }
                 }
             }
         }
 
-    
 
+    private fun setupPermissions() {
+        if (myRole != "admin") {
+            binding.permissionsSectionLabel.visibility = View.GONE
+            binding.permissionsSection.visibility = View.GONE
+            binding.permissionsDivider.visibility = View.GONE
+            return
+        }
 
+        binding.permissionsSectionLabel.visibility = View.VISIBLE
+        binding.permissionsSection.visibility = View.VISIBLE
+        binding.permissionsDivider.visibility = View.VISIBLE
 
+        val colorPrimary = ContextCompat.getColor(this, R.color.bluejeans)
+        val colorGray = ContextCompat.getColor(this, R.color.gray_500)
+        binding.editInfoSwitch.trackTintList = ColorStateList(
+            arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf()),
+            intArrayOf(colorPrimary, colorGray)
+        )
+        binding.editInfoSwitch.thumbTintList = ColorStateList(
+            arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf()),
+            intArrayOf(Color.WHITE, Color.WHITE)
+        )
 
+        binding.editInfoSwitch.setOnCheckedChangeListener(null)
+        binding.editInfoSwitch.isChecked = editInfoLocked
+        updateEditInfoLabel(editInfoLocked)
+        binding.editInfoSwitch.setOnCheckedChangeListener(editInfoSwitchListener)
+    }
 
+    private fun updateEditInfoLabel(locked: Boolean) {
+        binding.editInfoSwitchLabel.text = if (locked)
+            "Only admins can edit group info"
+        else
+            "All members can edit group info"
+    }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    override fun onDestroy() {
+        super.onDestroy()
+        deleteDialog?.dismiss()
+        deleteDialog = null
+    }
 
 }
