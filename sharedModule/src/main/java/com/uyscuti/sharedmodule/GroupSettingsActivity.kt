@@ -6,6 +6,8 @@ import android.content.Intent
 import android.graphics.drawable.InsetDrawable
 import android.net.Uri
 import android.os.Bundle
+import android.provider.MediaStore
+import android.view.View
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
@@ -137,7 +139,22 @@ class GroupSettingsActivity : AppCompatActivity() {
         binding.toolbar.setNavigationOnClickListener { onBackPressed() }
     }
 
-    
+    //  Header
+
+    private fun setupHeader() {
+        binding.groupNameHeaderTV.text = groupName.ifBlank { "Group" }
+        binding.memberCountTV.text     = "$memberCount members"
+
+        // Avatar edit only available to admins regardless of editInfoLocked
+        val isAdmin = myRole == "admin"
+        binding.addPhotoWrapper.visibility = if (isAdmin) View.VISIBLE else View.GONE
+
+        binding.addPhotoWrapper.setOnClickListener {
+            val intent = Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
+            intent.type = "image/*"
+            imagePickerLauncher.launch(intent)
+        }
+    }
 
 
 
