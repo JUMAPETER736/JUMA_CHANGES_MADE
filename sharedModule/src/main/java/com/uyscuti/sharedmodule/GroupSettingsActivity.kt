@@ -8,7 +8,9 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.DrawableCompat
 import com.uyscuti.sharedmodule.databinding.ActivityGroupSettingsBinding
+import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
 import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
 
 @AndroidEntryPoint
@@ -45,6 +47,10 @@ class GroupSettingsActivity : AppCompatActivity() {
     }
 
 
+    @Inject
+    lateinit var retrofitInterface: RetrofitInstance
+
+    private lateinit var binding: ActivityGroupSettingsBinding
 
 
 
@@ -89,7 +95,7 @@ class GroupSettingsActivity : AppCompatActivity() {
 
 
 
-    
+
 
 
 }
