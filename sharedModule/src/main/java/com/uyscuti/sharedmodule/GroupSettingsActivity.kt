@@ -7,16 +7,27 @@ import android.graphics.drawable.InsetDrawable
 import android.net.Uri
 import android.os.Bundle
 import android.provider.MediaStore
+import android.util.Log
 import android.view.View
+import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.DrawableCompat
+import com.bumptech.glide.Glide
 import com.uyscuti.sharedmodule.databinding.ActivityGroupSettingsBinding
 import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.asRequestBody
+import java.io.File
 import javax.inject.Inject
 import kotlin.getValue
 
@@ -153,6 +164,50 @@ class GroupSettingsActivity : AppCompatActivity() {
             val intent = Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
             intent.type = "image/*"
             imagePickerLauncher.launch(intent)
+        }
+    }
+
+
+    //  Upload avatar ─
+
+    private fun uploadGroupAvatar(uri: Uri) {
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val inputStream = contentResolver.openInputStream(uri) ?: return@launch
+                val tempFile    = File.createTempFile("group_avatar_", ".jpg", cacheDir)
+                tempFile.outputStream().use { inputStream.copyTo(it) }
+
+                val requestBody = tempFile.asRequestBody("image/jpeg".toMediaTypeOrNull())
+                val part = MultipartBody.Part.createFormData("avatar", tempFile.name, requestBody)
+
+                val response = retrofitInterface.apiService.updateGroupAvatar(chatId, part)
+
+                withContext(Dispatchers.Main) {
+                    if (response.isSuccessful) {
+                        val newAvatarUrl = response.body()?.data?.avatar?.url ?: ""
+                        Glide.with(this@GroupSettingsActivity).load(uri).circleCrop()
+                            .placeholder(R.drawable.baseline_groups_24)
+                            .error(R.drawable.baseline_groups_24)
+                            .into(binding.userAvatar)
+                        pendingPhotoUrl = newAvatarUrl.ifEmpty { uri.toString() }
+                        if (newAvatarUrl.isNotEmpty())
+                            viewModel.updateGroupAvatarLocally(chatId, newAvatarUrl)
+                        Toast.makeText(this@GroupSettingsActivity, "Group photo updated", Toast.LENGTH_SHORT).show()
+                    } else {
+                        Toast.makeText(
+                            this@GroupSettingsActivity,
+                            "Failed to update photo: ${response.code()}",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+                }
+                tempFile.delete()
+            } catch (e: Exception) {
+                Log.e("GroupSettings", "uploadGroupAvatar error: ${e.message}")
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(this@GroupSettingsActivity, "Error uploading photo: ${e.message}", Toast.LENGTH_LONG).show()
+                }
+            }
         }
     }
 
