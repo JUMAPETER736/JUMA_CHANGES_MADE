@@ -220,6 +220,33 @@ class GroupSettingsActivity : AppCompatActivity() {
     }
 
 
+    //  Name field
+
+    private fun setupNameField() {
+        binding.myNameTV.text = groupName.ifBlank { "Group" }
+        applyNameEditVisibility()
+
+        binding.myNameEditBtn.setOnClickListener {
+            isEditingName = !isEditingName
+            if (isEditingName) {
+                binding.myNameTV.visibility = View.GONE
+                binding.myNameET.visibility = View.VISIBLE
+                binding.myNameET.setText(binding.myNameTV.text)
+                binding.myNameET.requestFocus()
+                binding.myNameET.setSelection(binding.myNameET.text.length)
+                binding.myNameEditBtn.setImageResource(R.drawable.baseline_check_24)
+            } else {
+                val newName = binding.myNameET.text.toString().trim()
+                if (newName.isNotEmpty()) {
+                    binding.myNameTV.text          = newName
+                    binding.groupNameHeaderTV.text = newName
+                }
+                binding.myNameET.visibility = View.GONE
+                binding.myNameTV.visibility = View.VISIBLE
+                binding.myNameEditBtn.setImageResource(R.drawable.baseline_edit_24)
+            }
+        }
+    }
 
 
 
