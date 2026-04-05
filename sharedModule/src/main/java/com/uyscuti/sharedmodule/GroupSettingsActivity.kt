@@ -107,7 +107,22 @@ class GroupSettingsActivity : AppCompatActivity() {
             binding.myLastNameTV.setTextColor(ContextCompat.getColor(this, R.color.black))
         }
 
-        
+        setupToolbar()
+        setupHeader()
+        setupNameField()
+        setupDescriptionField()
+        setupInviteLink()
+        setupPermissions()
+        setupDangerZone()
+        setupSaveButton()
+        observeViewModel()
+
+        if (chatId.isNotEmpty()) {
+            viewModel.loadGroupDetail(chatId)
+            viewModel.loadMembers(chatId)
+        }
+    }
+
 
 
 
