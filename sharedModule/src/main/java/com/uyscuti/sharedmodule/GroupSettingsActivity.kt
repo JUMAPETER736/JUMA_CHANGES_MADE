@@ -571,7 +571,25 @@ class GroupSettingsActivity : AppCompatActivity() {
         }
     }
 
-    
+    //  Finish with result
+
+    private fun checkAndFinishWithResult() {
+        if (renamePending || descriptionPending) return
+        Toast.makeText(this, "Changes saved", Toast.LENGTH_SHORT).show()
+        setResult(Activity.RESULT_OK, Intent().apply {
+            putExtra(EXTRA_UPDATED_NAME,  pendingName)
+            putExtra(EXTRA_UPDATED_DESC,  pendingDesc)
+            putExtra(EXTRA_UPDATED_PHOTO, pendingPhotoUrl)
+        })
+        finish()
+    }
+
+    //  Navigation
+
+    private fun navigateToGroupsList() {
+        setResult(RESULT_GROUP_DELETED)
+        finish()
+    }
 
 
 
