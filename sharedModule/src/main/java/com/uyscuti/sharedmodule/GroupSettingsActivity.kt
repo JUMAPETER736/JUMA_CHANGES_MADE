@@ -52,6 +52,15 @@ class GroupSettingsActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityGroupSettingsBinding
 
+    private var chatId:          String  = ""
+    private var myRole:          String  = "member"
+    private var inviteLink:      String  = ""
+    private var groupName:       String  = ""
+    private var memberCount:     Int     = 0
+    private var pendingName:     String  = ""
+    private var pendingDesc:     String  = ""
+    private var pendingPhotoUrl: String  = ""
+    private var editInfoLocked:  Boolean = false
 
 
 
