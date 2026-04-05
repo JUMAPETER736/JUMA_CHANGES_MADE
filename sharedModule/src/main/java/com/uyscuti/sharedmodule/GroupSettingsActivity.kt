@@ -1,9 +1,14 @@
 package com.uyscuti.sharedmodule
 
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.graphics.drawable.InsetDrawable
+import android.net.Uri
 import android.os.Bundle
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.viewModels
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.DrawableCompat
@@ -11,6 +16,7 @@ import com.uyscuti.sharedmodule.databinding.ActivityGroupSettingsBinding
 import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
+import kotlin.getValue
 
 
 @AndroidEntryPoint
@@ -63,7 +69,23 @@ class GroupSettingsActivity : AppCompatActivity() {
     private var editInfoLocked:  Boolean = false
 
 
+    private var renamePending:      Boolean = false
+    private var descriptionPending: Boolean = false
 
+    private val viewModel: GroupProfileViewModel by viewModels()
+
+    private var isEditingName:        Boolean      = false
+    private var isEditingDescription: Boolean      = false
+    private var deleteDialog:         AlertDialog? = null
+    private var isDeleting:           Boolean      = false
+
+    private val imagePickerLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            if (result.resultCode == Activity.RESULT_OK) {
+                val uri: Uri? = result.data?.data
+                if (uri != null) uploadGroupAvatar(uri)
+            }
+        }
 
 
 
