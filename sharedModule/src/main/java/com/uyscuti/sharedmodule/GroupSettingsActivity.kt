@@ -543,30 +543,60 @@ class GroupSettingsActivity : AppCompatActivity() {
             }
         }
 
+        viewModel.inviteLink.observe(this) { result ->
+            when (result) {
+                is GroupResult.Loading -> binding.inviteLinkText.text = "Generating..."
+                is GroupResult.Success -> {
+                    inviteLink                  = result.data.inviteLink
+                    binding.inviteLinkText.text = inviteLink
+                }
+                is GroupResult.Error -> {
+                    binding.inviteLinkText.text =
+                        if (result.message == "Link revoked") "No active link" else "Could not load link"
+                }
+            }
+        }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        viewModel.revokeResult.observe(this) { result ->
+            when (result) {
+                is GroupResult.Success -> {
+                    inviteLink = ""
+                    Toast.makeText(this, "Generating new link...", Toast.LENGTH_SHORT).show()
+                    viewModel.generateLink(chatId)
+                }
+                is GroupResult.Error ->
+                    Toast.makeText(this, "Reset failed: ${result.message}", Toast.LENGTH_LONG).show()
+                else -> {}
+            }
+        }
     }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+}
