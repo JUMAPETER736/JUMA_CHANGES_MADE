@@ -284,12 +284,26 @@ class GroupSettingsActivity : AppCompatActivity() {
         }
     }
 
-    
+
     private fun applyDescriptionEditVisibility() {
         val canEdit = myRole == "admin" || (!editInfoLocked && myRole == "moderator")
         binding.descriptionEditBtn.visibility = if (canEdit) View.VISIBLE else View.GONE
     }
 
+    //  Permissions (admin only)
+
+    //  Invite link ─
+
+    private fun setupInviteLink() {
+        val canManage = myRole == "admin" || myRole == "moderator"
+
+        binding.inviteSectionLabel.visibility = if (canManage) View.VISIBLE else View.GONE
+        binding.inviteLinkSection.visibility  = if (canManage) View.VISIBLE else View.GONE
+        binding.inviteLinkDivider.visibility  = if (canManage) View.VISIBLE else View.GONE
+        binding.revokeLinkBtn.visibility      = if (myRole == "admin") View.VISIBLE else View.GONE
+
+        if (inviteLink.isNotEmpty()) binding.inviteLinkText.text = inviteLink
+        else if (canManage) viewModel.generateLink(chatId)
 
 
 
