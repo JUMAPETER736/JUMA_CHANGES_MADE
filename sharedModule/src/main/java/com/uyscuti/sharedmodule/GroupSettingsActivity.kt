@@ -284,9 +284,11 @@ class GroupSettingsActivity : AppCompatActivity() {
         }
     }
 
-
-
-
+    
+    private fun applyDescriptionEditVisibility() {
+        val canEdit = myRole == "admin" || (!editInfoLocked && myRole == "moderator")
+        binding.descriptionEditBtn.visibility = if (canEdit) View.VISIBLE else View.GONE
+    }
 
 
 
