@@ -171,8 +171,10 @@ class GroupSettingsActivity : AppCompatActivity() {
     //  Upload avatar ─
 
     private fun uploadGroupAvatar(uri: Uri) {
+
         CoroutineScope(Dispatchers.IO).launch {
             try {
+
                 val inputStream = contentResolver.openInputStream(uri) ?: return@launch
                 val tempFile    = File.createTempFile("group_avatar_", ".jpg", cacheDir)
                 tempFile.outputStream().use { inputStream.copyTo(it) }
@@ -183,16 +185,20 @@ class GroupSettingsActivity : AppCompatActivity() {
                 val response = retrofitInterface.apiService.updateGroupAvatar(chatId, part)
 
                 withContext(Dispatchers.Main) {
+
                     if (response.isSuccessful) {
                         val newAvatarUrl = response.body()?.data?.avatar?.url ?: ""
+
                         Glide.with(this@GroupSettingsActivity).load(uri).circleCrop()
                             .placeholder(R.drawable.baseline_groups_24)
                             .error(R.drawable.baseline_groups_24)
                             .into(binding.userAvatar)
                         pendingPhotoUrl = newAvatarUrl.ifEmpty { uri.toString() }
+
                         if (newAvatarUrl.isNotEmpty())
                             viewModel.updateGroupAvatarLocally(chatId, newAvatarUrl)
                         Toast.makeText(this@GroupSettingsActivity, "Group photo updated", Toast.LENGTH_SHORT).show()
+
                     } else {
                         Toast.makeText(
                             this@GroupSettingsActivity,
@@ -201,7 +207,9 @@ class GroupSettingsActivity : AppCompatActivity() {
                         ).show()
                     }
                 }
+
                 tempFile.delete()
+
             } catch (e: Exception) {
                 Log.e("GroupSettings", "uploadGroupAvatar error: ${e.message}")
                 withContext(Dispatchers.Main) {
