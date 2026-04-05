@@ -3,6 +3,8 @@ package com.uyscuti.sharedmodule
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.drawable.Drawable
 import android.graphics.drawable.InsetDrawable
 import android.net.Uri
 import android.os.Bundle
@@ -16,7 +18,10 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.DrawableCompat
+import androidx.core.graphics.drawable.RoundedBitmapDrawableFactory
 import com.bumptech.glide.Glide
+import com.bumptech.glide.request.target.SimpleTarget
+import com.bumptech.glide.request.transition.Transition
 import com.uyscuti.sharedmodule.databinding.ActivityGroupSettingsBinding
 import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
 import dagger.hilt.android.AndroidEntryPoint
@@ -426,6 +431,35 @@ class GroupSettingsActivity : AppCompatActivity() {
                             "All members can edit group info"
                     }
 
+                    // Re-apply visibility based on fresh server value
+                    applyNameEditVisibility()
+                    applyDescriptionEditVisibility()
+                    val canEdit = myRole == "admin" || (!editInfoLocked && myRole == "moderator")
+                    binding.saveChangesBtn.visibility = if (canEdit) View.VISIBLE else View.GONE
+
+                    val avatarUrl = detail.groupAvatar?.url?.trim() ?: ""
+                    if (avatarUrl.isNotEmpty()) {
+                        Glide.with(this).asBitmap().load(avatarUrl).circleCrop()
+                            .placeholder(R.drawable.baseline_groups_24)
+                            .error(R.drawable.baseline_groups_24)
+                            .into(object : SimpleTarget<Bitmap>() {
+                                override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap>?) {
+                                    val drawable = RoundedBitmapDrawableFactory.create(resources, resource)
+                                    drawable.isCircular = true
+                                    binding.userAvatar.setImageDrawable(InsetDrawable(drawable, 0, 0, 0, 0))
+                                }
+                                override fun onLoadFailed(errorDrawable: Drawable?) {
+                                    binding.userAvatar.setImageResource(R.drawable.baseline_groups_24)
+                                }
+                            })
+                    } else {
+                        binding.userAvatar.setImageResource(R.drawable.baseline_groups_24)
+                    }
+                }
+                is GroupResult.Error   -> Log.w("GroupSettings", "loadGroupDetail: ${result.message}")
+                is GroupResult.Loading -> {}
+            }
+        }
 
 
 
@@ -452,4 +486,6 @@ class GroupSettingsActivity : AppCompatActivity() {
 
 
 
-}
+
+
+    }
