@@ -228,4 +228,76 @@ class GroupParticipantsFragment : Fragment() {
         participantsNumber.text = "${members.size} participants (you were removed)"
     }
 
+    // Show a subtle banner at the top of the participant count label
+    private fun showRemovedBanner() {
+        participantsNumber.text = "You were removed from this group"
+        participantsNumber.setTextColor(
+            androidx.core.content.ContextCompat.getColor(
+                requireContext(),
+                android.R.color.holo_red_dark
+            )
+        )
+    }
+
+    private fun handleMemberAction(chatId: String, member: GroupMember, action: String) {
+        // If I was removed, ignore all actions — adapter should not show buttons anyway
+        if (iWasRemoved) return
+
+        val name = member.user.username ?: member.user.fullName ?: "this member"
+
+        when (action) {
+            "make_moderator" -> {
+                val fromAdmin = member.role.name == "admin"
+                confirm(
+                    title   = "Make Moderator",
+                    message = if (fromAdmin)
+                        "Demote $name from admin to moderator? They will keep moderator permissions but lose admin privileges."
+                    else
+                        "Give $name moderator permissions? They can add members, rename the group, and remove regular members.",
+                    confirm = "Make Moderator"
+                ) { viewModel.changeMemberRole(chatId, member.user._id, "moderator") }
+            }
+
+            "make_admin" -> confirm(
+                title   = "Make Admin",
+                message = "Make $name an admin? Admins have full control over the group including deleting it.",
+                confirm = "Make Admin"
+            ) { viewModel.changeMemberRole(chatId, member.user._id, "admin") }
+
+            "make_member" -> {
+                val isAdmin = member.role.name == "admin"
+                confirm(
+                    title   = if (isAdmin) "Demote Admin" else "Remove Moderator Role",
+                    message = if (isAdmin)
+                        "Remove $name's admin privileges? They will become a regular member."
+                    else
+                        "Remove $name's moderator permissions? They will become a regular member.",
+                    confirm = if (isAdmin) "Demote to Member" else "Remove Role"
+                ) { viewModel.changeMemberRole(chatId, member.user._id, "member") }
+            }
+
+            "mute" -> confirm(
+                title   = "Mute $name",
+                message = "$name will not be able to send messages in this group.",
+                confirm = "Mute"
+            ) { viewModel.setMemberMuteStatus(chatId, member.user._id, true) }
+
+            "unmute" -> viewModel.setMemberMuteStatus(chatId, member.user._id, false)
+
+            "remove" -> {
+                val username = member.user.username ?: member.user.fullName ?: "Someone"
+                confirm(
+                    title       = "Remove $name?",
+                    message     = "$name will be removed from the group and will no longer receive messages.",
+                    confirm     = "Remove",
+                    isDangerous = true
+                ) {
+                    insertLocalRemoveSystemMessage(chatId, member.user._id, username)
+                    viewModel.removeMember(chatId, member.user._id)
+                }
+            }
+        }
+    }
+
+
 }
