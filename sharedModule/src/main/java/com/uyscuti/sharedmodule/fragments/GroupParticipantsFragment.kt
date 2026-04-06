@@ -16,6 +16,7 @@ import com.uyscuti.sharedmodule.data.model.User
 import com.uyscuti.sharedmodule.R
 import com.uyscuti.sharedmodule.adapter.GroupParticipantAdapter
 import com.uyscuti.social.core.common.data.room.repository.MessageRepository
+import com.uyscuti.social.network.api.request.group.GroupMember
 import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
 import com.uyscuti.social.network.utils.LocalStorage
 import dagger.hilt.android.AndroidEntryPoint
@@ -65,6 +66,13 @@ class GroupParticipantsFragment : Fragment() {
 
     // Track whether the current user has been removed
     private var iWasRemoved: Boolean = false
+
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        adminId = arguments?.getString(ARG_ADMIN_ID) ?: ""
+        myRole  = arguments?.getString(ARG_MY_ROLE)  ?: "member"
+    }
 
 
 
