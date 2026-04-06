@@ -6032,4 +6032,76 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
         return true
     }
 
+
+    private fun setupMuteSocketListeners() {
+        // Get the underlying Socket.IO socket from your client
+        val mSocket = coreChatSocketClient.getSocket() ?: return
+
+        mSocket.on("GROUP_MEMBER_MUTED") { args ->
+            val data = (args.getOrNull(0) as? JSONObject) ?: return@on
+            val affectedUserId = data.optString("userId")
+            val affectedChatId = data.optString("chatId")
+
+            if (affectedChatId != chatId) return@on
+
+            groupMembers = groupMembers.map { member ->
+                if (member.user._id == affectedUserId)
+                    member.copy(isMuted = true)
+                else
+                    member
+            }
+
+            if (affectedUserId == myId) {
+                isCurrentUserMuted = true
+            }
+
+            loadGroupMembers()
+        }
+
+        mSocket.on("GROUP_MEMBER_UNMUTED") { args ->
+            val data = (args.getOrNull(0) as? JSONObject) ?: return@on
+            val affectedUserId = data.optString("userId")
+            val affectedChatId = data.optString("chatId")
+
+            if (affectedChatId != chatId) return@on
+
+            groupMembers = groupMembers.map { member ->
+                if (member.user._id == affectedUserId)
+                    member.copy(isMuted = false)
+                else
+                    member
+            }
+
+            if (affectedUserId == myId) {
+                isCurrentUserMuted = false
+            }
+
+            loadGroupMembers()
+        }
+
+        mSocket.on("GROUP_ROLE_CHANGED") { args ->
+            val data = (args.getOrNull(0) as? JSONObject) ?: return@on
+            val affectedChatId = data.optString("chatId")
+            if (affectedChatId != chatId) return@on
+            loadGroupMembers()
+        }
+
+        mSocket.on("GROUP_MEMBER_REMOVED") { args ->
+            val data = (args.getOrNull(0) as? JSONObject) ?: return@on
+            val removedUserId = data.optString("userId")
+            val affectedChatId = data.optString("chatId")
+
+            if (affectedChatId != chatId) return@on
+            if (removedUserId != myId) return@on  // only care if it's us being removed
+
+            isRemovedFromGroup = true
+
+            runOnUiThread {
+                applyMuteState()
+            }
+        }
+    }
+
+
+
 }
