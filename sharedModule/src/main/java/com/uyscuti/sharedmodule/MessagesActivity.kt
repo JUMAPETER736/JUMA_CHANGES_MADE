@@ -5662,6 +5662,14 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
             }
         }
     }
+
+
+
+
+    private fun setSendButtonEnabled(enabled: Boolean) {
+        binding.sendCard.isEnabled = enabled
+        binding.sendCard.alpha     = if (enabled) 1.0f else 0.4f
+    }
     
     // setupGroupE2EE
 
