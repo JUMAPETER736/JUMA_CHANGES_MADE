@@ -253,8 +253,10 @@ class GroupParticipantsFragment : Fragment() {
         val name = member.user.username ?: member.user.fullName ?: "this member"
 
         when (action) {
+
             "make_moderator" -> {
                 val fromAdmin = member.role.name == "admin"
+
                 confirm(
                     title   = "Make Moderator",
                     message = if (fromAdmin)
@@ -273,6 +275,7 @@ class GroupParticipantsFragment : Fragment() {
 
             "make_member" -> {
                 val isAdmin = member.role.name == "admin"
+
                 confirm(
                     title   = if (isAdmin) "Demote Admin" else "Remove Moderator Role",
                     message = if (isAdmin)
@@ -287,20 +290,34 @@ class GroupParticipantsFragment : Fragment() {
                 title   = "Mute $name",
                 message = "$name will not be able to send messages in this group.",
                 confirm = "Mute"
-            ) { viewModel.setMemberMuteStatus(chatId, member.user._id, true) }
+            ) {
+                viewModel.setMemberMuteStatus(
+                    chatId,
+                    member.user._id,
+                    true) }
 
             "unmute" -> viewModel.setMemberMuteStatus(chatId, member.user._id, false)
 
             "remove" -> {
+
                 val username = member.user.username ?: member.user.fullName ?: "Someone"
                 confirm(
+
                     title       = "Remove $name?",
                     message     = "$name will be removed from the group and will no longer receive messages.",
                     confirm     = "Remove",
                     isDangerous = true
+
                 ) {
-                    insertLocalRemoveSystemMessage(chatId, member.user._id, username)
-                    viewModel.removeMember(chatId, member.user._id)
+                    insertLocalRemoveSystemMessage(
+                        chatId,
+                        member.user._id,
+                        username)
+
+                    viewModel.removeMember(
+                        chatId,
+                        member.user._id
+                    )
                 }
             }
         }
