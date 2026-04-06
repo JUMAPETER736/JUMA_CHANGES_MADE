@@ -5557,4 +5557,94 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
         trigger()
     }
 
+
+    @org.greenrobot.eventbus.Subscribe(threadMode = org.greenrobot.eventbus.ThreadMode.MAIN)
+    fun onSystemMessageEntity(entity: com.uyscuti.social.core.common.data.room.entity.MessageEntity) {
+        if (entity.chatId != chatId) return
+        if (!entity.isSystemMessage) return
+
+        val user = User(
+            entity.userId,
+            entity.userName ?: "",
+            entity.user?.avatar ?: "",
+            false,
+            Date()
+        )
+        val date = Date(entity.createdAt)
+        val msg  = Message(entity.id, user, entity.text, date)
+        msg.setSystemMessage(true)
+
+        super.messagesAdapter?.addToStart(msg, true)
+    }
+
+    // setupGroupE2EE
+
+
+    fun setupGroupE2EE(chatId: String, participantIds: List<String>) {
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                // 1. Fetch all participants' public keys in one call
+                val bulkResp = retrofitIns.apiService.getBulkKeys(BulkKeysRequest(participantIds))
+                if (!bulkResp.isSuccessful || bulkResp.body()?.data == null) {
+                    Log.e(TAG, "Failed to fetch bulk keys for group E2EE setup")
+                    return@launch
+                }
+
+                val keyMap     = bulkResp.body()!!.data!!.keyMap
+                val recipients = keyMap.mapNotNull { (userId, keyData) ->
+                    if (keyData.x25519PublicKey != null) {
+                        // Pass full Signal bundle — required for X3DH key wrapping
+                        RecipientPublicKey(
+                            userId               = userId,
+                            x25519PublicKey      = keyData.x25519PublicKey!!,
+                            ed25519PublicKey     = keyData.ed25519PublicKey ?: "",
+                            keySignature         = keyData.keySignature ?: "",
+                            registrationId       = keyData.registrationId,
+                            signedPreKeyId       = keyData.signedPreKeyId,
+                            signedPreKey         = keyData.signedPreKey,
+                            signedPreKeySignature = keyData.signedPreKeySignature,
+                            oneTimePreKeyId      = keyData.oneTimePreKeyId,
+                            oneTimePreKey        = keyData.oneTimePreKey
+                        )
+                    } else null
+                }
+
+                if (recipients.isEmpty()) {
+                    Log.w(TAG, "No participants have E2EE keys — skipping group key setup")
+                    return@launch
+                }
+
+                // 2. Generate a fresh group AES key and wrap it for every recipient
+                val encryptedGroupKeys = e2ee.setupGroupKeys(recipients)
+
+                // 3. Upload wrapped keys to the server
+                val storeResp = retrofitIns.apiService.storeGroupKeys(
+                    chatId,
+                    StoreGroupKeysRequest(encryptedGroupKeys)
+                )
+
+                if (storeResp.isSuccessful) {
+                    // 4. Load group key locally so the admin can send messages immediately
+                    val myEntry = encryptedGroupKeys.firstOrNull { it["participantId"] == myId }
+                    if (myEntry != null) {
+                        e2ee.loadGroupKey(
+                            chatId             = chatId,
+                            encryptedKey       = myEntry["encryptedKey"]!!,
+                            nonce              = myEntry["nonce"]!!,
+                            ephemeralPublicKey = myEntry["ephemeralPublicKey"]!!
+                        )
+                        isE2EEReady = true
+                    } else {
+                        Log.w(TAG, "My own wrapped group key not found in response — isE2EEReady stays false")
+                    }
+                    Log.d(TAG, "Group E2EE keys stored for $chatId")
+                } else {
+                    Log.e(TAG, "Failed to store group keys: ${storeResp.code()}")
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "setupGroupE2EE failed: ${e.message}", e)
+            }
+        }
+    }
+
 }
