@@ -5670,7 +5670,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
         binding.sendCard.isEnabled = enabled
         binding.sendCard.alpha     = if (enabled) 1.0f else 0.4f
     }
-    
+
     // setupGroupE2EE
 
 
@@ -5741,6 +5741,69 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
         }
     }
 
+    // sendTextMessage
 
+
+    private fun sendTextMessage(
+        text: String,
+        message: Message,
+        dBMessage: MessageEntity,
+        callback: (Boolean) -> Unit
+    ) {
+        CoroutineScope(Dispatchers.IO).launch {
+            withContext(NonCancellable) {
+                try {
+                    val request: SendMessageRequest = when {
+                        isE2EEReady && !isGroup && recipientPublicKey != null -> {
+                            val enc = e2ee.encryptForDM(text, recipientPublicKey!!)
+                            SendMessageRequest(
+                                encryptedContent   = enc.encryptedContent,
+                                iv                 = enc.iv,
+                                ephemeralPublicKey = enc.ephemeralPublicKey,
+                                messageType        = enc.messageType   // ← PREKEY_TYPE(3) or WHISPER_TYPE(1)
+                            )
+                        }
+
+                        isE2EEReady && isGroup && e2ee.hasGroupKey(chatId) -> {
+                            val enc = e2ee.encryptForGroup(text, chatId)
+                            SendMessageRequest(
+                                encryptedContent = enc.encryptedContent,
+                                iv               = enc.iv
+                            )
+                        }
+
+                        else -> {
+                            Log.w(TAG, "E2EE not ready — sending plaintext")
+                            SendMessageRequest(content = text)
+                        }
+                    }
+
+                    Log.d(TAG, "Sending: $request")
+
+                    when (val result = remoteMessageRepository.sendMessage(chatId, request)) {
+                        is Result.Success -> {
+                            withContext(Dispatchers.Main) {
+                                super.messagesAdapter?.notifyMessageSent(message)
+                            }
+                            messageViewModel.updateMessageStatus(dBMessage)
+                            callback(true)
+                        }
+
+                        is Result.Error -> {
+                            Log.e(TAG, "Send failed: ${result.exception.message}")
+                            callback(false)
+                        }
+
+                        else -> callback(false)
+                    }
+                } catch (e: Exception) {
+                    Log.e(TAG, "sendTextMessage failed: ${e.message}", e)
+                    callback(false)
+                }
+            }
+        }
+    }
+
+    
 
 }
