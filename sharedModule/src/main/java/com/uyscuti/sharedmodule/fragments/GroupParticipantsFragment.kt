@@ -8,6 +8,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -364,6 +365,29 @@ class GroupParticipantsFragment : Fragment() {
             kotlinx.coroutines.withContext(Dispatchers.Main) {
                 EventBus.getDefault().post(entity)
             }
+        }
+    }
+
+
+
+    private fun confirm(
+        title:       String,
+        message:     String,
+        confirm:     String,
+        isDangerous: Boolean = false,
+        onConfirm:   () -> Unit
+    ) {
+        val ctx = context ?: return
+        val dialog = AlertDialog.Builder(ctx)
+            .setTitle(title)
+            .setMessage(message)
+            .setPositiveButton(confirm) { _, _ -> onConfirm() }
+            .setNegativeButton("Cancel", null)
+            .create()
+        dialog.show()
+        if (isDangerous) {
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE)
+                ?.setTextColor(android.graphics.Color.parseColor("#E53935"))
         }
     }
 
