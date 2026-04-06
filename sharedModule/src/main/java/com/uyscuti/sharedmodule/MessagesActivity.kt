@@ -5804,6 +5804,100 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
         }
     }
 
-    
+    override fun onNewMessage(message: com.uyscuti.social.network.api.models.Message) {
+        CoroutineScope(Dispatchers.IO).launch {
+            Log.d(TAG, "onNewMessage: $message")
+
+            if (message.chat != chatId) return@launch
+
+            val user = User(
+                "1",
+                message.sender.username,
+                message.sender.avatar.url,
+                true,
+                Date()
+            )
+
+            var imageUrl: String? = null
+            var audioUrl: String? = null
+            var videoUrl: String? = null
+            var docUrl:   String? = null
+
+            message.attachments?.forEach { attachment ->
+                when (getFileType(attachment.url)) {
+                    FileType.IMAGE    -> imageUrl = attachment.url
+                    FileType.AUDIO    -> audioUrl = attachment.url
+                    FileType.VIDEO    -> videoUrl = attachment.url
+                    FileType.DOCUMENT -> docUrl   = attachment.url
+                    FileType.OTHER    -> Unit
+                }
+            }
+
+            val displayText: String = when {
+                message.isEncrypted == true && !message.encryptedContent.isNullOrEmpty() -> {
+                    try {
+                        when {
+                            !isGroup -> e2ee.decryptDM(
+                                encryptedContent   = message.encryptedContent!!,
+                                iv                 = message.iv ?: "",
+                                ephemeralPublicKey = message.ephemeralPublicKey ?: "",
+                                senderId           = message.sender._id,
+                                messageType        = message.messageType ?: 1
+                            )
+
+                            isGroup && e2ee.hasGroupKey(chatId) && !message.iv.isNullOrEmpty() ->
+                                e2ee.decryptGroup(
+                                    encryptedContent = message.encryptedContent!!,
+                                    iv               = message.iv!!,
+                                    chatId           = chatId
+                                )
+
+                            else -> "Encrypted message"
+                        }
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Decrypt failed: ${e.message}")
+                        "Encrypted message"
+                    }
+                }
+
+                else -> message.content ?: ""
+            }
+
+            val date       = Date(convertIso8601ToUnixTimestamp(message.createdAt))
+            val newMessage = Message(message._id, user, displayText, date)
+
+            newMessage.setImage(imageUrl?.let    { Message.Image(it) })
+            newMessage.setVideo(videoUrl?.let    { Message.Video(it) })
+            newMessage.setDocument(docUrl?.let   {
+                Message.Document(it, getNameFromUrl(it), formatFileSize(getFileSize(it)))
+            })
+            newMessage.setAudio(audioUrl?.let    {
+                Message.Audio(it, 0, getNameFromUrl(it))
+            })
+
+            // Flag system messages so they render as centered pill, not a chat bubble
+            val isSystemMsg =
+                (displayText.startsWith("@") && displayText.contains("joined via the group link")) ||
+                        (displayText.startsWith("@") && displayText.contains(" added @")) ||
+                        (displayText.startsWith("@") && displayText.contains(" added you")) ||
+                        (displayText.startsWith("@") && displayText.contains(" removed @")) ||
+                        (displayText.startsWith("@") && displayText.contains(" removed you")) ||
+                        displayText.startsWith("You added @") ||
+                        displayText.startsWith("You removed @")
+            if (isSystemMsg) newMessage.setSystemMessage(true)
+
+            withContext(Dispatchers.Main) {
+                super.messagesAdapter?.addToStart(newMessage, true)
+            }
+
+            if (!isGroup) {
+                delay(700)
+                sendSeenReport(chatId, message.sender._id)
+            }
+
+            if (isGroup) resetGroupUnreadCount(chatId) else resetUnreadCount(dialog)
+        }
+    }
+
 
 }
