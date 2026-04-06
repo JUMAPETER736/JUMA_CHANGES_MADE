@@ -51,4 +51,45 @@
         app:layout_constraintBottom_toBottomOf="@id/memberAvatar" />
 
 
+    <!--
+            memberRoleLabel  — replaces the old "roleBadge" id.
+            The adapter sets text to "Admin" or "Moderator" and hides it for plain members.
+            Tint changes per role via adapter (or you can do it in XML with a selector).
+        -->
+    <TextView
+        android:id="@+id/memberRoleLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:paddingStart="8dp"
+        android:paddingEnd="8dp"
+        android:paddingTop="3dp"
+        android:paddingBottom="3dp"
+        android:text="Admin"
+        android:textColor="@android:color/white"
+        android:textSize="11sp"
+        android:textStyle="bold"
+        android:background="@drawable/role_badge_bg"
+        android:visibility="gone"
+        app:layout_constraintEnd_toStartOf="@id/memberMoreBtn"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        tools:visibility="visible" />
+
+    <!--
+        memberMutedBadge — small 🔇 icon shown when isMuted == true.
+        Sits between the name/username column and the role label.
+    -->
+    <TextView
+        android:id="@+id/memberMutedBadge"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="6dp"
+        android:text="🔇"
+        android:textSize="13sp"
+        android:visibility="gone"
+        app:layout_constraintEnd_toStartOf="@id/memberRoleLabel"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        tools:visibility="visible" />
+
     
