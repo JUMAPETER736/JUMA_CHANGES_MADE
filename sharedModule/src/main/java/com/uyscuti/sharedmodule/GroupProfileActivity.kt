@@ -406,7 +406,7 @@ class GroupProfileActivity : AppCompatActivity() {
             if (result is GroupResult.Success) {
                 currentMembers = result.data
                 val count = result.data.size
-                binding.membersCount.text = count.toString()
+                binding.membersCount.text    = count.toString()
                 binding.memberCountText.text = "Group · $count members"
 
                 //  Derive real admin(s) from members[].role — NOT top-level admin field
@@ -419,9 +419,9 @@ class GroupProfileActivity : AppCompatActivity() {
                     // Refresh the "Created by" / role label with the correct admin name
                     val adminName = serverAdmins.first().user.username ?: "Admin"
                     val roleLabel = when (myGroupRole) {
-                        "admin" -> " · You are Admin"
+                        "admin"     -> " · You are Admin"
                         "moderator" -> " · You are Moderator"
-                        else -> ""
+                        else        -> ""
                     }
                     binding.groupInfo.text = "Admin: $adminName, joined $groupCreatedAt$roleLabel"
                 }
@@ -433,7 +433,7 @@ class GroupProfileActivity : AppCompatActivity() {
 
                 //  Re-check my own role from server in case it changed ─
                 val myId = getSharedPreferences(PREFS_NAME, 0).getString("_id", "") ?: ""
-                val me = result.data.find { it.user._id == myId }
+                val me   = result.data.find { it.user._id == myId }
                 if (me != null && me.role.name != myGroupRole) {
                     myGroupRole = me.role.name
                     setupInviteLinkSection()
@@ -567,7 +567,6 @@ class GroupProfileActivity : AppCompatActivity() {
         }
     }
 
-
     //  Options menu ─
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -622,7 +621,109 @@ class GroupProfileActivity : AppCompatActivity() {
         })
     }
 
+    private fun initGroup() {
+        val photo = dialog?.dialogPhoto?.trim() ?: ""
+        if (photo.isNotEmpty()) {
+            Glide.with(this)
+                .asBitmap()
+                .load(photo)
+                .placeholder(R.drawable.baseline_groups_24)
+                .error(R.drawable.baseline_groups_24)
+                .into(object : SimpleTarget<Bitmap>() {
+                    override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap>?) {
+                        val drawable = RoundedBitmapDrawableFactory.create(resources, resource)
+                        drawable.isCircular = true
+                        binding.userAvatar.setImageDrawable(InsetDrawable(drawable, 0, 0, 0, 0))
+                    }
+                    override fun onLoadFailed(errorDrawable: Drawable?) {
+                        binding.userAvatar.setImageResource(R.drawable.baseline_groups_24)
+                    }
+                })
+        } else {
+            // No avatar set — show default group icon
+            binding.userAvatar.setImageResource(R.drawable.baseline_groups_24)
+        }
+    }
+
+    @Suppress("unused")
+    private fun getTintedDrawable(drawableResId: Int, @ColorInt tintColor: Int): Drawable {
+        val drawable = ContextCompat.getDrawable(this, drawableResId)
+        drawable?.setTint(tintColor)
+        return drawable ?: throw IllegalArgumentException("Drawable not found")
+    }
+
+    private fun showInfoDialog(title: String, message: String) {
+        AlertDialog.Builder(this).apply {
+            setTitle(title)
+            setMessage(message)
+            setPositiveButton("OK") { d, _ -> d.dismiss() }
+        }.create().show()
+    }
 
 
+    private fun showBlockGroupDialog() {
+        AlertDialog.Builder(this)
+            .setTitle("Block Group")
+            .setMessage("You will no longer receive messages or notifications from \"${dialog?.dialogName}\". Continue?")
+            .setPositiveButton("Block") { _, _ ->
+                // Leave the group first, then block all members or just mute notifications
+                // For now, leave the group and show confirmation
+                dialog?.id?.let { groupProfileViewModel.leaveGroup(it) }
+                Toast.makeText(this, "Group blocked and you have left.", Toast.LENGTH_SHORT).show()
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
 
+    private fun showReportDialog() {
+        val reasons = arrayOf(
+            "Spam or scam",
+            "Harassment or bullying",
+            "Hate speech",
+            "Inappropriate content",
+            "Fake group / impersonation",
+            "Other"
+        )
+        var selectedIndex = 0
+
+        AlertDialog.Builder(this)
+            .setTitle("Report \"${dialog?.dialogName}\"")
+            .setSingleChoiceItems(reasons, 0) { _, which ->
+                selectedIndex = which
+            }
+            .setPositiveButton("Submit") { _, _ ->
+                val reason = reasons[selectedIndex]
+                val chatId = dialog?.id ?: return@setPositiveButton
+                groupProfileViewModel.reportGroup(chatId, reason)
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun showCallTypeDialog() {
+        AlertDialog.Builder(this)
+            .setTitle("Select Group Call Type")
+            .setItems(arrayOf("Video Call", "Voice Call")) { d, which ->
+                when (which) { 0 -> initiateVideoCall(); 1 -> initiateVoiceCall() }
+                d.dismiss()
+            }.create().show()
+    }
+
+    private fun initiateVideoCall() { /* TODO */ }
+    private fun initiateVoiceCall() { /* TODO */ }
+
+    private fun copyToClipboard(text: String) {
+        val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+        clipboard.setPrimaryClip(ClipData.newPlainText("Invite Link", text))
+        Toast.makeText(this, "Link copied!", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun shareLink(link: String) {
+        startActivity(Intent.createChooser(
+            Intent(Intent.ACTION_SEND).apply {
+                type = "text/plain"
+                putExtra(Intent.EXTRA_TEXT, "Join my group on Circuit!\n$link")
+            }, "Share invite link"
+        ))
+    }
 }
