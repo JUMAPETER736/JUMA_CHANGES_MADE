@@ -5577,6 +5577,92 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
         super.messagesAdapter?.addToStart(msg, true)
     }
 
+
+
+
+    // setupE2EE
+
+    private fun setupE2EE() {
+        // Disable send button immediately — re-enabled once E2EE setup resolves either way
+        setSendButtonEnabled(false)
+
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                // 1. Generate or load existing device keys
+                val keys = e2ee.initializeKeys()
+
+                // 2. Register public keys with the server — now includes full Signal bundle
+                val uploadResp = retrofitIns.apiService.uploadPublicKeys(
+                    UploadKeysRequest(
+                        x25519PublicKey       = keys.x25519PublicKey,
+                        ed25519PublicKey      = keys.ed25519PublicKey,
+                        keySignature          = keys.keySignature,
+                        registrationId        = keys.registrationId,
+                        signedPreKeyId        = keys.signedPreKeyId,
+                        signedPreKey          = keys.signedPreKey,
+                        signedPreKeySignature = keys.signedPreKeySignature,
+                        oneTimePreKeys        = keys.oneTimePreKeys
+                    )
+                )
+                Log.d(TAG, "Keys registered: ${uploadResp.isSuccessful}")
+
+                if (!isGroup) {
+                    //  DM: fetch the other person's full Signal key bundle
+                    val friendId = dialog?.users?.firstOrNull()?.id ?: run {
+                        withContext(Dispatchers.Main) { setSendButtonEnabled(true) }
+                        return@launch
+                    }
+                    val keyResp = retrofitIns.apiService.getRecipientKeys(friendId)
+
+                    if (keyResp.isSuccessful && keyResp.body()?.data?.x25519PublicKey != null) {
+                        val data = keyResp.body()!!.data!!
+                        recipientPublicKey = RecipientPublicKey(
+                            userId                = friendId,
+                            x25519PublicKey       = data.x25519PublicKey!!,
+                            ed25519PublicKey      = data.ed25519PublicKey ?: "",
+                            keySignature          = data.keySignature ?: "",
+                            registrationId        = data.registrationId ?: 0,
+                            signedPreKeyId        = data.signedPreKeyId ?: 0,
+                            signedPreKey          = data.signedPreKey ?: "",
+                            signedPreKeySignature = data.signedPreKeySignature ?: "",
+                            oneTimePreKeyId       = data.oneTimePreKeyId ?: 0,
+                            oneTimePreKey         = data.oneTimePreKey
+                        )
+                        isE2EEReady = true
+                        Log.d(TAG, "DM E2EE ready for $friendId")
+                    } else {
+                        Log.w(TAG, "Recipient has no E2EE keys — sending plaintext")
+                        isE2EEReady = false
+                    }
+                } else {
+                    //  Group: fetch MY wrapped copy of the group key
+                    val groupKeyResp = retrofitIns.apiService.getMyGroupKey(chatId)
+
+                    if (groupKeyResp.isSuccessful && groupKeyResp.body()?.data != null) {
+                        val gk = groupKeyResp.body()!!.data!!
+                        e2ee.loadGroupKey(
+                            chatId             = chatId,
+                            encryptedKey       = gk.encryptedKey,
+                            nonce              = gk.nonce,
+                            ephemeralPublicKey = gk.ephemeralPublicKey
+                        )
+                        isE2EEReady = true
+                        Log.d(TAG, "Group E2EE ready for $chatId")
+                    } else {
+                        Log.w(TAG, "No group key found for $chatId — plaintext fallback")
+                        isE2EEReady = false
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "E2EE setup failed: ${e.message}", e)
+                isE2EEReady = false
+            } finally {
+                // Always re-enable the send button when setup completes — success or failure
+                withContext(Dispatchers.Main) { setSendButtonEnabled(true) }
+            }
+        }
+    }
+    
     // setupGroupE2EE
 
 
@@ -5646,5 +5732,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
             }
         }
     }
+
+
 
 }
