@@ -392,5 +392,46 @@ class GroupParticipantsFragment : Fragment() {
     }
 
 
+    private fun sortMembers(members: List<GroupMember>, adminId: String): List<GroupMember> =
+        members.sortedWith(compareBy(
+            {
+                when (it.role.name) {
+                    "admin"     -> 0
+                    "moderator" -> 1
+                    else        -> 2
+                }
+            },
+            { it.user.username ?: "" }
+        ))
+
+
+
+    fun onCurrentUserRemoved() {
+        iWasRemoved = true
+        if (cachedMembers.isNotEmpty()) {
+            showRemovedBanner()
+            showMembersReadOnly(cachedMembers)
+        }
+    }
+
+    @org.greenrobot.eventbus.Subscribe(threadMode = org.greenrobot.eventbus.ThreadMode.MAIN)
+    fun onGroupRemovedEvent(event: GroupRemovedEvent) {
+        val chatId = arguments?.getString(ARG_CHAT_ID) ?: ""
+        if (event.chatId != chatId) return
+        if (event.removedUserId != myUserId) return
+
+        // We were removed — reload members from ViewModel
+        // ViewModel will fall back to Room cache since server will reject us
+        iWasRemoved = true
+        showRemovedBanner()
+
+        // If we already have cached members in the fragment, show immediately
+        if (cachedMembers.isNotEmpty()) {
+            showMembersReadOnly(cachedMembers)
+        } else {
+            // Ask ViewModel to reload — it will use Room cache as fallback
+            viewModel.loadMembers(chatId)
+        }
+    }
 
 }
