@@ -13,6 +13,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.uyscuti.sharedmodule.GroupMembersAdapter
 import com.uyscuti.sharedmodule.GroupProfileViewModel
 import com.uyscuti.sharedmodule.GroupResult
 import com.uyscuti.sharedmodule.data.model.Dialog
