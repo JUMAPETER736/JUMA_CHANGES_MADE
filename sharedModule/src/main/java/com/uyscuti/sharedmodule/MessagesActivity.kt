@@ -5899,5 +5899,137 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
         }
     }
 
+    //  loadGroupMembers: fetch members and refresh UI
+    private fun loadGroupMembers() {
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val response = retrofitIns.apiService.getGroupMembers(chatId)
+                if (response.isSuccessful) {
+                    groupMembers = response.body()?.data ?: emptyList()
+
+                    val myMember = groupMembers.find { it.user._id == myId }
+                    myGroupRole = myMember?.role ?: GroupRole.member
+
+                    isCurrentUserMuted = if (myGroupRole == GroupRole.admin) false
+                    else myMember?.isMuted ?: false
+
+                    isRemovedFromGroup = false  // still a member
+
+                    withContext(Dispatchers.Main) {
+                        val roleLabel = when (myGroupRole) {
+                            GroupRole.admin     -> "Admin"
+                            GroupRole.moderator -> "Moderator"
+                            GroupRole.member    -> ""
+                        }
+                        val subtitle = "${groupMembers.size} members" +
+                                if (roleLabel.isNotEmpty()) " · $roleLabel" else ""
+                        supportActionBar?.subtitle = subtitle
+                        applyMuteState()  // ← restores input if member
+                    }
+
+                } else {
+
+                    Log.w(TAG, "loadGroupMembers rejected: ${response.code()}")
+                    isRemovedFromGroup = true
+                    withContext(Dispatchers.Main) {
+                        applyMuteState()  // ← shows the banner
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "loadGroupMembers failed: ${e.message}")
+                // Don't set isRemovedFromGroup on network errors — could be temporary
+            }
+        }
+    }
+
+    //lock or unlock the entire input UI
+    private fun applyMuteState() {
+        if (shouldBlockSending) {
+            binding.inputEditText.isEnabled = false
+            binding.inputEditText.isFocusable = false
+            binding.inputEditText.isFocusableInTouchMode = false
+
+            binding.sendCard?.visibility = View.GONE
+            binding.sendBtn?.visibility = View.GONE
+            binding.vnCard?.visibility = View.GONE
+            binding.voiceNote?.visibility = View.GONE
+            binding.attachment?.visibility = View.GONE
+            binding.emoji?.visibility = View.GONE
+
+            binding.mutedBanner?.visibility = View.VISIBLE
+            binding.mutedBanner?.text = when {
+                isRemovedFromGroup -> "You are no longer a member of this group."
+                isGroupLocked      -> "This group is locked. Only admins can send messages."
+                else               -> "You have been muted. You cannot send messages."
+            }
+        } else {
+
+            binding.inputEditText.isEnabled = true
+            binding.inputEditText.isFocusable = true
+            binding.inputEditText.isFocusableInTouchMode = true
+            binding.inputEditText.hint = "Type a message..."
+
+            binding.vnCard?.visibility = View.VISIBLE
+            binding.voiceNote?.visibility = View.VISIBLE
+            binding.attachment?.visibility = View.VISIBLE
+            binding.emoji?.visibility = View.VISIBLE
+
+            binding.mutedBanner?.visibility = View.GONE
+        }
+    }
+
+    //block sending if muted or group is locked
+    override fun onSubmit(input: CharSequence): Boolean {
+        if (shouldBlockSending) {
+            val msg = when {
+                isRemovedFromGroup                              -> "You are no longer a member of this group."
+                isGroupLocked && myGroupRole != GroupRole.admin -> "This group is locked. Only admins can send messages."
+                else                                            -> "You have been muted and cannot send messages."
+            }
+            Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
+            return false
+        }
+
+        //  Normal send flow (your existing code unchanged below)
+        val user = User("0", "You", "avatar", true, Date())
+        val date = Date(System.currentTimeMillis())
+        val messageId = "Text_${Random.Default.nextInt()}"
+        val avatar = settings.getString("avatar", "avatar").toString()
+
+        Log.d("MessageSent", "Message Id : $messageId")
+
+        val message = Message(messageId, user, input.toString(), date)
+        message.status = "Sending"
+
+        val userEntity = UserEntity(
+            "0", "You", avatar, Date(), true
+        )
+
+        val textMessage = MessageEntity(
+            id           = messageId,
+            chatId       = chatId,
+            userName     = "You",
+            user         = userEntity,
+            userId       = myId,
+            text         = input.toString(),
+            createdAt    = System.currentTimeMillis(),
+            imageUrl     = null,
+            voiceUrl     = null,
+            voiceDuration = 0,
+            status       = "Sending",
+            videoUrl     = null,
+            audioUrl     = null,
+            docUrl       = null,
+            fileSize     = 0
+        )
+
+        CoroutineScope(Dispatchers.IO).launch {
+            insertMessage(textMessage)
+            updateLastMessage(isGroup, chatId, textMessage)
+        }
+
+        super.messagesAdapter?.addToStart(message, true)
+        return true
+    }
 
 }
