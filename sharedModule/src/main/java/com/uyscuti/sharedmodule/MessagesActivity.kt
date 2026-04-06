@@ -6291,4 +6291,115 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
         }
     }
 
+
+    override fun onResume() {
+        super.onResume()
+        userStatusManager?.start()
+        coreChatSocketClient.chatListener = this
+        chatManager.listener = this
+
+        // Guard against double registration
+        if (!org.greenrobot.eventbus.EventBus.getDefault().isRegistered(this)) {
+            org.greenrobot.eventbus.EventBus.getDefault().register(this)
+        }
+
+        if (!isGroup) {
+            CoroutineScope(Dispatchers.IO).launch {
+                delay(1000)
+                dialog?.users?.first()?.id?.let { sendSeenReport(chatId, it) }
+            }
+        } else {
+            CoroutineScope(Dispatchers.IO).launch {
+                delay(1000)
+                dialog?.lastMessage?.user?.id?.let { sendDeliveryReport(chatId, it) }
+            }
+        }
+
+        // Reload latest system message in case it was inserted while paused
+        if (isGroup) {
+            CoroutineScope(Dispatchers.IO).launch {
+                try {
+                    // Small delay to ensure adapter is ready after resume
+                    delay(500)
+
+                    val recentSystemMessages = messageViewModel.getRecentSystemMessages(chatId)
+                    Log.d(TAG, "onResume: found ${recentSystemMessages.size} system messages for chatId=$chatId")
+
+                    if (recentSystemMessages.isEmpty()) return@launch
+
+                    withContext(Dispatchers.Main) {
+                        Log.d(TAG, "onResume: adapter = ${super.messagesAdapter}")
+
+                        for (entity in recentSystemMessages) {
+                            Log.d(TAG, "onResume: processing system msg id=${entity.id} text=${entity.text}")
+
+                            val user = User(
+                                entity.userId,
+                                entity.userName ?: "",
+                                entity.user.avatar ?: "",
+                                false,
+                                Date()
+                            )
+                            val msg = Message(entity.id, user, entity.text, Date(entity.createdAt))
+                            msg.setSystemMessage(true)
+
+                            val alreadyShown = super.messagesAdapter?.update(msg) ?: false
+                            Log.d(TAG, "onResume: alreadyShown=$alreadyShown for msg=${entity.text}")
+
+                            if (!alreadyShown) {
+                                super.messagesAdapter?.addToStart(msg, false)
+                                Log.d(TAG, "onResume: added to adapter: ${entity.text}")
+                            }
+                        }
+                    }
+                } catch (e: Exception) {
+                    Log.e(TAG, "onResume system message sync failed: ${e.message}")
+                }
+            }
+        }
+
+    }
+
+    override fun onPause() {
+        super.onPause()
+        //  Unregister here so we don't leak, but onResume re-registers when coming back
+        try {
+            org.greenrobot.eventbus.EventBus.getDefault().unregister(this)
+        } catch (e: Exception) {
+            // ignore — safe to call even if not registered
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        userStatusManager?.stop()
+        coreChatSocketClient.chatListener = null
+        // EventBus already unregistered in onPause, but safe to call again
+        try {
+            org.greenrobot.eventbus.EventBus.getDefault().unregister(this)
+        } catch (e: Exception) {
+            // ignore
+        }
+    }
+
+
+    @org.greenrobot.eventbus.Subscribe(threadMode = org.greenrobot.eventbus.ThreadMode.MAIN)
+    fun onSystemMessageEntity(entity: com.uyscuti.social.core.common.data.room.entity.MessageEntity) {
+        if (entity.chatId != chatId) return
+        if (!entity.isSystemMessage) return
+
+        val user = User(
+            entity.userId,
+            entity.userName ?: "",
+            entity.user?.avatar ?: "",
+            false,
+            Date()
+        )
+        val date = Date(entity.createdAt)
+        val msg  = Message(entity.id, user, entity.text, date)
+        msg.setSystemMessage(true)
+
+        super.messagesAdapter?.addToStart(msg, true)
+    }
+
 }
