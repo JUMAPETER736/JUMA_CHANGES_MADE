@@ -19,11 +19,18 @@ import com.uyscuti.sharedmodule.data.model.User
 import com.uyscuti.sharedmodule.R
 import com.uyscuti.sharedmodule.adapter.GroupParticipantAdapter
 import com.uyscuti.social.core.common.data.room.database.ChatDatabase
+import com.uyscuti.social.core.common.data.room.entity.MessageEntity
+import com.uyscuti.social.core.common.data.room.entity.UserEntity
 import com.uyscuti.social.core.common.data.room.repository.MessageRepository
 import com.uyscuti.social.network.api.request.group.GroupMember
 import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
 import com.uyscuti.social.network.utils.LocalStorage
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import org.greenrobot.eventbus.EventBus
+import java.util.Date
 import javax.inject.Inject
 import kotlin.getValue
 
@@ -298,6 +305,51 @@ class GroupParticipantsFragment : Fragment() {
             }
         }
     }
+
+
+    private fun insertLocalRemoveSystemMessage(
+        chatId:          String,
+        removedUserId:   String,
+        removedUsername: String
+    ) {
+        val now  = System.currentTimeMillis()
+        val text = "You removed @$removedUsername"
+
+        val userEntity = UserEntity(
+            id       = myUserId,
+            name     = myUsername,
+            avatar   = myAvatar,
+            online   = true,
+            lastSeen = Date(now)
+        )
+
+        val entity = MessageEntity(
+            id              = "Text_system_remove_${removedUserId}_${myUserId}_${chatId.takeLast(6)}",
+            chatId          = chatId,
+            text            = text,
+            userId          = myUserId,
+            user            = userEntity,
+            createdAt       = now,
+            imageUrl        = null,
+            voiceUrl        = null,
+            voiceDuration   = 0,
+            userName        = myUsername,
+            status          = "Received",
+            videoUrl        = null,
+            audioUrl        = null,
+            docUrl          = null,
+            fileSize        = 0,
+            isSystemMessage = true
+        )
+
+        CoroutineScope(Dispatchers.IO).launch {
+            messageRepository.insertMessage(entity)
+            kotlinx.coroutines.withContext(Dispatchers.Main) {
+                EventBus.getDefault().post(entity)
+            }
+        }
+    }
+
 
 
 }
