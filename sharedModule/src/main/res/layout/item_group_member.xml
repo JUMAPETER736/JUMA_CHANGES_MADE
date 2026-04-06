@@ -92,4 +92,20 @@
         app:layout_constraintBottom_toBottomOf="parent"
         tools:visibility="visible" />
 
-    
+    <!-- More / kebab button — hidden for plain members, shown for admin/moderator -->
+    <ImageView
+        android:id="@+id/memberMoreBtn"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:src="@drawable/ic_more_vert"
+        android:padding="4dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:visibility="gone"
+        app:tint="#0F86E4"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        tools:visibility="visible"
+        tools:ignore="ContentDescription" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
