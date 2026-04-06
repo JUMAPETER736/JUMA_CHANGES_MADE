@@ -75,3 +75,17 @@ class GroupTabsAdapter(private val context: Context, fm: FragmentManager) :
             else -> throw IllegalArgumentException("Invalid tab position: $position")
         }
     }
+
+
+    override fun getPageTitle(position: Int): CharSequence? {
+        return null
+    }
+
+    fun getIcon(position: Int): Drawable? {
+        return ContextCompat.getDrawable(context, TAB_ICONS[position])
+    }
+
+    override fun getCount(): Int {
+        return TAB_ICONS.size
+    }
+}
