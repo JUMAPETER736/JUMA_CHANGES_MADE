@@ -6102,6 +6102,193 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
         }
     }
 
+    private fun showGroupManagementSheet() {
+        val options = mutableListOf<String>()
 
+        // Moderator+ can do these:
+        if (myGroupRole == GroupRole.admin || myGroupRole == GroupRole.moderator) {
+            options.add("Generate Invite Link")
+            options.add("View Members & Roles")
+        }
+
+        // Admin only:
+        if (myGroupRole == GroupRole.admin) {
+            options.add("Manage Roles")
+            options.add("Revoke Invite Link")
+        }
+
+        AlertDialog.Builder(this)
+            .setTitle("Group Management")
+            .setItems(options.toTypedArray()) { _, which ->
+                when (options[which]) {
+                    "Generate Invite Link"  -> generateInviteLink()
+                    "Revoke Invite Link"    -> revokeInviteLink()
+                    "View Members & Roles"  -> viewGroupMembers()
+                    "Manage Roles"          -> viewGroupMembers() // same screen, different actions shown
+                }
+            }.show()
+    }
+
+    private fun generateInviteLink() {
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val response = retrofitIns.apiService.generateGroupLink(chatId)
+                if (response.isSuccessful) {
+                    groupInviteLink = response.body()?.data?.inviteLink
+
+                    // Persist so it survives logout and app restart
+                    settings.edit()
+                        .putString("invite_link_$chatId", groupInviteLink)
+                        .apply()
+
+                    withContext(Dispatchers.Main) {
+                        AlertDialog.Builder(this@MessagesActivity)
+                            .setTitle("Invite Link")
+                            .setMessage(groupInviteLink)
+                            .setPositiveButton("Copy") { _, _ ->
+                                val clipboard = getSystemService(CLIPBOARD_SERVICE)
+                                        as android.content.ClipboardManager
+                                clipboard.setPrimaryClip(
+                                    android.content.ClipData.newPlainText("invite", groupInviteLink)
+                                )
+                                showToast("Link copied!")
+                            }
+                            .setNegativeButton("Share") { _, _ ->
+                                val intent = Intent(Intent.ACTION_SEND).apply {
+                                    type = "text/plain"
+                                    putExtra(Intent.EXTRA_TEXT, groupInviteLink)
+                                }
+                                startActivity(Intent.createChooser(intent, "Share invite link"))
+                            }.show()
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "generateInviteLink failed: ${e.message}")
+            }
+        }
+    }
+
+    private fun initAdapter() {
+        super.messagesAdapter = MessagesListAdapter(super.senderId, super.imageLoader)
+        super.messagesAdapter?.setDateHeadersFormatter(this)
+        super.messagesAdapter?.enableDateListener(this)
+        super.messagesAdapter?.enableSelectionMode(this)
+        super.messagesAdapter?.setLoadMoreListener(this)
+        super.messagesAdapter?.setIsGroup(isGroup)
+        super.messagesAdapter?.setMessageSentListener(this)
+        super.messagesAdapter?.setDownloadListener(this)
+        super.messagesAdapter?.setMediaClickListener(this)
+        super.messagesAdapter?.setAudioPlayListener(this)
+        super.messagesAdapter?.setDeleteListener(this)
+
+        // Group invite tap handler
+        super.messagesAdapter?.setOnMessageClickListener { message ->
+            val displayText = (message as? com.uyscuti.social.core.models.data.Message)?.text ?: return@setOnMessageClickListener
+            if (displayText == "👥  Group Invite — tap to join") {
+                CoroutineScope(Dispatchers.IO).launch {
+                    val entity = messageViewModel.getMessage(message.id)
+                    val rawText = entity?.text ?: return@launch
+                    if (rawText.startsWith("circuit://join/group/")) {
+                        val token = rawText.removePrefix("circuit://join/group/")
+                        withContext(Dispatchers.Main) {
+                            handleGroupInvite(token)
+                        }
+                    }
+                }
+            }
+        }
+
+        messagesList.setAdapter(super.messagesAdapter)
+    }
+
+    private fun handleGroupInvite(token: String) {
+        AlertDialog.Builder(this)
+            .setTitle("👥 Join Group")
+            .setMessage("Do you want to join this group?")
+            .setPositiveButton("Join") { _, _ ->
+                CoroutineScope(Dispatchers.IO).launch {
+                    try {
+                        val response = retrofitIns.apiService.joinGroupViaLink(token)
+                        withContext(Dispatchers.Main) {
+                            when {
+                                response.isSuccessful && response.body()?.data != null -> {
+                                    val groupDetail = response.body()!!.data!!
+                                    showToast("You joined ${groupDetail.name}!")
+
+                                    val myUsername = settings.getString("username", "unknown") ?: "unknown"
+                                    val systemText = "@$myUsername joined via the group link"
+
+                                    CoroutineScope(Dispatchers.IO).launch {
+                                        // 1. Save group to local DB
+                                        groupDialogRepository.saveGroupDialogFromDetail(groupDetail)
+
+                                        // 2. Send system message to the joined group
+                                        try {
+                                            val request = SendMessageRequest(content = systemText)
+                                            retrofitIns.apiService.sendMessage(groupDetail._id, request)
+                                        } catch (e: Exception) {
+                                            Log.e(TAG, "System message send failed: ${e.message}")
+                                        }
+                                    }
+
+                                    // NO local addToStart here — message belongs in the joined group,
+                                    // not in the current chat. It will show when user opens that group.
+                                }
+                                else -> {
+                                    val errorMsg = when (response.code()) {
+                                        400 -> "Invalid or expired invite link."
+                                        403 -> "You are not allowed to join this group."
+                                        404 -> "Group not found."
+                                        409 -> "You are already a member of this group."
+                                        else -> "Failed to join group. Please try again."
+                                    }
+                                    showToast(errorMsg)
+                                }
+                            }
+                        }
+                    } catch (e: Exception) {
+                        withContext(Dispatchers.Main) {
+                            showToast("Error: ${e.message}")
+                            Log.e(TAG, "handleGroupInvite failed: ${e.message}")
+                        }
+                    }
+                }
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun revokeInviteLink() {
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val response = retrofitIns.apiService.revokeGroupLink(chatId)
+                if (response.isSuccessful) {
+                    groupInviteLink = null
+
+                    // Clear persisted link
+                    settings.edit()
+                        .remove("invite_link_$chatId")
+                        .apply()
+
+                    withContext(Dispatchers.Main) { showToast("Invite link revoked") }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "revokeInviteLink failed: ${e.message}")
+            }
+        }
+    }
+
+    private fun viewGroupMembers() {
+        dialog?.let {
+            GroupProfileActivity.open(
+                this,
+                it,
+                groupAdminId,
+                groupCreatedAt,
+                myGroupRole.name,
+                groupInviteLink
+            )
+        }
+    }
 
 }
