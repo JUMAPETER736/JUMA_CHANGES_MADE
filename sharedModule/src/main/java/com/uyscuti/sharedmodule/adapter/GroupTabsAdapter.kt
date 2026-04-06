@@ -32,3 +32,46 @@ class GroupTabsAdapter(private val context: Context, fm: FragmentManager) :
     // Keep a reference to the participants fragment so we can
     // notify it of role changes (e.g. when the user gets removed)
     private var participantsFragment: GroupParticipantsFragment? = null
+
+
+    fun setDialog(dialog: com.uyscuti.social.core.models.data.Dialog) {
+        this.dialog = dialog
+        Log.d("GroupTabsAdapter", "Dialog content: ${dialog.users}")
+    }
+
+    fun setAdminId(adminId: String) {
+        this.adminId = adminId
+        Log.d("GroupTabsAdapter", "admin id: $adminId")
+    }
+
+    fun setMyRole(role: String) {
+        this.myRole = role
+        Log.d("GroupTabsAdapter", "my role: $role")
+    }
+
+    //  Call this from GroupProfileActivity when the user is removed
+    // so the participants tab switches to read-only mode immediately
+    fun notifyUserRemoved() {
+        participantsFragment?.onCurrentUserRemoved()
+    }
+
+    override fun getItem(position: Int): Fragment {
+        return when (position) {
+            0 -> {
+                val fragment = GroupParticipantsFragment.newInstance(
+                    chatId  = dialog?.id ?: "",
+                    adminId = adminId ?: "",
+                    myRole  = myRole
+                )
+                //  Save reference so we can call notifyUserRemoved() later
+                participantsFragment = fragment
+                fragment
+            }
+            1 -> GroupPlaceholderFragment.newInstance("", "")
+            2 -> GroupPlaceholderFragment.newInstance("", "")
+            3 -> GroupPlaceholderFragment.newInstance("", "")
+            4 -> GroupPlaceholderFragment.newInstance("", "")
+            5 -> GroupPlaceholderFragment.newInstance("", "")
+            else -> throw IllegalArgumentException("Invalid tab position: $position")
+        }
+    }
