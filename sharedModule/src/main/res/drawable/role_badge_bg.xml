@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    role_badge_bg.xml
+    Place in: res/drawable/role_badge_bg.xml
+
+    Used as the background for the memberRoleLabel TextView in item_group_member.xml.
+
+    The adapter sets the background tint at runtime:
+        "Admin"     → #1565C0  (dark blue)
+        "Moderator" → #6A1B9A  (purple)
+
+    If you want the tint to switch automatically via XML instead, replace this
+    file with a <selector> that reads the activated / selected state — but the
+    simplest approach is to just call
+        holder.roleLabel.backgroundTintList = ColorStateList.valueOf(color)
+    from the adapter, which is what GroupMembersAdapter already does.
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+
+    <!-- Default fill — overridden at runtime by the adapter via backgroundTint -->
+    <solid android:color="#1565C0" />
+
+    <!-- Pill shape — corners match the paddingTop/Bottom="3dp" in the TextView -->
+    <corners android:radius="12dp" />
+
+</shape>
