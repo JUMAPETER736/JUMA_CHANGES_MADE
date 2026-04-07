@@ -420,4 +420,33 @@ class E2EEManager private constructor(
 
 
 
+    private fun decodeJavaX25519PublicKey(base64: String): java.security.PublicKey {
+        val bytes = Base64.decode(base64, Base64.NO_WRAP)
+        return try {
+            java.security.KeyFactory.getInstance("X25519")
+                .generatePublic(java.security.spec.X509EncodedKeySpec(bytes))
+        } catch (e: Exception) {
+            // Fall back to Elliptic Curve P-256 if X25519 decoding fails
+            java.security.KeyFactory.getInstance("EC")
+                .generatePublic(java.security.spec.X509EncodedKeySpec(bytes))
+        }
+    }
+
+    private fun performJavaECDH(
+        privateKey: java.security.PrivateKey,
+        publicKey: java.security.PublicKey
+    ): ByteArray = try {
+        // Perform X25519 Elliptic Curve Diffie-Hellman key agreement to produce a shared secret
+        javax.crypto.KeyAgreement.getInstance("X25519").apply {
+            init(privateKey); doPhase(publicKey, true)
+        }.generateSecret()
+    } catch (e: Exception) {
+        // Fall back to ECDH Elliptic Curve Diffie-Hellman on P-256 if X25519 is unavailable
+        javax.crypto.KeyAgreement.getInstance("ECDH").apply {
+            init(privateKey); doPhase(publicKey, true)
+        }.generateSecret()
+    }
+
+
+
 }
