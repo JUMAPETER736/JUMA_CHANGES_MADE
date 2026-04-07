@@ -3,10 +3,28 @@ package com.uyscuti.social.network.api.models
 import android.content.Context
 import android.util.Base64
 import android.util.Log
+import org.signal.libsignal.protocol.IdentityKey
+import org.signal.libsignal.protocol.IdentityKeyPair
+import org.signal.libsignal.protocol.InvalidKeyException
+import org.signal.libsignal.protocol.SessionBuilder
+import org.signal.libsignal.protocol.SessionCipher
+import org.signal.libsignal.protocol.SignalProtocolAddress
+import org.signal.libsignal.protocol.ecc.Curve
+import org.signal.libsignal.protocol.ecc.ECKeyPair
+import org.signal.libsignal.protocol.ecc.ECPublicKey
+import org.signal.libsignal.protocol.message.CiphertextMessage
+import org.signal.libsignal.protocol.message.PreKeySignalMessage
+import org.signal.libsignal.protocol.message.SignalMessage
+import org.signal.libsignal.protocol.state.PreKeyBundle
+import org.signal.libsignal.protocol.state.PreKeyRecord
+import org.signal.libsignal.protocol.state.SignedPreKeyRecord
+import org.signal.libsignal.protocol.state.impl.InMemorySignalProtocolStore
 import java.security.SecureRandom
+import javax.crypto.Cipher
+import javax.crypto.Mac
 import javax.crypto.SecretKey
+import javax.crypto.spec.GCMParameterSpec
 import javax.crypto.spec.SecretKeySpec
-
 
 
 class E2EEManager private constructor(
@@ -225,6 +243,50 @@ class E2EEManager private constructor(
             ), Charsets.UTF_8
         )
     }
+
+    // Signal key generation (libsignal-android API)
+
+    private fun generateRegistrationId(): Int =
+        (random.nextInt(16380) + 1) // Valid Signal Protocol registration ID range: 1–16380
+
+    private fun loadOrGenerateIdentityKeyPair(): IdentityKeyPair {
+        val pubB64  = prefs.getString(PREF_IDENTITY_KEY_PUB,  null)
+        val privB64 = prefs.getString(PREF_IDENTITY_KEY_PRIV, null)
+
+        return if (pubB64 != null && privB64 != null) {
+            try {
+                val pubBytes  = Base64.decode(pubB64,  Base64.NO_WRAP)
+                val privBytes = Base64.decode(privB64, Base64.NO_WRAP)
+                val publicKey  = IdentityKey(pubBytes, 0)
+                val privateKey = Curve.decodePrivatePoint(privBytes)
+                IdentityKeyPair(publicKey, privateKey)
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed to load identity keys, regenerating: ${e.message}")
+                generateAndSaveIdentityKeyPair()
+            }
+        } else {
+            generateAndSaveIdentityKeyPair()
+        }
+    }
+
+    private fun generateAndSaveIdentityKeyPair(): IdentityKeyPair {
+        // Generate a Curve25519 elliptic curve key pair for long-term identity
+        val ecKeyPair   = Curve.generateKeyPair()
+        val identityKey = IdentityKey(ecKeyPair.publicKey)
+        val idKeyPair   = IdentityKeyPair(identityKey, ecKeyPair.privateKey)
+
+        prefs.edit()
+            .putString(PREF_IDENTITY_KEY_PUB,
+                Base64.encodeToString(identityKey.serialize(), Base64.NO_WRAP))
+            .putString(PREF_IDENTITY_KEY_PRIV,
+                Base64.encodeToString(ecKeyPair.privateKey.serialize(), Base64.NO_WRAP))
+            .apply()
+
+        return idKeyPair
+    }
+
+
+
 
 
 }
