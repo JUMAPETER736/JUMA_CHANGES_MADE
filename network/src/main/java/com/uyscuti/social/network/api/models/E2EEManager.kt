@@ -287,6 +287,47 @@ class E2EEManager private constructor(
 
 
 
+    private fun generateSignedPreKey(identityKeyPair: IdentityKeyPair, id: Int): SignedPreKeyRecord {
+        // Generate a Curve25519 key pair and sign its public key with the identity private key
+        val keyPair   = Curve.generateKeyPair()
+        val timestamp = System.currentTimeMillis()
+        val signature = Curve.calculateSignature(
+            identityKeyPair.privateKey,
+            keyPair.publicKey.serialize()
+        )
+        return SignedPreKeyRecord(id, timestamp, keyPair, signature)
+    }
+
+    private fun generateOneTimePreKeys(start: Int, count: Int): List<PreKeyRecord> =
+        // Each one-time pre-key is a single-use Curve25519 key pair consumed during X3DH
+        (start until start + count).map { id ->
+            PreKeyRecord(id, Curve.generateKeyPair())
+        }
+
+    private fun buildPreKeyBundle(recipient: RecipientPublicKey): PreKeyBundle {
+        // Assemble the recipient's public key material needed for X3DH Extended Triple Diffie-Hellman
+        val identityKey  = IdentityKey(Base64.decode(recipient.x25519PublicKey, Base64.NO_WRAP), 0)
+        val signedPubKey = Curve.decodePoint(Base64.decode(recipient.signedPreKey, Base64.NO_WRAP), 0)
+        val signature    = Base64.decode(recipient.signedPreKeySignature, Base64.NO_WRAP)
+
+        return if (recipient.oneTimePreKey != null) {
+            val otpk = Curve.decodePoint(Base64.decode(recipient.oneTimePreKey, Base64.NO_WRAP), 0)
+            PreKeyBundle(
+                recipient.registrationId, DEVICE_ID,
+                recipient.oneTimePreKeyId, otpk,
+                recipient.signedPreKeyId, signedPubKey, signature,
+                identityKey
+            )
+        } else {
+            // No one-time pre-key available — X3DH proceeds with 3 Diffie-Hellman exchanges instead of 4
+            PreKeyBundle(
+                recipient.registrationId, DEVICE_ID,
+                -1, null,
+                recipient.signedPreKeyId, signedPubKey, signature,
+                identityKey
+            )
+        }
+    }
 
 
 }
