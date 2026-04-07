@@ -1,4 +1,12 @@
 package com.uyscuti.social.network.api.request.group
 
-class UploadKeysRequest {
-}
+data class UploadKeysRequest(
+    val x25519PublicKey: String,
+    val ed25519PublicKey: String,
+    val keySignature: String,
+    val registrationId: Int = 0,
+    val signedPreKeyId: Int = 0,
+    val signedPreKey: String = "",
+    val signedPreKeySignature: String = "",
+    val oneTimePreKeys: List<Map<String, String>> = emptyList()
+)
