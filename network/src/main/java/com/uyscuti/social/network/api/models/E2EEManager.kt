@@ -5,13 +5,10 @@ import android.util.Base64
 import android.util.Log
 import org.signal.libsignal.protocol.IdentityKey
 import org.signal.libsignal.protocol.IdentityKeyPair
-import org.signal.libsignal.protocol.InvalidKeyException
 import org.signal.libsignal.protocol.SessionBuilder
 import org.signal.libsignal.protocol.SessionCipher
 import org.signal.libsignal.protocol.SignalProtocolAddress
 import org.signal.libsignal.protocol.ecc.Curve
-import org.signal.libsignal.protocol.ecc.ECKeyPair
-import org.signal.libsignal.protocol.ecc.ECPublicKey
 import org.signal.libsignal.protocol.message.CiphertextMessage
 import org.signal.libsignal.protocol.message.PreKeySignalMessage
 import org.signal.libsignal.protocol.message.SignalMessage
@@ -330,6 +327,7 @@ class E2EEManager private constructor(
     }
 
 
+
     // Legacy Elliptic Curve Diffie-Hellman (backward compatibility for old clients)
 
     fun encryptForDMLegacy(plaintext: String, recipient: RecipientPublicKey): EncryptedMessage {
@@ -448,5 +446,22 @@ class E2EEManager private constructor(
     }
 
 
+    // Advanced Encryption Standard — Galois/Counter Mode (AES-256-GCM)
+
+    private fun generateIV() = ByteArray(GCM_IV_LENGTH).also { random.nextBytes(it) }
+
+    private fun aesGCMEncrypt(plaintext: ByteArray, key: SecretKey, iv: ByteArray): ByteArray =
+        // Encrypt using Advanced Encryption Standard 256-bit in Galois/Counter Mode with 128-bit authentication tag
+        Cipher.getInstance("AES/GCM/NoPadding").run {
+            init(Cipher.ENCRYPT_MODE, key, GCMParameterSpec(GCM_TAG_LENGTH, iv))
+            doFinal(plaintext)
+        }
+
+    private fun aesGCMDecrypt(ciphertext: ByteArray, key: SecretKey, iv: ByteArray): ByteArray =
+        // Decrypt and verify the 128-bit Galois/Counter Mode authentication tag
+        Cipher.getInstance("AES/GCM/NoPadding").run {
+            init(Cipher.DECRYPT_MODE, key, GCMParameterSpec(GCM_TAG_LENGTH, iv))
+            doFinal(ciphertext)
+        }
 
 }
