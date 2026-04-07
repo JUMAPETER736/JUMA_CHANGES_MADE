@@ -202,5 +202,29 @@ class E2EEManager private constructor(
         Log.d(TAG, "Group key loaded for $chatId")
     }
 
+    fun hasGroupKey(chatId: String) = groupKeyCache.containsKey(chatId)
+
+    fun encryptForGroup(plaintext: String, chatId: String): EncryptedMessage {
+        val key = groupKeyCache[chatId] ?: throw IllegalStateException("No group key for $chatId")
+        // Generate a fresh 96-bit initialisation vector for each message (required by Galois/Counter Mode)
+        val iv  = generateIV()
+        return EncryptedMessage(
+            encryptedContent = Base64.encodeToString(
+                aesGCMEncrypt(plaintext.toByteArray(Charsets.UTF_8), key, iv), Base64.NO_WRAP),
+            iv = Base64.encodeToString(iv, Base64.NO_WRAP)
+        )
+    }
+
+    fun decryptGroup(encryptedContent: String, iv: String, chatId: String): String {
+        val key = groupKeyCache[chatId] ?: throw IllegalStateException("No group key for $chatId")
+        return String(
+            aesGCMDecrypt(
+                Base64.decode(encryptedContent, Base64.NO_WRAP),
+                key,
+                Base64.decode(iv, Base64.NO_WRAP)
+            ), Charsets.UTF_8
+        )
+    }
+
 
 }
