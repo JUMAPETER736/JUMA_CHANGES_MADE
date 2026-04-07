@@ -128,8 +128,8 @@ dependencies {
     implementation("androidx.media3:media3-ui:$mediaVersion")
     implementation("androidx.media3:media3-exoplayer-dash:$mediaVersion")
 
-   // implementation("com.google.android.exoplayer:exoplayer:2.13.3")
-  //  implementation("com.google.android.exoplayer:exoplayer-ui:2.13.3")
+    // implementation("com.google.android.exoplayer:exoplayer:2.13.3")
+    //  implementation("com.google.android.exoplayer:exoplayer-ui:2.13.3")
 
     implementation("com.github.colourmoon:readmore-textview:v1.0.2")
     implementation("androidx.paging:paging-common-ktx:3.1.1")
@@ -172,6 +172,7 @@ dependencies {
 
     implementation ("com.github.PhilJay:MPAndroidChart:v3.1.0")
 
+    implementation ("org.signal:libsignal-android:0.36.0")
 
 
 

@@ -5,6 +5,9 @@ import android.util.Base64
 import android.util.Log
 import java.security.SecureRandom
 import javax.crypto.SecretKey
+import javax.crypto.spec.SecretKeySpec
+
+
 
 class E2EEManager private constructor(
     private val context: Context) {
@@ -108,7 +111,7 @@ class E2EEManager private constructor(
         localAddress = SignalProtocolAddress(userId, DEVICE_ID)
     }
 
-    // ── Direct Message encryption (Signal Double Ratchet + X3DH Extended Triple Diffie-Hellman) ──
+    // Direct Message encryption (Signal Double Ratchet + X3DH Extended Triple Diffie-Hellman)
 
     fun encryptForDM(plaintext: String, recipient: RecipientPublicKey): EncryptedMessage {
         // If the recipient hasn't uploaded a full Signal bundle yet, fall back to legacy
@@ -170,7 +173,34 @@ class E2EEManager private constructor(
         }
     }
 
+   // Group encryption (AES-256-GCM with per-group symmetric key)
 
+    fun setupGroupKeys(recipients: List<RecipientPublicKey>): List<Map<String, String>> {
+        // Generate a random 256-bit Advanced Encryption Standard key for the group
+        val groupKeyBytes = ByteArray(32).also { random.nextBytes(it) }
+        return recipients.mapNotNull { recipient ->
+            try {
+                // Wrap the group key for each recipient using Elliptic Curve Diffie-Hellman key agreement
+                val enc = encryptGroupKeyForRecipient(groupKeyBytes, recipient)
+                mapOf(
+                    "participantId"      to recipient.userId,
+                    "encryptedKey"       to enc.encryptedContent,
+                    "nonce"              to enc.iv,
+                    "ephemeralPublicKey" to enc.ephemeralPublicKey
+                )
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to wrap group key for ${recipient.userId}: ${e.message}")
+                null
+            }
+        }
+    }
+
+    fun loadGroupKey(chatId: String, encryptedKey: String, nonce: String, ephemeralPublicKey: String) {
+        // Unwrap the group Advanced Encryption Standard key using our local X25519 private key
+        val groupKeyBytes = decryptLegacyDMBytes(encryptedKey, nonce, ephemeralPublicKey)
+        groupKeyCache[chatId] = SecretKeySpec(groupKeyBytes, "AES")
+        Log.d(TAG, "Group key loaded for $chatId")
+    }
 
 
 }

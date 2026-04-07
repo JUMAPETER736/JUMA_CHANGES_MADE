@@ -56,11 +56,11 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
 
-    // Hilt dependencies - using KSP
+    // Hilt
     implementation("com.google.dagger:hilt-android:2.51.1")
     ksp("com.google.dagger:hilt-compiler:2.51.1")
 
-    // Networking dependencies
+    // Networking
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
@@ -69,11 +69,16 @@ dependencies {
     // Socket.IO
     implementation("io.socket:socket.io-client:2.1.0")
 
-    // Additional dependencies
+    // Misc
     implementation("javax.inject:javax.inject:1")
     implementation("com.google.code.gson:gson:2.10.1")
 
-    // Coroutines for async operations
+    // Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
+
+    // Signal Protocol — use ONLY this one
+    implementation("org.signal:libsignal-android:0.36.0")
+
+
 }
