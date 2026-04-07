@@ -361,6 +361,33 @@ class E2EEManager private constructor(
     }
 
 
+    private fun decryptLegacyDMBytes(encryptedContent: String, iv: String, ephemeralPublicKey: String): ByteArray {
+        // Used to unwrap group Advanced Encryption Standard keys encrypted with legacy Elliptic Curve Diffie-Hellman
+        val myKeyPair    = loadJavaX25519KeyPair()
+        val ephemeralPub = decodeJavaX25519PublicKey(ephemeralPublicKey)
+        val sharedSecret = performJavaECDH(myKeyPair.private, ephemeralPub)
+        val aesKey       = deriveAESKeyHKDF(sharedSecret, "GROUP_KEY_WRAP")
+        return aesGCMDecrypt(
+            Base64.decode(encryptedContent, Base64.NO_WRAP),
+            aesKey,
+            Base64.decode(iv, Base64.NO_WRAP)
+        )
+    }
+
+    private fun encryptGroupKeyForRecipient(groupKeyBytes: ByteArray, recipient: RecipientPublicKey): EncryptedMessage {
+        // Wrap the group Advanced Encryption Standard key using ephemeral X25519 Elliptic Curve Diffie-Hellman
+        val ephemeral    = generateJavaX25519KeyPair()
+        val recipientPub = decodeJavaX25519PublicKey(recipient.x25519PublicKey)
+        val sharedSecret = performJavaECDH(ephemeral.private, recipientPub)
+        val wrapKey      = deriveAESKeyHKDF(sharedSecret, "GROUP_KEY_WRAP")
+        val iv           = generateIV()
+        return EncryptedMessage(
+            encryptedContent   = Base64.encodeToString(aesGCMEncrypt(groupKeyBytes, wrapKey, iv), Base64.NO_WRAP),
+            iv                 = Base64.encodeToString(iv, Base64.NO_WRAP),
+            ephemeralPublicKey = Base64.encodeToString(ephemeral.public.encoded, Base64.NO_WRAP)
+        )
+    }
+
 
 
 
