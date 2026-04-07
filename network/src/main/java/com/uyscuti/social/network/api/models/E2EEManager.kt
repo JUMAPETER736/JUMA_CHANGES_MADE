@@ -139,6 +139,37 @@ class E2EEManager private constructor(
         )
     }
 
+    fun decryptDM(
+        encryptedContent: String,
+        iv: String,
+        ephemeralPublicKey: String,
+        senderId: String,
+        messageType: Int = 1
+    ): String {
+        val store   = protocolStore ?: throw IllegalStateException("Keys not initialized")
+        val address = SignalProtocolAddress(senderId, DEVICE_ID)
+        val cipher  = sessionCiphers.getOrPut(senderId) { SessionCipher(store, address) }
+        val bytes   = Base64.decode(encryptedContent, Base64.NO_WRAP)
+
+        return try {
+            val plaintext = when (messageType) {
+                // PreKey Signal Message: first message in a session, contains X3DH key material
+                CiphertextMessage.PREKEY_TYPE -> cipher.decrypt(PreKeySignalMessage(bytes))
+                // Whisper Message: subsequent Double Ratchet messages after session is established
+                else                          -> cipher.decrypt(SignalMessage(bytes))
+            }
+            String(plaintext, Charsets.UTF_8)
+        } catch (e: Exception) {
+            Log.e(TAG, "Signal decrypt failed: ${e.javaClass.simpleName}: ${e.message}")
+            // Fallback for legacy Elliptic Curve Diffie-Hellman messages from old clients
+            if (ephemeralPublicKey.isNotEmpty() && iv.isNotEmpty()) {
+                decryptLegacyDM(encryptedContent, iv, ephemeralPublicKey)
+            } else {
+                throw e
+            }
+        }
+    }
+
 
 
 
