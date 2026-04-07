@@ -4,6 +4,7 @@ import android.media.MediaPlayer
 import android.net.Uri
 import androidx.appcompat.app.AppCompatActivity
 import androidx.media3.exoplayer.ExoPlayer
+import com.uyscuti.sharedmodule.databinding.ActivityMediaCompositionBinding
 
 class MediaCompositionActivity : AppCompatActivity() {
 
@@ -23,6 +24,7 @@ class MediaCompositionActivity : AppCompatActivity() {
         const val EXTRA_MEDIA_TYPE = "MEDIA_TYPE"
         const val EXTRA_CAPTION = "CAPTION"
     }
+
 
 
 }
