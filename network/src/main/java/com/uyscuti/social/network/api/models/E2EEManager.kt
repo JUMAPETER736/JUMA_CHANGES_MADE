@@ -330,4 +330,37 @@ class E2EEManager private constructor(
     }
 
 
+    // ── Legacy Elliptic Curve Diffie-Hellman (backward compatibility for old clients) ──
+
+    fun encryptForDMLegacy(plaintext: String, recipient: RecipientPublicKey): EncryptedMessage {
+        val ephemeral    = generateJavaX25519KeyPair()
+        val recipientPub = decodeJavaX25519PublicKey(recipient.x25519PublicKey)
+        val sharedSecret = performJavaECDH(ephemeral.private, recipientPub)
+        val aesKey       = deriveAESKeyHKDF(sharedSecret, "DM_ENCRYPTION")
+        val iv           = generateIV()
+        return EncryptedMessage(
+            encryptedContent   = Base64.encodeToString(
+                aesGCMEncrypt(plaintext.toByteArray(Charsets.UTF_8), aesKey, iv), Base64.NO_WRAP),
+            iv                 = Base64.encodeToString(iv, Base64.NO_WRAP),
+            ephemeralPublicKey = Base64.encodeToString(ephemeral.public.encoded, Base64.NO_WRAP)
+        )
+    }
+
+    private fun decryptLegacyDM(encryptedContent: String, iv: String, ephemeralPublicKey: String): String {
+        val myKeyPair    = loadJavaX25519KeyPair()
+        val ephemeralPub = decodeJavaX25519PublicKey(ephemeralPublicKey)
+        val sharedSecret = performJavaECDH(myKeyPair.private, ephemeralPub)
+        val aesKey       = deriveAESKeyHKDF(sharedSecret, "DM_ENCRYPTION")
+        return String(
+            aesGCMDecrypt(
+                Base64.decode(encryptedContent, Base64.NO_WRAP),
+                aesKey,
+                Base64.decode(iv, Base64.NO_WRAP)
+            ), Charsets.UTF_8
+        )
+    }
+
+
+
+
 }
