@@ -326,6 +326,38 @@ class E2EEManager private constructor(
         }
     }
 
+    private fun loadJavaX25519KeyPair(): java.security.KeyPair {
+        val pubB64  = prefs.getString("x25519_public",  null)
+        val privB64 = prefs.getString("x25519_private", null)
+
+        // Generate and persist a new X25519 key pair if none is stored
+        if (pubB64 == null || privB64 == null) {
+            val kp = generateJavaX25519KeyPair()
+            prefs.edit()
+                .putString("x25519_public",  Base64.encodeToString(kp.public.encoded,  Base64.NO_WRAP))
+                .putString("x25519_private", Base64.encodeToString(kp.private.encoded, Base64.NO_WRAP))
+                .apply()
+            return kp
+        }
+
+        val pubBytes  = Base64.decode(pubB64,  Base64.NO_WRAP)
+        val privBytes = Base64.decode(privB64, Base64.NO_WRAP)
+        return try {
+            // Decode as X25519 SubjectPublicKeyInfo / PKCS#8 encoded keys
+            val kf = java.security.KeyFactory.getInstance("X25519")
+            java.security.KeyPair(
+                kf.generatePublic(java.security.spec.X509EncodedKeySpec(pubBytes)),
+                kf.generatePrivate(java.security.spec.PKCS8EncodedKeySpec(privBytes))
+            )
+        } catch (e: Exception) {
+            // Fall back to Elliptic Curve P-256 if X25519 is unavailable on this device
+            val kf = java.security.KeyFactory.getInstance("EC")
+            java.security.KeyPair(
+                kf.generatePublic(java.security.spec.X509EncodedKeySpec(pubBytes)),
+                kf.generatePrivate(java.security.spec.PKCS8EncodedKeySpec(privBytes))
+            )
+        }
+    }
 
 
     // Legacy Elliptic Curve Diffie-Hellman (backward compatibility for old clients)

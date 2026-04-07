@@ -54,6 +54,10 @@ class MessageViewModel @Inject constructor(
         return messageRepository.getTempMessages(name)
     }
 
+    suspend fun getRecentSystemMessages(chatId: String): List<MessageEntity> {
+        return messageRepository.getRecentSystemMessages(chatId)
+    }
+
     suspend fun updateMessageStatus(message: MessageEntity) {
         try {
             messageRepository.updateMessageStatus(message)
