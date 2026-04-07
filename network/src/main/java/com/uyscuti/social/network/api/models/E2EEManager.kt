@@ -389,6 +389,35 @@ class E2EEManager private constructor(
     }
 
 
+    // HKDF Hash-based Key Derivation Function (RFC 5869)
+
+    private fun deriveAESKeyHKDF(sharedSecret: ByteArray, info: String): SecretKey {
+        val salt = "CircuitApp-E2EE-v1".toByteArray(Charsets.UTF_8)
+        val hmac = Mac.getInstance("HmacSHA256")
+
+        // Extract phase: compress the Diffie-Hellman shared secret into a pseudorandom key
+        hmac.init(SecretKeySpec(salt, "HmacSHA256"))
+        val prk = hmac.doFinal(sharedSecret)
+
+        // Expand phase: stretch the pseudorandom key into a 256-bit Advanced Encryption Standard key
+        hmac.init(SecretKeySpec(prk, "HmacSHA256"))
+        val okm = hmac.doFinal(info.toByteArray(Charsets.UTF_8) + byteArrayOf(0x01))
+
+        return SecretKeySpec(okm.copyOf(32), "AES")
+    }
+
+    // Java X25519 helpers (used for group key wrapping and legacy Elliptic Curve Diffie-Hellman)
+
+    private fun generateJavaX25519KeyPair(): java.security.KeyPair =
+        try {
+            // Prefer X25519 (Curve25519 Diffie-Hellman); fall back to P-256 on older Android versions
+            java.security.KeyPairGenerator.getInstance("X25519").generateKeyPair()
+        } catch (e: Exception) {
+            java.security.KeyPairGenerator.getInstance("EC").apply {
+                initialize(256, random)
+            }.generateKeyPair()
+        }
+
 
 
 }
