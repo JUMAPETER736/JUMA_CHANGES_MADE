@@ -67,3 +67,59 @@
         app:surface_type="texture_view"
         app:use_controller="true"
         app:controller_layout_id="@layout/custom_playback_control" />
+
+
+    <!-- Modern Audio Player Card -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/audioControls"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="20dp"
+        android:layout_marginEnd="20dp"
+        android:layout_marginBottom="180dp"
+        app:cardBackgroundColor="#1A1A1A"
+        app:cardCornerRadius="24dp"
+        app:cardElevation="8dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:strokeColor="#2A2A2A"
+        app:strokeWidth="1dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="24dp">
+
+            <ImageView
+                android:id="@+id/albumArtImageView"
+                android:layout_width="wrap_content"
+                android:layout_height="200dp"
+                android:scaleType="centerCrop"
+                android:layout_gravity="center"
+                android:src="@drawable/music_placeholder"/>
+
+            <!-- Audio Icon and Title -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="56dp"
+                    android:layout_height="56dp"
+                    app:cardBackgroundColor="@color/blueJeans"
+                    app:cardCornerRadius="16dp"
+                    app:cardElevation="0dp">
+
+                    <ImageView
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:layout_gravity="center"
+                        android:src="@drawable/ic_audio_wave"
+                        app:tint="#FFFFFF" />
+
+                </com.google.android.material.card.MaterialCardView>
+
