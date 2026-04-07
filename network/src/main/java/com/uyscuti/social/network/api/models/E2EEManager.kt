@@ -330,7 +330,7 @@ class E2EEManager private constructor(
     }
 
 
-    // ── Legacy Elliptic Curve Diffie-Hellman (backward compatibility for old clients) ──
+    // Legacy Elliptic Curve Diffie-Hellman (backward compatibility for old clients)
 
     fun encryptForDMLegacy(plaintext: String, recipient: RecipientPublicKey): EncryptedMessage {
         val ephemeral    = generateJavaX25519KeyPair()
@@ -359,6 +359,7 @@ class E2EEManager private constructor(
             ), Charsets.UTF_8
         )
     }
+
 
 
 
