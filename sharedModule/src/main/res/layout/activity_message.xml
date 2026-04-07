@@ -8,8 +8,8 @@
     android:background="@drawable/personal_chat_white_default_background">
 
     <RelativeLayout
-        android:layout_width="match_parent"
         android:id="@+id/container"
+        android:layout_width="match_parent"
         android:layout_height="match_parent">
 
         <com.google.android.material.appbar.AppBarLayout
@@ -17,14 +17,13 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="@color/bluejeans"
-            app:subtitle="New"
             android:elevation="@dimen/sub_title_text_size"
             android:fitsSystemWindows="true">
 
             <com.google.android.material.appbar.MaterialToolbar
                 android:id="@+id/toolbar"
-                android:layout_width="match_parent"
                 style="@style/Widget.MaterialComponents.Toolbar.Primary"
+                android:layout_width="match_parent"
                 android:layout_height="?attr/actionBarSize" />
 
         </com.google.android.material.appbar.AppBarLayout>
@@ -54,27 +53,45 @@
             app:outcomingTextSize="16sp"
             app:textAutoLink="all" />
 
+        <!-- ── Input area ─────────────────────────────────────────────────── -->
         <RelativeLayout
             android:id="@+id/inputContainer"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_alignParentBottom="true"
-            android:background="@color/white"
-            android:padding="8dp">
+            android:background="@color/white">
 
+            <!-- Muted / locked banner — sits at the very top of the input area -->
+            <TextView
+                android:id="@+id/mutedBanner"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_alignParentTop="true"
+                android:background="#FFF3CD"
+                android:gravity="center"
+                android:padding="10dp"
+                android:text="You have been muted."
+                android:textColor="#856404"
+                android:textSize="13sp"
+                android:visibility="gone" />
+
+            <!-- Input row — sits below the banner -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_below="@id/mutedBanner"
+                android:gravity="center_vertical"
                 android:orientation="horizontal"
-                android:gravity="center_vertical">
+                android:padding="8dp">
 
+                <!-- Text field + emoji + attachment -->
                 <LinearLayout
                     android:layout_width="0dp"
-                    android:layout_weight="1"
                     android:layout_height="wrap_content"
+                    android:layout_weight="1"
                     android:background="@drawable/edittext_design"
-                    android:orientation="horizontal"
                     android:gravity="center_vertical"
+                    android:orientation="horizontal"
                     android:paddingStart="4dp"
                     android:paddingEnd="4dp">
 
@@ -89,22 +106,22 @@
                     <com.vanniktech.emoji.EmojiEditText
                         android:id="@+id/inputEditText"
                         android:layout_width="0dp"
-                        android:layout_weight="1"
                         android:layout_height="wrap_content"
-                        android:minHeight="40dp"
-                        android:maxHeight="120dp"
+                        android:layout_weight="1"
                         android:background="@android:color/transparent"
+                        android:gravity="center_vertical"
                         android:hint="Message..."
-                        android:textSize="16sp"
-                        android:textColorHint="#808080"
                         android:imeOptions="actionSend"
                         android:inputType="textCapSentences|textMultiLine"
+                        android:maxHeight="120dp"
                         android:maxLines="4"
+                        android:minHeight="40dp"
                         android:paddingStart="8dp"
                         android:paddingEnd="8dp"
                         android:paddingTop="8dp"
                         android:paddingBottom="8dp"
-                        android:gravity="center_vertical" />
+                        android:textColorHint="#808080"
+                        android:textSize="16sp" />
 
                     <ImageView
                         android:id="@+id/attachment"
@@ -116,15 +133,16 @@
 
                 </LinearLayout>
 
+                <!-- Send button (shown when text is typed) -->
                 <androidx.cardview.widget.CardView
                     android:id="@+id/sendCard"
                     android:layout_width="48dp"
                     android:layout_height="48dp"
                     android:layout_marginStart="8dp"
-                    app:cardCornerRadius="24dp"
+                    android:visibility="gone"
                     app:cardBackgroundColor="@color/bluejeans"
-                    app:cardElevation="2dp"
-                    android:visibility="gone">
+                    app:cardCornerRadius="24dp"
+                    app:cardElevation="2dp">
 
                     <ImageView
                         android:id="@+id/sendBtn"
@@ -132,17 +150,19 @@
                         android:layout_height="24dp"
                         android:layout_gravity="center"
                         android:src="@drawable/send_svgrepo_com__1_"
-                        app:tint="@color/white"
-                        android:visibility="gone" />
+                        android:visibility="gone"
+                        app:tint="@color/white" />
+
                 </androidx.cardview.widget.CardView>
 
+                <!-- Voice note button (shown when text field is empty) -->
                 <androidx.cardview.widget.CardView
                     android:id="@+id/vnCard"
                     android:layout_width="48dp"
                     android:layout_height="48dp"
                     android:layout_marginStart="8dp"
-                    app:cardCornerRadius="24dp"
                     app:cardBackgroundColor="@color/bluejeans"
+                    app:cardCornerRadius="24dp"
                     app:cardElevation="2dp">
 
                     <ImageView
@@ -152,117 +172,123 @@
                         android:layout_gravity="center"
                         android:src="@drawable/mic_1"
                         app:tint="@color/white" />
+
                 </androidx.cardview.widget.CardView>
 
             </LinearLayout>
 
         </RelativeLayout>
+        <!-- ── End input area ─────────────────────────────────────────────── -->
 
     </RelativeLayout>
 
+    <!-- Legacy second message box (kept for back-compat, hidden by default) -->
     <RelativeLayout
         android:id="@+id/messageBox"
         android:layout_width="match_parent"
+        android:layout_height="50dp"
         android:layout_alignParentBottom="true"
-        android:gravity="center_vertical"
         android:layout_margin="8dp"
-        android:visibility="gone"
-        android:layout_height="50dp">
+        android:gravity="center_vertical"
+        android:visibility="gone">
 
         <LinearLayout
             android:id="@+id/messageBoxLayout"
             android:layout_width="match_parent"
-            android:orientation="horizontal"
-            android:layout_height="50dp">
+            android:layout_height="50dp"
+            android:orientation="horizontal">
 
             <LinearLayout
                 android:layout_width="0dp"
-                android:layout_weight="1"
+                android:layout_height="45dp"
                 android:layout_gravity="center_vertical"
+                android:layout_weight="1"
                 android:background="@drawable/edittext_design"
-                android:orientation="horizontal"
-                android:layout_height="45dp">
+                android:orientation="horizontal">
 
                 <ImageView
-                    android:layout_width="25dp"
                     android:id="@+id/emoji2"
+                    android:layout_width="25dp"
+                    android:layout_height="25dp"
                     android:layout_gravity="center_vertical"
                     android:layout_margin="10dp"
                     android:background="@drawable/baseline_insert_emoticon_24"
-                    android:layout_height="25dp"
                     app:tint="@color/bluejeans" />
 
                 <com.vanniktech.emoji.EmojiEditText
+                    android:id="@+id/messageEdit2"
                     android:layout_width="0dp"
-                    android:layout_weight="1"
                     android:layout_height="50dp"
-                    android:gravity="center_vertical"
                     android:layout_gravity="center_vertical"
+                    android:layout_weight="1"
                     android:background="@android:color/transparent"
-                    android:paddingStart="20dp"
-                    android:padding="8dp"
+                    android:gravity="center_vertical"
                     android:hint="Type a Message..."
-                    android:textSize="16sp"
                     android:imeOptions="actionSend"
                     android:inputType="textCapSentences|textMultiLine"
                     android:maxLines="4"
-                    android:id="@+id/messageEdit2" />
+                    android:padding="8dp"
+                    android:paddingStart="20dp"
+                    android:textSize="16sp" />
 
                 <ImageView
-                    android:layout_width="25dp"
                     android:id="@+id/attachment2"
+                    android:layout_width="25dp"
+                    android:layout_height="25dp"
                     android:layout_gravity="center_vertical"
                     android:layout_margin="8dp"
-                    android:background="@drawable/attachment_white"
-                    android:layout_height="25dp"
+                    android:background="@drawable/attachment__2_"
                     app:tint="@color/bluejeans" />
 
             </LinearLayout>
 
             <androidx.cardview.widget.CardView
+                android:id="@+id/sendCard2"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                app:cardCornerRadius="20dp"
-                android:id="@+id/sendCard2"
-                android:padding="4dp"
-                android:layout_marginLeft="5dp"
-                app:contentPadding="8dp"
-                android:visibility="gone"
                 android:layout_gravity="center_vertical"
-                android:gravity="end">
+                android:layout_marginLeft="5dp"
+                android:gravity="end"
+                android:padding="4dp"
+                android:visibility="gone"
+                app:cardCornerRadius="20dp"
+                app:contentPadding="8dp">
 
                 <ImageView
+                    android:id="@+id/sendBtn2"
                     android:layout_width="30dp"
                     android:layout_height="30dp"
                     android:src="@drawable/send_svgrepo_com__1_"
                     android:visibility="gone"
-                    android:id="@+id/sendBtn2"
                     app:tint="@color/bluejeans" />
+
             </androidx.cardview.widget.CardView>
 
             <androidx.cardview.widget.CardView
+                android:id="@+id/vnCard2"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                app:cardCornerRadius="20dp"
-                android:id="@+id/vnCard2"
-                android:padding="4dp"
-                android:layout_marginLeft="5dp"
-                app:contentPadding="8dp"
                 android:layout_gravity="center_vertical"
-                android:gravity="end">
+                android:layout_marginLeft="5dp"
+                android:gravity="end"
+                android:padding="4dp"
+                app:cardCornerRadius="20dp"
+                app:contentPadding="8dp">
 
                 <ImageView
+                    android:id="@+id/voiceNote2"
                     android:layout_width="30dp"
                     android:layout_height="30dp"
                     android:src="@drawable/mic_1"
-                    android:id="@+id/voiceNote2"
                     app:tint="@color/bluejeans" />
+
             </androidx.cardview.widget.CardView>
 
         </LinearLayout>
 
     </RelativeLayout>
 
+    <!-- Voice note recording sheet -->
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/VNBottomSheetLayout"
         android:layout_width="match_parent"
@@ -333,6 +359,7 @@
                             android:text="00:00"
                             android:textColor="@color/blueJeans"
                             android:textSize="16sp" />
+
                     </LinearLayout>
 
                     <HorizontalScrollView
@@ -350,7 +377,9 @@
                             android:orientation="horizontal"
                             android:paddingEnd="8dp"
                             tools:ignore="RtlSymmetry" />
+
                     </HorizontalScrollView>
+
                 </LinearLayout>
 
                 <LinearLayout
@@ -374,6 +403,7 @@
                         app:wave_progress_color="@color/blueJeans"
                         app:wave_width="4dp"
                         tools:ignore="MissingClass" />
+
                 </LinearLayout>
 
                 <LinearLayout
@@ -425,6 +455,7 @@
                         android:scaleType="centerCrop"
                         android:src="@drawable/send_svgrepo_com__1_"
                         app:tint="@color/white" />
+
                 </LinearLayout>
 
             </LinearLayout>
@@ -434,4 +465,3 @@
     </androidx.constraintlayout.widget.ConstraintLayout>
 
 </RelativeLayout>
-
