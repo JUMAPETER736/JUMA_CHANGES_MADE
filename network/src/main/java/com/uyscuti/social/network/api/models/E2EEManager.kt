@@ -88,7 +88,7 @@ class E2EEManager private constructor(
             )
         }
 
-        Log.d(TAG, "✅ Signal keys initialized, regId=$registrationId")
+        Log.d(TAG, "Signal keys initialized, regId=$registrationId")
 
         return DeviceKeys(
             x25519PublicKey       = identityPubB64,
@@ -101,6 +101,45 @@ class E2EEManager private constructor(
             oneTimePreKeys        = otpkList
         )
     }
+
+
+    fun setMyUserId(userId: String) {
+        prefs.edit().putString("my_user_id", userId).apply()
+        localAddress = SignalProtocolAddress(userId, DEVICE_ID)
+    }
+
+    // ── Direct Message encryption (Signal Double Ratchet + X3DH Extended Triple Diffie-Hellman) ──
+
+    fun encryptForDM(plaintext: String, recipient: RecipientPublicKey): EncryptedMessage {
+        // If the recipient hasn't uploaded a full Signal bundle yet, fall back to legacy
+        // Elliptic Curve Diffie-Hellman so messages still reach them while they upgrade
+        if (!recipient.hasSignalBundle()) {
+            Log.w(TAG, " ${recipient.userId} has no Signal bundle — using legacy Elliptic Curve Diffie-Hellman fallback")
+            return encryptForDMLegacy(plaintext, recipient)
+        }
+
+        val store   = protocolStore ?: throw IllegalStateException("Keys not initialized")
+        val address = SignalProtocolAddress(recipient.userId, DEVICE_ID)
+
+        // If no session exists yet, perform X3DH Extended Triple Diffie-Hellman to establish one
+        if (!store.containsSession(address)) {
+            val bundle = buildPreKeyBundle(recipient)
+            SessionBuilder(store, address).process(bundle)
+            Log.d(TAG, "New Signal session with ${recipient.userId}")
+        }
+
+        val cipher    = sessionCiphers.getOrPut(recipient.userId) { SessionCipher(store, address) }
+        val cipherMsg = cipher.encrypt(plaintext.toByteArray(Charsets.UTF_8))
+
+        return EncryptedMessage(
+            encryptedContent   = Base64.encodeToString(cipherMsg.serialize(), Base64.NO_WRAP),
+            iv                 = "",   // Signal Double Ratchet manages its own initialisation vectors internally
+            ephemeralPublicKey = "",   // Signal Double Ratchet manages ephemeral keys internally
+            messageType        = cipherMsg.type
+        )
+    }
+
+
 
 
 }

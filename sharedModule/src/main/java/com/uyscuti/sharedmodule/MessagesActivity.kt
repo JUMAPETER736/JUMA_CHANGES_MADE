@@ -146,7 +146,6 @@ import androidx.activity.viewModels
 import androidx.annotation.RequiresExtension
 import androidx.core.net.toUri
 import androidx.lifecycle.lifecycleScope
-import com.uyscuti.sharedmodule.MediaCompositionActivity.MediaType
 import com.uyscuti.sharedmodule.User_Interfaces.OtherUserProfile.OtherUserProfileAccount
 import com.uyscuti.sharedmodule.data.model.shortsmodels.OtherUsersProfile
 import com.uyscuti.sharedmodule.utils.Timer
@@ -158,6 +157,13 @@ import java.lang.Math.sqrt
 import com.uyscuti.sharedmodule.databinding.ActivityMessageBinding
 import com.uyscuti.sharedmodule.model.PauseShort
 import com.uyscuti.sharedmodule.utils.audiomixer.input.GeneralAudioInput
+import com.uyscuti.social.network.api.models.E2EEManager
+import com.uyscuti.social.network.api.models.RecipientPublicKey
+import com.uyscuti.social.network.api.request.group.BulkKeysRequest
+import com.uyscuti.social.network.api.request.group.GroupMember
+import com.uyscuti.social.network.api.request.group.GroupRole
+import com.uyscuti.social.network.api.request.group.StoreGroupKeysRequest
+import com.uyscuti.social.network.api.request.group.UploadKeysRequest
 import kotlin.toString
 import com.uyscuti.social.network.api.request.messages.SendMessageRequest
 import org.json.JSONObject
