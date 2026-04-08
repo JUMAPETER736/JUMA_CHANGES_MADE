@@ -4,9 +4,15 @@ import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Bundle
 import android.view.View
+import android.widget.SeekBar
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.widget.addTextChangedListener
 import androidx.media3.exoplayer.ExoPlayer
 import com.uyscuti.sharedmodule.databinding.ActivityMediaCompositionBinding
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class MediaCompositionActivity : AppCompatActivity() {
 
@@ -50,6 +56,65 @@ class MediaCompositionActivity : AppCompatActivity() {
         binding.documentPreview.visibility = View.GONE
 
 
+    }
+
+    private fun setupListeners() {
+        binding.closeButton.setOnClickListener {
+            finish()
+        }
+
+        binding.sendButton.setOnClickListener {
+            sendMedia()
+        }
+
+        binding.captionInput.addTextChangedListener {
+            // updateCaptionCounter()
+        }
+
+        binding.playPauseButton.setOnClickListener {
+            togglePlayPause()
+        }
+
+        binding.audioSeekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                if (fromUser) {
+                    mediaPlayer?.seekTo(progress)
+                }
+            }
+
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {}
+        })
+    }
+
+    private fun loadMedia() {
+        mediaUri?.let { uri ->
+
+            // Auto-detect media type if UNKNOWN
+            if (mediaType == MediaType.UNKNOWN) {
+                CoroutineScope(Dispatchers.IO).launch {
+                    mediaType = detectMediaType(uri)
+
+                    withContext(Dispatchers.Main) {
+                        when (mediaType) {
+                            MediaType.IMAGE -> loadImage(uri)
+                            MediaType.VIDEO -> loadVideo(uri)
+                            MediaType.AUDIO -> loadAudio(uri)
+                            MediaType.DOCUMENT -> loadDocument(uri)
+                            MediaType.UNKNOWN -> showError()
+                        }
+                    }
+                }
+            } else {
+                when (mediaType) {
+                    MediaType.IMAGE -> loadImage(uri)
+                    MediaType.VIDEO -> loadVideo(uri)
+                    MediaType.AUDIO -> loadAudio(uri)
+                    MediaType.DOCUMENT -> loadDocument(uri)
+                    MediaType.UNKNOWN -> showError()
+                }
+            }
+        }
     }
 
 
