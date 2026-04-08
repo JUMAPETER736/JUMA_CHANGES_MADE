@@ -1,5 +1,6 @@
 package com.uyscuti.sharedmodule
 
+import android.media.MediaMetadataRetriever
 import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Bundle
@@ -151,7 +152,48 @@ class MediaCompositionActivity : AppCompatActivity() {
         }
     }
 
-    
+    private fun loadAudio(uri: Uri) {
+        binding.audioControls.visibility = View.VISIBLE
 
+        try {
+            // Get audio metadata
+            val retriever = MediaMetadataRetriever()
+            retriever.setDataSource(this, uri)
+
+            val title = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE)
+                ?: getFileName(uri)
+            val duration = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
+                ?.toLongOrNull() ?: 0L
+
+            binding.albumArtImageView.setImageResource(R.drawable.music_icon)
+            binding.audioFileName.text = title
+            binding.audioDuration.text = formatDuration(duration)
+
+            retriever.release()
+
+            // Setup MediaPlayer
+            mediaPlayer = MediaPlayer().apply {
+                setDataSource(this@MediaCompositionActivity, uri)
+                prepare()
+
+                binding.audioSeekBar.max = duration.toInt()
+
+                setOnCompletionListener {
+                    this@MediaCompositionActivity.isPlaying = false
+                    binding.playPauseButton.setImageResource(R.drawable.ic_play)
+                    binding.audioSeekBar.progress = 0
+                }
+            }
+
+            // Update seekbar
+            startSeekBarUpdate()
+
+        } catch (e: Exception) {
+            e.printStackTrace()
+            showError()
+        }
+    }
+
+    
 
 }
