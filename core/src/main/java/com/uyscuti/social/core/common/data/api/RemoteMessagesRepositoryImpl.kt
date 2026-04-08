@@ -1,23 +1,26 @@
 package com.uyscuti.social.core.common.data.api
 
+import android.util.Log
 import com.uyscuti.social.network.api.request.messages.SendMessageRequest
 import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
-
 import okhttp3.MultipartBody
 
 class RemoteMessageRepositoryImpl(private val messageApi: RetrofitInstance) :
     RemoteMessageRepository {
-    override suspend fun sendMessage(chatId: String, message: String): Result<Unit> {
-        return try {
 
-            val data = SendMessageRequest(message, null)
-            val response = messageApi.apiService.sendMessage(chatId,data)
+    override suspend fun sendMessage(chatId: String, request: SendMessageRequest): Result<Unit> {
+        return try {
+            Log.d("RemoteMessageRepo", "Sending request: $request")
+            val response = messageApi.apiService.sendMessage(chatId, request)
             if (response.isSuccessful) {
+                Log.d("RemoteMessageRepo", "Message sent successfully")
                 Result.Success(Unit)
             } else {
-                Result.Error(Exception("Message sending failed"))
+                Log.e("RemoteMessageRepo", "Failed: ${response.code()} ${response.errorBody()?.string()}")
+                Result.Error(Exception("Message sending failed: ${response.code()}"))
             }
         } catch (e: Exception) {
+            Log.e("RemoteMessageRepo", "Exception: ${e.message}")
             Result.Error(e)
         }
     }
@@ -27,40 +30,15 @@ class RemoteMessageRepositoryImpl(private val messageApi: RetrofitInstance) :
         message: String?,
         filePath: MultipartBody.Part
     ): Result<Unit> {
-        return  try {
-//            val data = SendMessageRequest(null, filePath)
-            val response = messageApi.apiService.sendAttachment(chatId,filePath) // Implement this method in your network API
+        return try {
+            val response = messageApi.apiService.sendAttachment(chatId, filePath)
             if (response.isSuccessful) {
                 Result.Success(Unit)
             } else {
-                Result.Error(Exception("Message sending failed"))
+                Result.Error(Exception("Attachment sending failed"))
             }
         } catch (e: Exception) {
             Result.Error(e)
         }
     }
-
 }
-
-
-//class RemoteMessageRepositoryImpl @Inject constructor(private val retrofitInterface: RetrofitInterface) :
-//    RemoteMessageRepository {
-//
-//    override suspend fun sendMessage(chatId: String, message: String): Result<Unit> {
-//        try {
-//            // Make a network request using RetrofitInterface to send the message
-//            val response = retrofitInterface.sendMessage(chatId, message)
-//
-//            if (response.isSuccessful) {
-//                return Result.Success(Unit)
-//            } else {
-//                // Handle the error case
-//                return Result.Error("Failed to send message")
-//            }
-//        } catch (e: Exception) {
-//            // Handle network request failure
-//            return Result.Error("Network request failed: ${e.message}")
-//        }
-//    }
-//}
-
