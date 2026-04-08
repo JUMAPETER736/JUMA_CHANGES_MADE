@@ -51,6 +51,7 @@ import com.daimajia.androidanimations.library.Techniques
 import com.daimajia.androidanimations.library.YoYo
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.gson.Gson
+import com.google.gson.stream.MalformedJsonException
 import com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.Fragment_Original_Post_With_Repost_Inside
 import com.uyscuti.sharedmodule.data.model.shortsmodels.OtherUsersProfile
 import com.uyscuti.sharedmodule.R
@@ -62,7 +63,7 @@ import com.uyscuti.sharedmodule.adapter.feed.feed.multiple_files.FeedMixedFilesV
 import com.uyscuti.sharedmodule.adapter.feed.feed.multiple_files.FeedRepostViewFileAdapter
 import com.uyscuti.sharedmodule.adapter.feed.feed.multiple_files.OnMultipleFilesClickListener
 import com.uyscuti.sharedmodule.bottomSheet.SendOfferBottomSheet
-import com.uyscuti.sharedmodule.data.model.User
+import com.uyscuti.social.core.models.data.User
 import com.uyscuti.sharedmodule.databinding.BottomDialogForShareBinding
 import com.uyscuti.sharedmodule.databinding.FeedBusinessPostBinding
 import com.uyscuti.sharedmodule.model.GoToUserProfileFragment
@@ -78,8 +79,11 @@ import com.uyscuti.social.core.common.data.room.entity.FollowUnFollowEntity
 import com.uyscuti.social.core.common.data.room.entity.ShortsEntity
 import com.uyscuti.social.core.common.data.room.entity.ShortsEntityFollowList
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.BookmarkRequest
+import com.uyscuti.social.network.api.response.allFeedRepostsPost.BookmarkResponse
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.CommentCountResponse
-import android.net.Uri
+import com.uyscuti.social.network.api.response.allFeedRepostsPost.LikeRequest
+import com.uyscuti.social.network.api.response.allFeedRepostsPost.LikeResponse
+import com.uyscuti.social.network.api.response.allFeedRepostsPost.RepostResponse
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.RetrofitClient
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.ShareResponse
 import com.uyscuti.social.network.api.response.getrepostsPostsoriginal.File
@@ -98,7 +102,6 @@ import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 import java.text.SimpleDateFormat
-import java.util.Calendar
 import java.util.Collections.addAll
 import java.util.Date
 import java.util.Locale
@@ -116,14 +119,16 @@ private const val BUSINESS_POST_VIEW = 7
 
 const val TAG = "FeedAdapter"
 
-
 class FeedAdapter(
 
     private val context: Context,
     private val retrofitInterface: RetrofitInstance,
     private val feedClickListener: OnFeedClickListener,
+    private var currentCommentCount: Int = 0,
     private val fragmentManager: FragmentManager,
-    private var followingUserIds: Set<String> = emptySet()
+    private var followingUserIds: Set<String> = emptySet(),
+    private var onSendOfferClicked: (Double, String, Post) -> Unit = {_, _, _ ->},
+    private var onMakeCalledClicked: (String) -> Unit = {_ ->}
 
 ) : FeedPaginatedAdapter<RecyclerView.ViewHolder>(), OnMultipleImagesClickListener {
 
@@ -136,7 +141,7 @@ class FeedAdapter(
         private val cachedFollowingUsernames = mutableSetOf<String>()
         private val cachedFollowersUsernames = mutableSetOf<String>()
         private val myFollowersCache = mutableSetOf<String>()
-
+        private val blockedUsersCache = mutableSetOf<String>()
 
         fun getCachedFollowersUsernames(): Set<String> = cachedFollowersUsernames.toSet()
         fun getCachedFollowingUsernames(): Set<String> = cachedFollowingUsernames.toSet()
@@ -145,29 +150,36 @@ class FeedAdapter(
         private val mutedPostsUsersCache = mutableSetOf<String>()
         private val hiddenPostsCache = mutableSetOf<String>()
 
-
-        //  HIDDEN POSTS METHODS
-
-
+        fun setMutedPostsUsers(userIds: Set<String>) {
+            mutedPostsUsersCache.clear()
+            mutedPostsUsersCache.addAll(userIds)
+            Log.d("FeedAdapter", "Muted posts cache updated with ${userIds.size} users")
+        }
 
         fun addToMutedPostsCache(userId: String) {
             mutedPostsUsersCache.add(userId)
             Log.d("FeedAdapter", "Added $userId to muted posts cache (Total: ${mutedPostsUsersCache.size})")
         }
 
-        fun isUserPostsMuted(userId: String): Boolean {
-            return mutedPostsUsersCache.contains(userId)
-        }
-
-
         fun removeFromMutedPostsCache(userId: String) {
             mutedPostsUsersCache.remove(userId)
             Log.d("FeedAdapter", "Removed $userId from muted posts cache (Total: ${mutedPostsUsersCache.size})")
         }
 
+        fun isUserPostsMuted(userId: String): Boolean {
+            return mutedPostsUsersCache.contains(userId)
+        }
 
         fun getMutedPostsUsers(): Set<String> {
             return mutedPostsUsersCache.toSet()
+        }
+
+        // ==================== HIDDEN POSTS METHODS ====================
+
+        fun setHiddenPosts(postIds: Set<String>) {
+            hiddenPostsCache.clear()
+            hiddenPostsCache.addAll(postIds)
+            Log.d("FeedAdapter", "Hidden posts cache updated with ${postIds.size} posts")
         }
 
         fun addToHiddenPostsCache(postId: String) {
@@ -180,6 +192,17 @@ class FeedAdapter(
             Log.d("FeedAdapter", "Removed $postId from hidden posts cache (Total: ${hiddenPostsCache.size})")
         }
 
+        fun isPostHidden(postId: String): Boolean {
+            return hiddenPostsCache.contains(postId)
+        }
+
+        fun getHiddenPosts(): Set<String> {
+            return hiddenPostsCache.toSet()
+        }
+
+        fun isUserBlocked(userId: String): Boolean {
+            return blockedUsersCache.contains(userId)
+        }
 
         fun isUserInMyFollowersList(userId: String): Boolean {
             return myFollowersCache.contains(userId)
@@ -209,10 +232,7 @@ class FeedAdapter(
             cachedFollowingUserIds = cachedFollowingList.toSet()
             Log.d("FeedAdapter", "Removed $userId from global following cache (Total: ${cachedFollowingList.size})")
         }
-
-
     }
-
     init {
         // Load from cache on initialization
         followingUserIds = cachedFollowingUserIds
@@ -224,6 +244,12 @@ class FeedAdapter(
 
     // Track comment counts by post ID for more reliable updates
     private val commentCountMap = mutableMapOf<String, Int>()
+
+    private val userId = LocalStorage.getInstance(context).getUserId()
+
+    private val currentUsername = LocalStorage.getInstance(context).getUsername()
+
+    private var businessPost: com.uyscuti.social.network.api.response.business.response.post.Post? = null
 
     private var followList: MutableList<ShortsEntityFollowList> =
         mutableListOf()
@@ -275,6 +301,10 @@ class FeedAdapter(
         Log.d(TAG, "Following usernames updated: ${usernames.size} users")
     }
 
+    fun clearItems() {
+        submitItems(mutableListOf())
+        notifyDataSetChanged()
+    }
 
     private fun updatePostsForUser(userId: String) {
         for (i in 0 until itemCount) {
@@ -358,6 +388,41 @@ class FeedAdapter(
         return -1
     }
 
+    fun refreshPostCommentCount(postId: String) {
+        val position = findPostPosition(postId)
+        if (position != -1) {
+            Log.d("FeedAdapter", "Refreshing comment count for post at position $position")
+            notifyItemChanged(position)
+        }
+    }
+
+    fun notifyCommentAdded(postId: String) {
+        val position = findPostPosition(postId)
+        if (position != -1) {
+            Log.d("FeedAdapter", "Notifying comment added for post at position $position")
+            // Update the post data and refresh the view
+            notifyItemChanged(position)
+        }
+    }
+
+
+    // Enhanced helper method to get the correct comment count
+    private fun getCommentCount(post: com.uyscuti.social.network.api.response.posts.Post): Int {
+        return commentCountMap[post._id] ?: run {
+            // Fallback to original count if not in map
+            val originalCount = when {
+                post.originalPost?.isNotEmpty() == true -> {
+                    post.originalPost[0].commentCount ?: 0
+                }
+                else -> {
+                    0
+                }
+            }
+            commentCountMap[post._id] = originalCount
+            originalCount
+        }
+    }
+
 
     private var lifeCycleOwner: LifecycleOwner? = null
     private  var dialogViewModel: DialogViewModel? = null
@@ -369,6 +434,9 @@ class FeedAdapter(
         this.dialogViewModel = dialogViewModel
 
     }
+
+
+    var onItemVisible: ((Int) -> Unit)? = null
 
 
     inner class FeedTextOnyViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
@@ -812,7 +880,7 @@ class FeedAdapter(
                                     // Sync with server data
                                     data.isLiked = likeResponse.data.isLiked
 
-                                    //  FIX: Handle potential null likeCount from server
+                                    // ✅ FIX: Handle potential null likeCount from server
                                     // Since your server only returns { isLiked: true/false }
                                     // We keep our optimistic count
                                     // data.likes stays as is (our optimistic update)
@@ -820,7 +888,7 @@ class FeedAdapter(
                                     updateLikeButtonUI(data.isLiked)
                                     updateMetricDisplay(likesCount, data.likes, "like")
 
-                                    //  FIX: Safely access likedByUserIds (it might be null)
+                                    // ✅ FIX: Safely access likedByUserIds (it might be null)
                                     val likedByCount = likeResponse.data.likedByUserIds?.size ?: 0
                                     Log.d(com.uyscuti.sharedmodule.adapter.feed.TAG, "Like synced - isLiked=${data.isLiked}, count=${data.likes}, likedBy=$likedByCount users")
 
@@ -1705,9 +1773,9 @@ class FeedAdapter(
         // Container Elements
         private val feedMixedFilesContainer: ConstraintLayout = itemView.findViewById(R.id.feedMixedFilesContainer)
 
-        //
+        // ─────────────────────────────────────────────────────────────────────────
         // STATE — set ONCE in render(), never overwritten in any setup*() method
-        //
+        // ─────────────────────────────────────────────────────────────────────────
         private var isFollowed = false
         private var totalMixedComments = 0
         private var serverCommentCount = 0
@@ -1720,9 +1788,9 @@ class FeedAdapter(
         private var postClicked = false
         private var isFollowingUser = false
 
-        //
+        // ─────────────────────────────────────────────────────────────────────────
         // RENDER — single source of truth for ALL counts
-        //
+        // ─────────────────────────────────────────────────────────────────────────
         @OptIn(UnstableApi::class)
         @SuppressLint("SetTextI18n", "SuspiciousIndentation")
         fun render(data: com.uyscuti.social.network.api.response.posts.Post) {
@@ -1740,7 +1808,7 @@ class FeedAdapter(
                     isFollowingUser = followingUserIds.contains(feedOwnerId)
                     Log.d(TAG, "render: User ${data.author?.account?.username} following status: $isFollowingUser")
 
-                    //  Set ALL counts here — NO setup*() method may reassign these
+                    // ── Set ALL counts here — NO setup*() method may reassign these ──────
                     if (originalPost != null) {
                         // Repost wrapper: show the original post's live global counts
                         totalMixedComments       = originalPost.commentCount
@@ -1789,13 +1857,13 @@ class FeedAdapter(
             }
         }
 
-        //
+        // ─────────────────────────────────────────────────────────────────────────
         // POST INFO — only sets date and triggers display; does NOT reset counts
-        //
+        // ─────────────────────────────────────────────────────────────────────────
         private fun setupPostInfo(data: com.uyscuti.social.network.api.response.posts.Post) {
             dateTime.text = formattedMongoDateTime(data.createdAt)
 
-            //  Just log — totalMixedComments already set correctly in render()
+            // ✅ Just log — totalMixedComments already set correctly in render()
             Log.d(TAG, "Initialized comment counts - Server: $serverCommentCount, Total: $totalMixedComments")
             updateCommentCountDisplay()
 
@@ -1809,11 +1877,11 @@ class FeedAdapter(
             Log.d(TAG, "Updated comment count display: $totalMixedComments")
         }
 
-        //
+        // ─────────────────────────────────────────────────────────────────────────
         // ENGAGEMENT COUNTS DISPLAY — reads totalMixed*, never writes them
-        //
+        // ─────────────────────────────────────────────────────────────────────────
         private fun updateEngagementCounts() {
-            //  All use totalMixed* set by render()
+            // ✅ All use totalMixed* set by render()
             updateMetricDisplay(likesCount,     totalMixedLikesCounts,    "like")
             updateMetricDisplay(commentCount,   totalMixedComments,       "comment")
             updateMetricDisplay(favoriteCounts, totalMixedBookMarkCounts, "bookmark")
@@ -1822,9 +1890,9 @@ class FeedAdapter(
             Log.d(TAG, "Updated all engagement counts")
         }
 
-        //
+        // ─────────────────────────────────────────────────────────────────────────
         // ENGAGEMENT BUTTONS — each reads totalMixed* but never reassigns them
-        //
+        // ─────────────────────────────────────────────────────────────────────────
         private fun setupEngagementButtons(data: com.uyscuti.social.network.api.response.posts.Post) {
             setupLikeButton(data)
             setupCommentButton(data)
@@ -1834,9 +1902,9 @@ class FeedAdapter(
             setupMoreOptionsButton(data)
         }
 
-        //  LIKE
+        // ── LIKE ─────────────────────────────────────────────────────────────────
         private fun setupLikeButton(data: com.uyscuti.social.network.api.response.posts.Post) {
-            //  Use totalMixedLikesCounts set by render() — NOT data.likes directly
+            // ✅ Use totalMixedLikesCounts set by render() — NOT data.likes directly
             updateLikeButtonUI(data.isLiked)
             updateMetricDisplay(likesCount, totalMixedLikesCounts, "like")
 
@@ -1915,9 +1983,9 @@ class FeedAdapter(
             Log.d(TAG, "Reverted like to: isLiked=$previousStatus, count=$previousCount")
         }
 
-        //  COMMENT
+        // ── COMMENT ──────────────────────────────────────────────────────────────
         private fun setupCommentButton(data: com.uyscuti.social.network.api.response.posts.Post) {
-            //  totalMixedComments already set in render() — just wire up click
+            // ✅ totalMixedComments already set in render() — just wire up click
             commentButton.setOnClickListener {
                 if (!commentButton.isEnabled) return@setOnClickListener
                 Log.d(TAG, "Comment button clicked for post ${data._id}")
@@ -1941,11 +2009,11 @@ class FeedAdapter(
             }
         }
 
-        //  BOOKMARK
+        // ── BOOKMARK ─────────────────────────────────────────────────────────────
         private fun setupBookmarkButton(data: com.uyscuti.social.network.api.response.posts.Post) {
             Log.d(TAG, "Setting up bookmark button - postId=${data._id}, isBookmarked=${data.isBookmarked}, count=$totalMixedBookMarkCounts")
 
-            //  Use totalMixedBookMarkCounts set by render() — NOT data.bookmarkCount directly
+            // ✅ Use totalMixedBookMarkCounts set by render() — NOT data.bookmarkCount directly
             updateBookmarkButtonUI(data.isBookmarked)
             updateMetricDisplay(favoriteCounts, totalMixedBookMarkCounts, "bookmark")
 
@@ -2032,12 +2100,12 @@ class FeedAdapter(
             Log.d(TAG, "Reverted bookmark to: isBookmarked=$previousStatus, count=$previousCount")
         }
 
-        //  REPOST
+        // ── REPOST ───────────────────────────────────────────────────────────────
         private fun setupRepostButton(data: com.uyscuti.social.network.api.response.posts.Post) {
             val originalPost = data.originalPost?.firstOrNull()
             val targetPostId = originalPost?._id ?: data._id
 
-            //  Use totalMixedRePostCounts set by render() — never overwrite here
+            // ✅ Use totalMixedRePostCounts set by render() — never overwrite here
             updateMetricDisplay(repostCount, totalMixedRePostCounts, "repost")
             updateRepostButtonAppearance(data.isReposted)
 
@@ -2060,12 +2128,12 @@ class FeedAdapter(
             repostPost.scaleY = if (isReposted) 1.1f else 1.0f
         }
 
-        //  SHARE
+        // ── SHARE ────────────────────────────────────────────────────────────────
         private fun setupShareButton(data: com.uyscuti.social.network.api.response.posts.Post) {
             val originalPost = data.originalPost?.firstOrNull()
             val targetPostId = originalPost?._id ?: data._id
 
-            //  Use totalMixedShareCounts set by render() — NOT hardcoded 0
+            // ✅ Use totalMixedShareCounts set by render() — NOT hardcoded 0
             updateMetricDisplay(shareCountText, totalMixedShareCounts, "share")
 
             feedShare.setOnClickListener {
@@ -2146,7 +2214,7 @@ class FeedAdapter(
                         feedShare.alpha = 1f
                         feedShare.isEnabled = true
                         if (response.isSuccessful) {
-                            //  Optimistically increment live counter on success
+                            // ✅ Optimistically increment live counter on success
                             totalMixedShareCounts++
                             updateMetricDisplay(shareCountText, totalMixedShareCounts, "share")
                         }
@@ -2161,7 +2229,7 @@ class FeedAdapter(
             feedClickListener.feedShareClicked(absoluteAdapterPosition, data)
         }
 
-        //  UI HELPERS
+        // ── UI HELPERS ───────────────────────────────────────────────────────────
         private fun updateLikeButtonUI(isLiked: Boolean) {
             Log.d(TAG, "Updating like button UI: isLiked=$isLiked")
             try {
@@ -2205,14 +2273,14 @@ class FeedAdapter(
             }
         }
 
-        //  MORE OPTIONS
+        // ── MORE OPTIONS ─────────────────────────────────────────────────────────
         private fun setupMoreOptionsButton(data: com.uyscuti.social.network.api.response.posts.Post) {
             moreOptionsButton.setOnClickListener {
                 feedClickListener.moreOptionsClick(absoluteAdapterPosition, data)
             }
         }
 
-        //  COMMENT COUNT PUBLIC API
+        // ── COMMENT COUNT PUBLIC API ─────────────────────────────────────────────
         fun updateCommentCount(newCount: Int) {
             Log.d(TAG, "updateCommentCount: Updating comment count from $totalMixedComments to $newCount")
             totalMixedComments = if (newCount < 0) {
@@ -2260,7 +2328,7 @@ class FeedAdapter(
                 })
         }
 
-        //  NAVIGATION
+        // ── NAVIGATION ───────────────────────────────────────────────────────────
         private fun navigateToOriginalPostWithoutRepostInside(data: com.uyscuti.social.network.api.response.posts.Post) {
             try {
                 Log.d(TAG, "Navigating to original Post for Post ID: ${data._id}")
@@ -2351,7 +2419,7 @@ class FeedAdapter(
             }
         }
 
-        //  FOLLOW BUTTON
+        // ── FOLLOW BUTTON ────────────────────────────────────────────────────────
         private fun setupFollowButton(feedOwnerId: String, feedOwnerUsername: String) {
             val currentUserId = LocalStorage.getInstance(itemView.context).getUserId()
             val cachedFollowingList = getCachedFollowingList()
@@ -2415,7 +2483,7 @@ class FeedAdapter(
             EventBus.getDefault().post(ShortsFollowButtonClicked(followEntity))
         }
 
-        //  POST CLICK LISTENERS
+        // ── POST CLICK LISTENERS ─────────────────────────────────────────────────
         private fun setupPostClickListeners(data: com.uyscuti.social.network.api.response.posts.Post) {
             feedMixedFilesContainer.setOnClickListener(null)
             mixedFilesCardView.setOnClickListener(null)
@@ -2471,7 +2539,7 @@ class FeedAdapter(
             Log.d(TAG, "Post clickability ensured for post: ${data._id}")
         }
 
-        //  PROFILE CLICK LISTENERS
+        // ── PROFILE CLICK LISTENERS ──────────────────────────────────────────────
         private fun setupProfileClickListeners(data: com.uyscuti.social.network.api.response.posts.Post, feedOwnerId: String) {
             val feedOwnerName = "${data.author?.firstName} ${data.author?.lastName}"
             val profilePicUrl = data.author?.account?.avatar?.url
@@ -2506,7 +2574,7 @@ class FeedAdapter(
             }
         }
 
-        //  USER INFO
+        // ── USER INFO ────────────────────────────────────────────────────────────
         private fun setupUserInfo(data: com.uyscuti.social.network.api.response.posts.Post, feedOwnerId: String) {
             loadImageWithGlide(data.author?.account?.avatar?.url, profileImageView, itemView.context)
             val fullName = listOfNotNull(
@@ -2517,7 +2585,7 @@ class FeedAdapter(
             handerText.text = "@${data.author?.account?.username ?: "unknown"}"
         }
 
-        //  CONTENT & TAGS
+        // ── CONTENT & TAGS ───────────────────────────────────────────────────────
         private fun setupContentAndTags(data: com.uyscuti.social.network.api.response.posts.Post) {
             if (data.content.isNotEmpty()) {
                 caption.text = data.content
@@ -2537,7 +2605,7 @@ class FeedAdapter(
             }
         }
 
-        //  MEDIA FILES
+        // ── MEDIA FILES ──────────────────────────────────────────────────────────
         private fun setupMediaFiles(data: com.uyscuti.social.network.api.response.posts.Post) {
             if (data.files.isEmpty()) {
                 Log.d(TAG, "No files in post")
@@ -2568,7 +2636,7 @@ class FeedAdapter(
             })
         }
 
-        //  UTILITIES
+        // ── UTILITIES ────────────────────────────────────────────────────────────
         @SuppressLint("DefaultLocale")
         private fun formatCount(count: Int): String {
             return when {
@@ -2637,7 +2705,6 @@ class FeedAdapter(
 
         // Share helpers
         private fun shareToWhatsApp(context: Context, text: String) = shareToApp(context, text, listOf("com.whatsapp", "com.whatsapp.w4b"), "WhatsApp")
-
         private fun shareViaSMS(context: Context, text: String) {
             try {
                 context.startActivity(Intent(Intent.ACTION_SENDTO).apply { data = "smsto:".toUri(); putExtra("sms_body", text) })
@@ -2753,23 +2820,21 @@ class FeedAdapter(
                     when {
                         // Case 1: Someone reposted - use their OWNER field (account ID) and username
                         data.repostedUser != null -> {
-                            // Store in local variable - now Kotlin knows it's non-null
-                            val repostedUser = data.repostedUser!!  // Use !! since we checked != null
-                            feedReposterOwnerId = repostedUser.owner
-                            feedReposterUsername = repostedUser.username
+                            feedReposterOwnerId = data.repostedUser.owner  // Use owner field, not _id!
+                            feedReposterUsername = data.repostedUser.username
                             Log.d(TAG, "RepostedUser account ID (owner): $feedReposterOwnerId")
                             Log.d(TAG, "RepostedUser username: @$feedReposterUsername")
-                            Log.d(TAG, "NOT using repostedUser._id which is: ${repostedUser._id}")
+                            Log.d(TAG, "NOT using repostedUser._id which is: ${data.repostedUser._id})")
                         }
 
                         // Case 2: Original post - use author.owner (the account ID!)
                         data.originalPost != null && data.originalPost.isNotEmpty() -> {
                             val originalAuthor = data.originalPost[0].author
-                            feedReposterOwnerId = originalAuthor.owner
+                            feedReposterOwnerId = originalAuthor.owner  // This is the account ID!
                             feedReposterUsername = originalAuthor.account.username
                             Log.d(TAG, "Using author.owner (account ID): $feedReposterOwnerId")
                             Log.d(TAG, " Username: @$feedReposterUsername")
-                            Log.d(TAG, "NOT using author._id which is: ${originalAuthor._id}")
+                            Log.d(TAG, "NOT using author._id which is: ${originalAuthor._id})")
                         }
 
                         // Case 3: Regular post - use main author's account ID
@@ -2789,6 +2854,7 @@ class FeedAdapter(
                             cachedFollowingList.contains(feedReposterOwnerId) ||
                             cachedFollowingUsernames.contains(feedReposterUsername)
 
+
                     Log.d(TAG, "REPOST FOLLOW CHECK - Post ID: ${data._id}")
                     Log.d(TAG, "Account ID (for follow check): $feedReposterOwnerId")
                     Log.d(TAG, "Username (for follow check): @$feedReposterUsername")
@@ -2797,6 +2863,7 @@ class FeedAdapter(
                     Log.d(TAG, "Match in cachedList: ${cachedFollowingList.contains(feedReposterOwnerId)}")
                     Log.d(TAG, "Match by username: ${cachedFollowingUsernames.contains(feedReposterUsername)}")
                     Log.d(TAG, "Following list (${followingUserIds.size} users): ${followingUserIds.joinToString(", ")}")
+
 
                     totalMixedComments = data.comments
                     totalMixedLikesCounts = data.likes
@@ -2828,176 +2895,22 @@ class FeedAdapter(
                     finalizeClickSetup(data)
                     setupRepostedUserProfileClicks(data)
                     setupOriginalPostAuthorClicks(data)
-                }
-            }
-        }
 
-        private fun setupOriginalPosterInfo(originalPostData: OriginalPost) {
-            Log.d(tag, "ORIGINAL POSTER Details: $originalPostData")
-            try {
-                Log.d(tag, "Setting up original poster info")
-                Log.d(tag, "originalPostReposter size: ${originalPostData.originalPostReposter.size}")
-
-                val author = originalPostData.author
-
-                //  NULL-SAFE avatar
-                // account, avatar, or url can all be null when the API
-                // returns  "account": {}  for a deleted / private post.
-                val avatarUrl: String? = author?.account?.avatar?.url   // safe call chain
-
-                //  Display name
-                val displayName = when {
-                    !author?.firstName.isNullOrBlank() && !author?.lastName.isNullOrBlank() ->
-                        "${author!!.firstName} ${author.lastName}"
-                    !author?.firstName.isNullOrBlank() -> author!!.firstName
-                    !author?.lastName.isNullOrBlank()  -> author!!.lastName
-                    !author?.account?.username.isNullOrBlank() -> author!!.account.username
-                    else -> "Unknown User"
-                }
-
-                //  Handle
-                val userHandle = if (!author?.account?.username.isNullOrBlank())
-                    "@${author!!.account.username}"
-                else
-                    "@unknown_user"
-
-                Log.d(tag, "Using author data: $displayName ($userHandle)")
-
-                //  Profile image
-                originalPosterProfileImage?.let { imageView ->
-                    if (!avatarUrl.isNullOrBlank()) {
-                        Glide.with(itemView.context)
-                            .load(avatarUrl)
-                            .apply(RequestOptions.bitmapTransform(CircleCrop()))
-                            .diskCacheStrategy(DiskCacheStrategy.ALL)
-                            .placeholder(R.drawable.flash21)
-                            .error(R.drawable.flash21)
-                            .into(imageView)
-                        Log.d(tag, "Loading avatar: $avatarUrl")
-                    } else {
-                        imageView.setImageResource(R.drawable.flash21)
-                        Log.d(tag, "No avatar URL — using default image")
-                    }
-                }
-
-                originalPosterName?.text  = displayName
-                tvQuotedUserHandle?.text  = userHandle
-
-                Log.d(tag, "Final UI setup — Name: '$displayName', Handle: '$userHandle'")
-
-            } catch (e: Exception) {
-                Log.e(tag, "Error setting up original poster info", e)
-                originalPosterProfileImage?.setImageResource(R.drawable.flash21)
-                originalPosterName?.text  = "Unknown User"
-                tvQuotedUserHandle?.text  = "@unknown_user"
-            }
-        }
-
-        private fun setupOriginalPostMedia(originalPostData: OriginalPost) {
-            hideAllMediaViews()
-
-            mixedFilesCardViews.setOnClickListener {
-                currentPost?.let {
-                    feedClickListener.feedRepostFileClicked(absoluteAdapterPosition, originalPostData)
-                }
-            }
-            originalFeedImages.setOnClickListener {
-                currentPost?.let {
-                    feedClickListener.feedRepostFileClicked(absoluteAdapterPosition, originalPostData)
                 }
             }
 
-            try {
-                //  NULL-SAFE file list
-                val files = originalPostData.files ?: emptyList()   // <-- THE KEY FIX
 
-                if (files.isEmpty()) {
-                    // Nothing to show — media views already hidden above
-                    Log.d(tag, "No files in original post — skipping media setup")
-                    return
-                }
-
-                // Special-case: exactly 3 files always use the grid layout
-                if (files.size == 3) {
-                    mixedFilesCardView?.visibility        = View.VISIBLE
-                    originalFeedImage?.visibility         = View.GONE
-                    multipleAudiosContainer?.visibility   = View.VISIBLE
-                    val adapter = FeedRepostViewFileAdapter(originalPostData)
-                    setupCleanRecyclerView(3, adapter)
-                    return
-                }
-
-                when (originalPostData.contentType) {
-
-                    "text" -> { /* text only, no media */ }
-
-                    "image" -> {
-                        mixedFilesCardView?.visibility      = View.VISIBLE
-                        originalFeedImage?.visibility       = View.VISIBLE
-                        multipleAudiosContainer?.visibility = View.GONE
-                        originalFeedImage?.let { imageView ->
-                            Glide.with(itemView.context)
-                                .load(files[0].url)
-                                .placeholder(R.drawable.imageplaceholder)
-                                .diskCacheStrategy(DiskCacheStrategy.ALL)
-                                .into(imageView)
-                            imageView.setOnClickListener {
-                                feedClickListener.feedRepostFileClicked(absoluteAdapterPosition, originalPostData)
-                            }
-                        }
-                    }
-
-                    "mixed_files", "video" -> {
-                        mixedFilesCardView?.visibility      = View.VISIBLE
-                        originalFeedImage?.visibility       = View.GONE
-                        multipleAudiosContainer?.visibility = View.VISIBLE
-                        val adapter = FeedRepostViewFileAdapter(originalPostData)
-                        setupCleanRecyclerView(files.size, adapter)
-                    }
-
-                    else -> {
-                        Log.w(tag, "Unknown / empty contentType: '${originalPostData.contentType}'")
-                        // Still attempt to show files if any exist
-                        if (files.size == 1) {
-                            mixedFilesCardView?.visibility      = View.VISIBLE
-                            originalFeedImage?.visibility       = View.VISIBLE
-                            multipleAudiosContainer?.visibility = View.GONE
-                            originalFeedImage?.let { imageView ->
-                                Glide.with(itemView.context)
-                                    .load(files[0].url)
-                                    .placeholder(R.drawable.imageplaceholder)
-                                    .diskCacheStrategy(DiskCacheStrategy.ALL)
-                                    .into(imageView)
-                            }
-                        } else if (files.size > 1) {
-                            mixedFilesCardView?.visibility      = View.VISIBLE
-                            originalFeedImage?.visibility       = View.GONE
-                            multipleAudiosContainer?.visibility = View.VISIBLE
-                            val adapter = FeedRepostViewFileAdapter(originalPostData)
-                            setupCleanRecyclerView(files.size, adapter)
-                        }
-                    }
-                }
-
-            } catch (e: Exception) {
-                Log.e(tag, "Error setting up original post media: ${e.message}")
-                hideAllMediaViews()
-            }
         }
 
 
         private fun navigateToTappedFilesInTheContainerView(
-
             files: List<Any>,
             mediaType: String,
             selectedPosition: Int
-
         ) {
             try {
-
                 val fragment = Tapped_Files_In_The_Container_View_Fragment().apply {
-
-                   arguments = Bundle().apply {
+                    arguments = Bundle().apply {
                         putString("files_data", Gson().toJson(files))
                         putString("media_type", mediaType)
                         putInt("selected_position", selectedPosition)
@@ -3012,19 +2925,12 @@ class FeedAdapter(
                             else -> files.map { it.toString() }
                         }
                         putStringArray("file_urls", fileUrls.toTypedArray())
-
-                       currentPost?.let { post ->
-                           putString("post_id", post._id)
-                           putString("post_data", Gson().toJson(post))
-
-                           // Store in local variable
-                           val repostedUser = post.repostedUser
-                           if (repostedUser != null) {
-                               putString("post_author_id", repostedUser._id)
-                               putString("post_author_username", repostedUser.username)
-                           }
-                       }
-
+                        currentPost?.let { post ->
+                            putString("post_id", post._id)
+                            putString("post_data", Gson().toJson(post))
+                            putString("post_author_id", post.repostedUser?._id)
+                            putString("post_author_username", post.repostedUser?.username)
+                        }
                         if (mediaType.contains("original") || mediaType.contains("quoted")) {
                             currentPost?.originalPost?.firstOrNull()?.let { originalPost ->
                                 putString("original_post_id", originalPost._id)
@@ -3317,7 +3223,6 @@ class FeedAdapter(
             var feedOwnerUsername = ""
             var userHandle = ""
 
-            // Store in local variable
             val repostedUser = data.repostedUser
             if (repostedUser != null) {
                 // Use owner field (account ID), not _id (profile ID)
@@ -3383,15 +3288,15 @@ class FeedAdapter(
 
         @SuppressLint("ClickableViewAccessibility")
         private fun setupRepostedUserProfileClicks(data: com.uyscuti.social.network.api.response.posts.Post) {
+            // Extract ACCOUNT ID (owner field) for profile navigation
             var feedOwnerId = ""
             var feedOwnerName = ""
             var feedOwnerUsername = ""
             var profilePicUrl = ""
 
-            // Store in local variable
             val repostedUser = data.repostedUser
             if (repostedUser != null) {
-                feedOwnerId = repostedUser.owner
+                feedOwnerId = repostedUser.owner  //Use owner field (account ID)
                 feedOwnerName = when {
                     repostedUser.firstName.isNotBlank() && repostedUser.lastName.isNotBlank() ->
                         "${repostedUser.firstName} ${repostedUser.lastName}"
@@ -3436,6 +3341,7 @@ class FeedAdapter(
                 }
             }
         }
+
 
         @SuppressLint("ClickableViewAccessibility")
         private fun setupOriginalPostAuthorClicks(data: com.uyscuti.social.network.api.response.posts.Post) {
@@ -3791,15 +3697,14 @@ class FeedAdapter(
             followButton.setOnClickListener { view ->
                 view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
 
+                // Get the correct user ID and USERNAME from current post
                 val feedReposterOwnerId: String
                 val feedReposterUsername: String
 
-                // Store in local variable
-                val repostedUser = currentPost?.repostedUser
                 when {
-                    repostedUser != null -> {
-                        feedReposterOwnerId = repostedUser.owner
-                        feedReposterUsername = repostedUser.username
+                    currentPost?.repostedUser != null -> {
+                        feedReposterOwnerId = currentPost?.repostedUser?.owner ?: ""
+                        feedReposterUsername = currentPost?.repostedUser?.username ?: "unknown"
                     }
                     currentPost?.author?.account != null -> {
                         feedReposterOwnerId = currentPost?.author?.account?._id ?: ""
@@ -3877,21 +3782,9 @@ class FeedAdapter(
             Log.d(tag, "- quotedPostCard: clickable=${quotedPostCard.isClickable}, focusable=${quotedPostCard.isFocusable}")
         }
 
-        // Fixed setupLikeButton - Replace in your Feed Repost View Holder FeedAdapter.kt
+        // Fixed setupLikeButton - Replace in your FeedAdapter.kt
 
         private fun setupLikeButton(data: com.uyscuti.social.network.api.response.posts.Post) {
-
-            val currentUserId = LocalStorage.getInstance(itemView.context).getUserId()
-            val actualIsLiked = data.likedByUserIds.contains(currentUserId)
-
-            if (data.isLiked != actualIsLiked) {
-                Log.w(TAG, "isLiked mismatch! Server said ${data.isLiked}, but likedByUserIds says $actualIsLiked")
-                data.isLiked = actualIsLiked
-                data.likes = data.likedByUserIds.size
-            }
-
-            Log.d(TAG, "FeedRepostViewHolder Set Up Like Button - PostId: ${data._id}, isLiked: ${data.isLiked}, likes: ${data.likes}")
-
             updateLikeButtonUI(data.isLiked)
             updateMetricDisplay(likesCount, data.likes, "like")
 
@@ -3900,20 +3793,15 @@ class FeedAdapter(
 
                 it.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
 
-                Log.d(TAG, "Like button clicked - PostId: ${data._id}, current isLiked: ${data.isLiked}, current likes: ${data.likes}")
-
                 val previousLikeStatus = data.isLiked
                 val previousLikeCount = data.likes
 
                 // Optimistic UI update
                 data.isLiked = !previousLikeStatus
                 data.likes = if (data.isLiked) previousLikeCount + 1 else maxOf(0, previousLikeCount - 1)
-                totalMixedLikesCounts = data.likes
 
                 updateLikeButtonUI(data.isLiked)
                 updateMetricDisplay(likesCount, data.likes, "like")
-
-                Log.d(TAG, "Optimistic update - PostId: ${data._id}, new isLiked: ${data.isLiked}, new likes: ${data.likes}")
 
                 YoYo.with(if (data.isLiked) Techniques.Tada else Techniques.Pulse)
                     .duration(500)
@@ -3925,7 +3813,6 @@ class FeedAdapter(
 
                 CoroutineScope(Dispatchers.Main).launch {
                     try {
-                        Log.d(TAG, "Making API call for post: ${data._id}")
                         val response = retrofitInterface.apiService.likeUnLikeFeed(data._id)
 
                         likeButton.alpha = 1f
@@ -3936,20 +3823,21 @@ class FeedAdapter(
                                 if (likeResponse.success) {
                                     // Sync with server data
                                     data.isLiked = likeResponse.data.isLiked
-                                    data.likes = likeResponse.data.likeCount
-                                    totalMixedLikesCounts = data.likes
+
+                                    // ✅ FIX: Handle potential null likeCount from server
+                                    // Since your server only returns { isLiked: true/false }
+                                    // We keep our optimistic count
+                                    // data.likes stays as is (our optimistic update)
 
                                     updateLikeButtonUI(data.isLiked)
                                     updateMetricDisplay(likesCount, data.likes, "like")
 
-                                    val likedByCount = likeResponse.data.likedByUserIds.size
-                                    Log.d(TAG, "API Response Success - PostId: ${data._id}, isLiked: ${data.isLiked}, likes: ${data.likes}, likedBy: $likedByCount users")
+                                    // ✅ FIX: Safely access likedByUserIds (it might be null)
+                                    val likedByCount = likeResponse.data.likedByUserIds?.size ?: 0
+                                    Log.d(TAG, "Like synced - isLiked=${data.isLiked}, count=${data.likes}, likedBy=$likedByCount users")
 
-                                    try {
-                                        feedClickListener.likeUnLikeFeed(absoluteAdapterPosition, data)
-                                    } catch (e: Exception) {
-                                        Log.e(TAG, "Error notifying adapter", e)
-                                    }
+                                    // Notify adapter
+                                    feedClickListener.likeUnLikeFeed(absoluteAdapterPosition, data)
                                 } else {
                                     Log.e(TAG, "Like failed - success=false")
                                     revertLikeState(data, previousLikeStatus, previousLikeCount)
@@ -3988,11 +3876,9 @@ class FeedAdapter(
         private fun revertLikeState(data: Post, previousStatus: Boolean, previousCount: Int) {
             data.isLiked = previousStatus
             data.likes = previousCount
-            totalMixedLikesCounts = previousCount
-
             updateLikeButtonUI(data.isLiked)
             updateMetricDisplay(likesCount, data.likes, "like")
-            Log.d(TAG, "Reverted like state - PostId: ${data._id}, isLiked: $previousStatus, likes: $previousCount")
+            Log.d(TAG, "Reverted to previous state: isLiked=$previousStatus, likes=$previousCount")
         }
 
         private fun setupBookmarkButton(data: com.uyscuti.social.network.api.response.posts.Post) {
@@ -4137,204 +4023,46 @@ class FeedAdapter(
             }
         }
 
-        // Update setupShareButton in FeedPostViewHolder
+        private fun setupRepostButton(data: com.uyscuti.social.network.api.response.posts.Post) {
+            totalMixedRePostCounts = data.repostCount  // Use actual count, not 0
+            updateMetricDisplay(repostCounts, totalMixedRePostCounts, "repost")
+            updateRepostButtonAppearance(data.isReposted)
 
-        private fun setupShareButton(data: Post) {
-            updateShareButtonUI(data.isShared)
-            updateMetricDisplay(shareCounts, data.shareCount, "share")
+            repostButton.setOnClickListener { view ->
+                if (!repostButton.isEnabled) return@setOnClickListener
+
+                // Haptic feedback
+                view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+
+                // Simple animation feedback
+                YoYo.with(Techniques.Pulse)
+                    .duration(300)
+                    .playOn(repostButton)
+
+                // Navigate to Fragment_Edit_Post_To_Repost WITHOUT changing any state
+                // The actual repost logic will happen in that fragment
+                navigateToEditPostToRepost(data)
+
+                // Also notify the listener if needed
+                feedClickListener.feedRepostPost(absoluteAdapterPosition, data)
+            }
+        }
+
+        private fun setupShareButton(data: com.uyscuti.social.network.api.response.posts.Post) {
+            totalMixedShareCounts = data.shareCount ?: 0
+            updateMetricDisplay(shareCounts, totalMixedShareCounts, "share")
 
             shareButton.setOnClickListener {
                 if (!shareButton.isEnabled) return@setOnClickListener
 
-                it.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                Log.d(TAG, "Share clicked for Post: ${data._id}")
 
-                val previousShareStatus = data.isShared
-                val previousShareCount = data.shareCount
-
-                // Optimistic UI update
-                data.isShared = true
-                data.shareCount = previousShareCount + 1
-
-                updateShareButtonUI(data.isShared)
-                updateMetricDisplay(shareCounts, data.shareCount, "share")
-
-                YoYo.with(Techniques.Tada)
-                    .duration(500)
-                    .repeat(1)
-                    .playOn(shareButton)
-
-                shareButton.isEnabled = false
-                shareButton.alpha = 0.8f
-
-                CoroutineScope(Dispatchers.Main).launch {
-                    try {
-                        val response = retrofitInterface.apiService.shareUnShareFeed(data._id)
-
-                        shareButton.alpha = 1f
-                        shareButton.isEnabled = true
-
-                        if (response.isSuccessful) {
-                            response.body()?.let { shareResponse ->
-                                if (shareResponse.success) {
-                                    val serverData = shareResponse.data
-
-                                    Log.d(TAG, "Share success - Server: isShared=${serverData.isShared}, count=${serverData.shareCount}")
-
-                                    data.isShared = serverData.isShared
-                                    data.shareCount = serverData.shareCount
-
-                                    updateShareButtonUI(data.isShared)
-                                    updateMetricDisplay(shareCounts, data.shareCount, "share")
-
-                                    // Notify adapter
-                                    feedClickListener.feedShareClicked(absoluteAdapterPosition, data)
-
-                                    // Show share bottom sheet
-                                    showShareBottomSheet(data, onShareConfirmed = {
-                                        // Called when user actually shares to a platform
-
-                                        // Optimistic UI update
-                                        data.isShared = true
-                                        data.shareCount = previousShareCount + 1
-
-                                        updateShareButtonUI(data.isShared)
-                                        updateMetricDisplay(shareCounts, data.shareCount, "share")
-
-                                        YoYo.with(Techniques.Tada)
-                                            .duration(500)
-                                            .repeat(1)
-                                            .playOn(shareButton)
-
-                                        shareButton.isEnabled = false
-                                        shareButton.alpha = 0.8f
-
-                                        CoroutineScope(Dispatchers.Main).launch {
-                                            try {
-                                                val response = retrofitInterface.apiService.shareUnShareFeed(data._id)
-
-                                                shareButton.alpha = 1f
-                                                shareButton.isEnabled = true
-
-                                                if (response.isSuccessful) {
-                                                    response.body()?.let { shareResponse ->
-                                                        if (shareResponse.success) {
-                                                            val serverData = shareResponse.data
-
-                                                            Log.d(TAG, "Share success - Server: isShared=${serverData.isShared}, count=${serverData.shareCount}")
-
-                                                            data.isShared = serverData.isShared
-                                                            data.shareCount = serverData.shareCount
-
-                                                            updateShareButtonUI(data.isShared)
-                                                            updateMetricDisplay(shareCounts, data.shareCount, "share")
-
-                                                            // Notify adapter
-                                                            feedClickListener.feedShareClicked(absoluteAdapterPosition, data)
-
-                                                            Toast.makeText(
-                                                                shareButton.context,
-                                                                shareResponse.message,
-                                                                Toast.LENGTH_SHORT
-                                                            ).show()
-                                                        } else {
-                                                            Log.e(TAG, "Share failed - success=false")
-                                                            revertShareState(data, previousShareStatus, previousShareCount)
-                                                        }
-                                                    } ?: run {
-                                                        Log.e(TAG, "Share response body is null")
-                                                        revertShareState(data, previousShareStatus, previousShareCount)
-                                                    }
-                                                } else {
-                                                    Log.e(TAG, "Share API error: ${response.code()} - ${response.message()}")
-                                                    revertShareState(data, previousShareStatus, previousShareCount)
-
-                                                    Toast.makeText(
-                                                        shareButton.context,
-                                                        "Failed to update share",
-                                                        Toast.LENGTH_SHORT
-                                                    ).show()
-                                                }
-                                            } catch (e: Exception) {
-                                                shareButton.alpha = 1f
-                                                shareButton.isEnabled = true
-
-                                                Log.e(TAG, "Share network error", e)
-                                                revertShareState(data, previousShareStatus, previousShareCount)
-
-                                                Toast.makeText(
-                                                    shareButton.context,
-                                                    "Network error. Please check your connection.",
-                                                    Toast.LENGTH_SHORT
-                                                ).show()
-                                            }
-                                        }
-                                    })
-
-                                    Toast.makeText(
-                                        shareButton.context,
-                                        "Shared successfully!",
-                                        Toast.LENGTH_SHORT
-                                    ).show()
-                                } else {
-                                    Log.e(TAG, "Share failed - success=false")
-                                    revertShareState(data, previousShareStatus, previousShareCount)
-                                }
-                            } ?: run {
-                                Log.e(TAG, "Share response body is null")
-                                revertShareState(data, previousShareStatus, previousShareCount)
-                            }
-                        } else {
-                            Log.e(TAG, "Share API error: ${response.code()} - ${response.message()}")
-                            revertShareState(data, previousShareStatus, previousShareCount)
-
-                            Toast.makeText(
-                                shareButton.context,
-                                "Failed to update share",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                        }
-                    } catch (e: Exception) {
-                        shareButton.alpha = 1f
-                        shareButton.isEnabled = true
-
-                        Log.e(TAG, "Share network error", e)
-                        revertShareState(data, previousShareStatus, previousShareCount)
-
-                        Toast.makeText(
-                            shareButton.context,
-                            "Network error. Please check your connection.",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    }
-                }
+                // Show share bottom sheet
+                showShareBottomSheet(data)
             }
         }
 
-        private fun revertShareState(data: Post, previousStatus: Boolean, previousCount: Int) {
-            data.isShared = previousStatus
-            data.shareCount = previousCount
-            updateShareButtonUI(data.isShared)
-            updateMetricDisplay(shareCounts, data.shareCount, "share")
-            Log.d(TAG, "Reverted to previous state: isShared=$previousStatus, shareCount=$previousCount")
-        }
-
-        private fun updateShareButtonUI(isShared: Boolean) {
-            Log.d(TAG, "Updating share button UI: isShared=$isShared")
-            try {
-                if (isShared) {
-                    shareButton.setColorFilter(
-                        ContextCompat.getColor(itemView.context, R.color.bluejeans),
-                        PorterDuff.Mode.SRC_IN
-                    )
-                } else {
-                    shareButton.clearColorFilter()
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Error updating share button UI", e)
-            }
-        }
-
-        private fun showShareBottomSheet(data: Post, onShareConfirmed: () -> Unit) {
+        private fun showShareBottomSheet(data: com.uyscuti.social.network.api.response.posts.Post) {
             val context = shareButton.context
             val bottomSheetDialog = BottomSheetDialog(context)
             val binding = BottomDialogForShareBinding.inflate(LayoutInflater.from(context))
@@ -4350,41 +4078,41 @@ class FeedAdapter(
             // Setup share buttons
             binding.btnWhatsApp.setOnClickListener {
                 shareToWhatsApp(context, fullShareText)
-                onShareConfirmed()
+                incrementShareCount(data)
                 bottomSheetDialog.dismiss()
             }
 
             binding.btnSMS.setOnClickListener {
                 shareViaSMS(context, fullShareText)
-                onShareConfirmed()
+                incrementShareCount(data)
                 bottomSheetDialog.dismiss()
             }
 
             binding.btnInstagram.setOnClickListener {
                 shareToInstagram(context, fullShareText)
-                onShareConfirmed()
+                incrementShareCount(data)
                 bottomSheetDialog.dismiss()
             }
 
             binding.btnMessenger.setOnClickListener {
                 shareToMessenger(context, fullShareText)
-                onShareConfirmed()
+                incrementShareCount(data)
                 bottomSheetDialog.dismiss()
             }
 
             binding.btnFacebook.setOnClickListener {
                 shareToFacebook(context, fullShareText)
-                onShareConfirmed()
+                incrementShareCount(data)
                 bottomSheetDialog.dismiss()
             }
 
             binding.btnTelegram.setOnClickListener {
                 shareToTelegram(context, fullShareText)
-                onShareConfirmed()
+                incrementShareCount(data)
                 bottomSheetDialog.dismiss()
             }
 
-            // Setup action buttons (these don't count as shares)
+            // Setup action buttons
             binding.btnReport.setOnClickListener {
                 Toast.makeText(context, "Report functionality", Toast.LENGTH_SHORT).show()
                 bottomSheetDialog.dismiss()
@@ -4421,6 +4149,58 @@ class FeedAdapter(
             }
 
             bottomSheetDialog.show()
+        }
+
+        private fun incrementShareCount(data: com.uyscuti.social.network.api.response.posts.Post) {
+            val previousShareCount = totalMixedShareCounts
+
+            // Update immediately for better UX
+            totalMixedShareCounts += 1
+            data.shareCount = totalMixedShareCounts
+            updateMetricDisplay(shareCounts, totalMixedShareCounts, "share")
+
+            YoYo.with(Techniques.Tada)
+                .duration(700)
+                .repeat(1)
+                .playOn(shareButton)
+
+            shareButton.isEnabled = false
+            shareButton.alpha = 0.8f
+
+            // Make API call to sync with server
+            RetrofitClient.shareService.incrementShare(data._id)
+                .enqueue(object : Callback<ShareResponse> {
+                    override fun onResponse(call: Call<ShareResponse>, response: Response<ShareResponse>) {
+                        shareButton.alpha = 1f
+                        shareButton.isEnabled = true
+
+                        if (response.isSuccessful) {
+                            response.body()?.let { shareResponse ->
+                                if (abs(shareResponse.shareCount - totalMixedShareCounts) > 1) {
+                                    data.shareCount = shareResponse.shareCount
+                                    totalMixedShareCounts = data.shareCount
+                                    updateMetricDisplay(shareCounts, data.shareCount, "share")
+                                }
+                            }
+                        } else {
+                            // Revert on failure
+                            data.shareCount = previousShareCount
+                            totalMixedShareCounts = data.shareCount
+                            updateMetricDisplay(shareCounts, data.shareCount, "share")
+                        }
+                    }
+
+                    override fun onFailure(call: Call<ShareResponse>, t: Throwable) {
+                        shareButton.alpha = 1f
+                        shareButton.isEnabled = true
+                        // Revert on network failure
+                        data.shareCount = previousShareCount
+                        totalMixedShareCounts = data.shareCount
+                        updateMetricDisplay(shareCounts, data.shareCount, "share")
+                    }
+                })
+
+            feedClickListener.feedShareClicked(absoluteAdapterPosition, data)
         }
 
         // Share helper functions with multiple package name variants
@@ -4557,45 +4337,15 @@ class FeedAdapter(
             }
         }
 
-        private fun setupRepostButton(data: Post) {
-            updateRepostButtonUI(data.isReposted)
-            updateMetricDisplay(repostCounts, data.repostCount, "repost")
-
-            repostButton.setOnClickListener { view ->
-                if (!repostButton.isEnabled) return@setOnClickListener
-
-                view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
-
-                // Just show a quick animation - DON'T change state yet
-                YoYo.with(Techniques.Pulse)
-                    .duration(300)
-                    .playOn(repostButton)
-
-                // Navigate to edit fragment WITHOUT changing any state
-                // The actual repost happens when user confirms in the fragment
-                feedClickListener.feedRepostPost(absoluteAdapterPosition, data)
-            }
-        }
-
-        private fun updateRepostButtonUI(isReposted: Boolean) {
-            Log.d(TAG, "Updating repost button UI: isReposted=$isReposted")
-            try {
-                if (isReposted) {
-                    repostButton.setImageResource(R.drawable.repeat_svgrepo_com)
-                    repostButton.setColorFilter(
-                        ContextCompat.getColor(itemView.context, R.color.bluejeans),
-                        PorterDuff.Mode.SRC_IN
-                    )
-                    repostButton.scaleX = 1.1f
-                    repostButton.scaleY = 1.1f
-                } else {
-                    repostButton.setImageResource(R.drawable.repeat_svgrepo_com)
-                    repostButton.clearColorFilter()
-                    repostButton.scaleX = 1.0f
-                    repostButton.scaleY = 1.0f
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Error updating repost button UI", e)
+        private fun updateRepostButtonAppearance(isReposted: Boolean) {
+            if (isReposted) {
+                repostButton.setImageResource(R.drawable.repeat_svgrepo_com)
+                repostButton.scaleX = 1.1f
+                repostButton.scaleY = 1.1f
+            } else {
+                repostButton.setImageResource(R.drawable.repeat_svgrepo_com)
+                repostButton.scaleX = 1.0f
+                repostButton.scaleY = 1.0f
             }
         }
 
@@ -4612,6 +4362,7 @@ class FeedAdapter(
                 else -> "$count $metricType"
             }
         }
+
 
         private fun getActivityFromContext(context: Context?): AppCompatActivity? {
             return when (context) {
@@ -4666,6 +4417,98 @@ class FeedAdapter(
             }
         }
 
+        private fun setupOriginalPostMedia(originalPostData: OriginalPost) {
+            hideAllMediaViews()
+            mixedFilesCardViews.setOnClickListener {
+                currentPost?.let { post ->
+                    feedClickListener.feedRepostFileClicked(
+                        absoluteAdapterPosition,
+                        originalPostData
+                    )
+                }
+            }
+            originalFeedImages.setOnClickListener {
+                currentPost?.let { post ->
+                    feedClickListener.feedRepostFileClicked(
+                        absoluteAdapterPosition,
+                        originalPostData
+                    )
+                }
+            }
+            try {
+                // Check file count first - if exactly 3 files, always use the 3-item layout
+                if (originalPostData.files.size == 3) {
+                    mixedFilesCardView?.visibility = View.VISIBLE
+                    originalFeedImage?.visibility = View.GONE
+                    multipleAudiosContainer?.visibility = View.VISIBLE
+                    val images = originalPostData.files.map { it.url }
+                    val adapter = FeedRepostViewFileAdapter(originalPostData)
+                    setupCleanRecyclerView(3, adapter) // This will force the 3-item layout
+                    return
+                }
+
+                // For other counts, use the existing content type logic
+                when (originalPostData.contentType) {
+
+                    "text" -> {
+                        // Only text content, no media
+                    }
+
+                    "image" -> {
+                        if (originalPostData.files.isNotEmpty()) {
+                            mixedFilesCardView?.visibility = View.VISIBLE
+                            originalFeedImage?.visibility = View.VISIBLE
+                            multipleAudiosContainer?.visibility = View.GONE
+                            originalFeedImage?.let { imageView ->
+                                Glide.with(itemView.context)
+                                    .load(originalPostData.files[0].url)
+                                    .placeholder(R.drawable.imageplaceholder)
+                                    .diskCacheStrategy(DiskCacheStrategy.ALL)
+                                    .into(imageView)
+                                imageView.setOnClickListener {
+                                    feedClickListener.feedRepostFileClicked(
+                                        absoluteAdapterPosition,
+                                        originalPostData
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    "mixed_files" -> {
+                        if (originalPostData.files.isNotEmpty()) {
+                            mixedFilesCardView?.visibility = View.VISIBLE
+                            originalFeedImage?.visibility = View.GONE
+                            multipleAudiosContainer?.visibility = View.VISIBLE
+                            val images = originalPostData.files.map { it.url }
+                            val adapter = FeedRepostViewFileAdapter(originalPostData)
+                            setupCleanRecyclerView(originalPostData.files.size, adapter)
+                        }
+                    }
+
+                    "video" -> {
+                        if (originalPostData.files.isNotEmpty()) {
+                            mixedFilesCardView?.visibility = View.VISIBLE
+                            originalFeedImage?.visibility = View.GONE
+                            multipleAudiosContainer?.visibility = View.VISIBLE
+                            val images = originalPostData.files.map { it.url }
+                            val adapter = FeedRepostViewFileAdapter(originalPostData)
+                            setupCleanRecyclerView(originalPostData.files.size, adapter)
+                        }
+                    }
+
+                    else -> {
+                        Log.w(tag, "Unknown content type: ${originalPostData.contentType}")
+                    }
+
+                }
+
+            } catch (e: Exception) {
+                Log.e(tag, "Error setting up original post media: ${e.message}")
+                hideAllMediaViews()
+            }
+        }
+
         private fun setupRecyclerViewFileTapListener(
             recyclerView: RecyclerView, files: List<Any>?, mediaType: String
         ) {
@@ -4702,6 +4545,71 @@ class FeedAdapter(
             }
         }
 
+        private fun setupOriginalPosterInfo(originalPostData: OriginalPost) {
+            Log.d(tag, "ORIGINAL POSTER Details: ${originalPostData}")
+            try {
+                Log.d(tag, "Setting up original poster info")
+                Log.d(tag, "originalPostReposter size: ${originalPostData.originalPostReposter.size}")
+
+                var displayName = " "
+                var userHandle = " "
+                var avatarUrl: String? = null
+
+                // Use author data (AuthorX is a single object, not a list)
+                val author = originalPostData.author
+                avatarUrl = author.account.avatar.url
+
+
+                displayName = when {
+                    // Try to build full name first
+                    author.firstName.isNotBlank() && author.lastName.isNotBlank() ->
+                        "${author.firstName} ${author.lastName}"
+                    author.firstName.isNotBlank() -> author.firstName
+                    author.lastName.isNotBlank() -> author.lastName
+                    // Fall back to account username
+                    author.account.username.isNotBlank() -> author.account.username
+                    // Final fallback
+                    else -> "Unknown User"
+                }
+
+                userHandle = if (author.account.username.isNotBlank()) {
+                    "@${author.account.username}"
+                } else {
+                    "@unknown_user"
+                }
+                Log.d(tag, "Using author data: $displayName ($userHandle)")
+
+                // Set profile image
+                originalPosterProfileImage?.let { imageView ->
+                    if (!avatarUrl.isNullOrBlank()) {
+                        Glide.with(itemView.context)
+                            .load(avatarUrl)
+                            .apply(RequestOptions.bitmapTransform(CircleCrop()))
+                            .diskCacheStrategy(DiskCacheStrategy.ALL)
+                            .placeholder(R.drawable.flash21)
+                            .error(R.drawable.flash21)
+                            .into(imageView)
+                        Log.d(tag, "Loading avatar: $avatarUrl")
+                    } else {
+                        imageView.setImageResource(R.drawable.flash21)
+                        Log.d(tag, "No avatar URL available, using default image")
+                    }
+                }
+
+                // Set display name and handle
+                originalPosterName?.text = displayName
+                tvQuotedUserHandle?.text = userHandle
+
+                Log.d(tag, "Final UI setup - Name: '$displayName', Handle: '$userHandle'")
+
+            } catch (e: Exception) {
+                Log.e(tag, "Error setting up original poster info", e)
+                // Set safe fallback values
+                originalPosterProfileImage?.setImageResource(R.drawable.flash21)
+                originalPosterName?.text = "Unknown User"
+                tvQuotedUserHandle?.text = "@unknown_user"
+            }
+        }
 
         private fun setupQuotedUserFromMainAuthor(data: com.uyscuti.social.network.api.response.posts.Post) {
             try {
@@ -4782,7 +4690,7 @@ class FeedAdapter(
                 } else {
                     tvQuotedHashtags?.text = "#SoftwareAppreciation #GameChanger #MustHave"
                 }
-                tvQuotedHashtags?.visibility = View.GONE
+                tvQuotedHashtags?.visibility = View.VISIBLE
 
             } catch (e: Exception) {
                 Log.e("QuotedUser", "Error setting up quoted user from main author", e)
@@ -4792,14 +4700,14 @@ class FeedAdapter(
                 tvQuotedUserHandle?.text = "@unknown"
                 originalPostText?.visibility = View.GONE
                 tvQuotedHashtags?.text = "#SoftwareAppreciation #GameChanger #MustHave"
-                tvQuotedHashtags?.visibility = View.GONE
+                tvQuotedHashtags?.visibility = View.VISIBLE
             }
         }
 
         private fun setupRepostHashtags(data: com.uyscuti.social.network.api.response.posts.Post) {
             val hashtagText = "#Repost #GreatContent #MustSee"
             tvHashtags.text = hashtagText
-            tvHashtags.visibility = View.GONE
+            tvHashtags.visibility = View.VISIBLE
         }
 
         private fun setupOriginalPostContent(data: com.uyscuti.social.network.api.response.posts.Post) {
@@ -4867,17 +4775,13 @@ class FeedAdapter(
         }
 
         private fun formattedMongoDateTime(dateTimeString: String?): String {
-
             if (dateTimeString.isNullOrBlank()) return "Unknown Time"
             return try {
                 val inputFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault())
                 inputFormat.timeZone = TimeZone.getTimeZone("UTC")
                 val date = inputFormat.parse(dateTimeString)
-
-                // Get current time in UTC instead of local time
-                val nowUtc = Calendar.getInstance(TimeZone.getTimeZone("UTC")).time
-
-                val diffInMillis = nowUtc.time - (date?.time ?: 0)
+                val now = Date()
+                val diffInMillis = now.time - (date?.time ?: 0)
                 val diffInSeconds = diffInMillis / 1000
                 val diffInMinutes = diffInSeconds / 60
                 val diffInHours = diffInMinutes / 60
@@ -5011,11 +4915,11 @@ class FeedAdapter(
                     when {
                         // Case 1: Someone reposted - use their OWNER field (account ID) and username
                         data.repostedUser != null -> {
-                            feedReposterOwnerId = data.repostedUser!!.owner  // Use owner field, not _id!
-                            feedReposterUsername = data.repostedUser!!.username
+                            feedReposterOwnerId = data.repostedUser.owner  // Use owner field, not _id!
+                            feedReposterUsername = data.repostedUser.username
                             Log.d(TAG, "Case 1: RepostedUser account ID (owner): $feedReposterOwnerId")
                             Log.d(TAG, "Case 1: RepostedUser username: @$feedReposterUsername")
-                            Log.d(TAG, "Case 1: (NOT using repostedUser._id which is: ${data.repostedUser!!._id})")
+                            Log.d(TAG, "Case 1: (NOT using repostedUser._id which is: ${data.repostedUser._id})")
                         }
 
                         // Case 2: Original post - use author.owner (the account ID!)
@@ -5486,7 +5390,7 @@ class FeedAdapter(
 
             } else {
                 tvQuotedHashtags.text = "#SoftwareAppreciation #GameChanger #MustHave"
-                tvQuotedHashtags.visibility = View.GONE
+                tvQuotedHashtags.visibility = View.VISIBLE
             }
         }
 
@@ -5735,7 +5639,7 @@ class FeedAdapter(
                                     // Sync with server data
                                     data.isLiked = likeResponse.data.isLiked
 
-                                    //  FIX: Handle potential null likeCount from server
+                                    // ✅ FIX: Handle potential null likeCount from server
                                     // Since your server only returns { isLiked: true/false }
                                     // We keep our optimistic count
                                     // data.likes stays as is (our optimistic update)
@@ -5743,7 +5647,7 @@ class FeedAdapter(
                                     updateLikeButtonUI(data.isLiked)
                                     updateMetricDisplay(likesCount, data.likes, "like")
 
-                                    //  FIX: Safely access likedByUserIds (it might be null)
+                                    // ✅ FIX: Safely access likedByUserIds (it might be null)
                                     val likedByCount = likeResponse.data.likedByUserIds?.size ?: 0
                                     Log.d(com.uyscuti.sharedmodule.adapter.feed.TAG, "Like synced - isLiked=${data.isLiked}, count=${data.likes}, likedBy=$likedByCount users")
 
@@ -5967,421 +5871,105 @@ class FeedAdapter(
         }
 
 
-        private fun setupRepostButton(data: Post) {
-            updateRepostButtonUI(data.isReposted)
-            updateMetricDisplay(repostCountTextView, data.repostCount, "repost")
+        private fun setupRepostButton(data: com.uyscuti.social.network.api.response.posts.Post) {
+
+            totalMixedRePostCounts = data.repostCount  // Use actual count, not 0
+            updateMetricDisplay(repostCountTextView, totalMixedRePostCounts, "repost")
+            updateRepostButtonAppearance(data.isReposted)
 
             repostPost.setOnClickListener { view ->
                 if (!repostPost.isEnabled) return@setOnClickListener
 
+                // Haptic feedback
                 view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
 
-                // Just show a quick animation - DON'T change state yet
+                // Simple animation feedback
                 YoYo.with(Techniques.Pulse)
                     .duration(300)
                     .playOn(repostPost)
 
-                // Navigate to edit fragment WITHOUT changing any state
-                // The actual repost happens when user confirms in the fragment
+                // Navigate to Fragment_Edit_Post_To_Repost WITHOUT changing any state
+                // The actual repost logic will happen in that fragment
+                navigateToEditPostToRepost(data)
+
+                // Also notify the listener if needed
                 feedClickListener.feedRepostPost(absoluteAdapterPosition, data)
             }
         }
 
+        private fun updateRepostButtonAppearance(isReposted: Boolean) {
 
-        private fun updateRepostButtonUI(isReposted: Boolean) {
-            Log.d(TAG, "Updating repost button UI: isReposted=$isReposted")
-            try {
-                if (isReposted) {
-                    repostPost.setImageResource(R.drawable.repeat_svgrepo_com)
-                    repostPost.setColorFilter(
-                        ContextCompat.getColor(itemView.context, R.color.bluejeans),
-                        PorterDuff.Mode.SRC_IN
-                    )
-                    repostPost.scaleX = 1.1f
-                    repostPost.scaleY = 1.1f
-                } else {
-                    repostPost.setImageResource(R.drawable.repeat_svgrepo_com)
-                    repostPost.clearColorFilter()
-                    repostPost.scaleX = 1.0f
-                    repostPost.scaleY = 1.0f
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Error updating repost button UI", e)
+            if (isReposted) {
+
+                repostPost.setImageResource(R.drawable.repeat_svgrepo_com)
+                repostPost.scaleX = 1.1f
+                repostPost.scaleY = 1.1f
+
+            } else {
+                repostPost.setImageResource(R.drawable.repeat_svgrepo_com)
+                repostPost.scaleX = 1.0f
+                repostPost.scaleY = 1.0f
             }
         }
 
+        private fun setupShareButton(data: com.uyscuti.social.network.api.response.posts.Post) {
 
-        private fun setupShareButton(data: Post) {
-            updateShareButtonUI(data.isShared)
-            updateMetricDisplay(shareCountTextView, data.shareCount, "share")
+            totalMixedShareCounts = data.shareCount ?: data.shareCount ?: 0
+            updateMetricDisplay(shareCountTextView, totalMixedShareCounts, "share")
 
             shareImageView.setOnClickListener {
                 if (!shareImageView.isEnabled) return@setOnClickListener
 
-                it.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                Log.d(TAG, "Share clicked for Post: ${data._id}")
+                val previousShareCount = totalMixedShareCounts
 
-                val previousShareStatus = data.isShared
-                val previousShareCount = data.shareCount
-
-                // Optimistic UI update
-                data.isShared = true
-                data.shareCount = previousShareCount + 1
-
-                updateShareButtonUI(data.isShared)
-                updateMetricDisplay(shareCountTextView, data.shareCount, "share")
+                // Update immediately for better UX
+                totalMixedShareCounts += 1
+                data.shareCount = totalMixedShareCounts
+                updateMetricDisplay(shareCountTextView, totalMixedShareCounts, "share")
 
                 YoYo.with(Techniques.Tada)
-                    .duration(500)
+                    .duration(700)
                     .repeat(1)
                     .playOn(shareImageView)
 
                 shareImageView.isEnabled = false
                 shareImageView.alpha = 0.8f
 
-                CoroutineScope(Dispatchers.Main).launch {
-                    try {
-                        val response = retrofitInterface.apiService.shareUnShareFeed(data._id)
+                // Make API call to sync with server
+                RetrofitClient.shareService.incrementShare(data._id)
+                    .enqueue(object : Callback<ShareResponse> {
+                        override fun onResponse(call: Call<ShareResponse>, response: Response<ShareResponse>) {
+                            shareImageView.alpha = 1f
+                            shareImageView.isEnabled = true
 
-                        shareImageView.alpha = 1f
-                        shareImageView.isEnabled = true
-
-                        if (response.isSuccessful) {
-                            response.body()?.let { shareResponse ->
-                                if (shareResponse.success) {
-                                    val serverData = shareResponse.data
-
-                                    Log.d(com.uyscuti.sharedmodule.adapter.feed.TAG, "Share success - Server: isShared=${serverData.isShared}, count=${serverData.shareCount}")
-
-                                    data.isShared = serverData.isShared
-                                    data.shareCount = serverData.shareCount
-
-                                    updateShareButtonUI(data.isShared)
-                                    updateMetricDisplay(shareCountTextView, data.shareCount, "share")
-
-                                    // Notify adapter
-                                    feedClickListener.feedShareClicked(absoluteAdapterPosition, data)
-
-                                    // Show share bottom sheet
-                                    showShareBottomSheet(data, onShareConfirmed = {
-                                        // Called when user actually shares to a platform
-
-                                        // Optimistic UI update
-                                        data.isShared = true
-                                        data.shareCount = previousShareCount + 1
-
-                                        updateShareButtonUI(data.isShared)
+                            if (response.isSuccessful) {
+                                response.body()?.let { shareResponse ->
+                                    if (abs(shareResponse.shareCount - 0) > 1) {
+                                        data.shareCount = shareResponse.shareCount
+                                        totalMixedShareCounts = data.shareCount
                                         updateMetricDisplay(shareCountTextView, data.shareCount, "share")
-
-                                        YoYo.with(Techniques.Tada)
-                                            .duration(500)
-                                            .repeat(1)
-                                            .playOn(shareImageView)
-
-                                        shareImageView.isEnabled = false
-                                        shareImageView.alpha = 0.8f
-
-                                        CoroutineScope(Dispatchers.Main).launch {
-                                            try {
-                                                val response = retrofitInterface.apiService.shareUnShareFeed(data._id)
-
-                                                shareImageView.alpha = 1f
-                                                shareImageView.isEnabled = true
-
-                                                if (response.isSuccessful) {
-                                                    response.body()?.let { shareResponse ->
-                                                        if (shareResponse.success) {
-                                                            val serverData = shareResponse.data
-
-                                                            Log.d(com.uyscuti.sharedmodule.adapter.feed.TAG, "Share success - Server: isShared=${serverData.isShared}, count=${serverData.shareCount}")
-
-                                                            data.isShared = serverData.isShared
-                                                            data.shareCount = serverData.shareCount
-
-                                                            updateShareButtonUI(data.isShared)
-                                                            updateMetricDisplay(shareCountTextView, data.shareCount, "share")
-
-                                                            // Notify adapter
-                                                            feedClickListener.feedShareClicked(absoluteAdapterPosition, data)
-
-                                                            Toast.makeText(
-                                                                shareImageView.context,
-                                                                shareResponse.message,
-                                                                Toast.LENGTH_SHORT
-                                                            ).show()
-                                                        } else {
-                                                            Log.e(com.uyscuti.sharedmodule.adapter.feed.TAG, "Share failed - success=false")
-                                                            revertShareState(data, previousShareStatus, previousShareCount)
-                                                        }
-                                                    } ?: run {
-                                                        Log.e(com.uyscuti.sharedmodule.adapter.feed.TAG, "Share response body is null")
-                                                        revertShareState(data, previousShareStatus, previousShareCount)
-                                                    }
-                                                } else {
-                                                    Log.e(com.uyscuti.sharedmodule.adapter.feed.TAG, "Share API error: ${response.code()} - ${response.message()}")
-                                                    revertShareState(data, previousShareStatus, previousShareCount)
-
-                                                    Toast.makeText(
-                                                        shareImageView.context,
-                                                        "Failed to update share",
-                                                        Toast.LENGTH_SHORT
-                                                    ).show()
-                                                }
-                                            } catch (e: Exception) {
-                                                shareImageView.alpha = 1f
-                                                shareImageView.isEnabled = true
-
-                                                Log.e(com.uyscuti.sharedmodule.adapter.feed.TAG, "Share network error", e)
-                                                revertShareState(data, previousShareStatus, previousShareCount)
-
-                                                Toast.makeText(
-                                                    shareImageView.context,
-                                                    "Network error. Please check your connection.",
-                                                    Toast.LENGTH_SHORT
-                                                ).show()
-                                            }
-                                        }
-                                    })
-
-                                    Toast.makeText(
-                                        shareImageView.context,
-                                        "Shared successfully!",
-                                        Toast.LENGTH_SHORT
-                                    ).show()
-                                } else {
-                                    Log.e(com.uyscuti.sharedmodule.adapter.feed.TAG, "Share failed - success=false")
-                                    revertShareState(data, previousShareStatus, previousShareCount)
+                                    }
                                 }
-                            } ?: run {
-                                Log.e(com.uyscuti.sharedmodule.adapter.feed.TAG, "Share response body is null")
-                                revertShareState(data, previousShareStatus, previousShareCount)
+                            } else {
+                                data.shareCount = previousShareCount
+                                totalMixedShareCounts = data.shareCount
+                                updateMetricDisplay(shareCountTextView, data.shareCount, "share")
                             }
-                        } else {
-                            Log.e(com.uyscuti.sharedmodule.adapter.feed.TAG, "Share API error: ${response.code()} - ${response.message()}")
-                            revertShareState(data, previousShareStatus, previousShareCount)
-
-                            Toast.makeText(
-                                shareImageView.context,
-                                "Failed to update share",
-                                Toast.LENGTH_SHORT
-                            ).show()
                         }
-                    } catch (e: Exception) {
-                        shareImageView.alpha = 1f
-                        shareImageView.isEnabled = true
 
-                        Log.e(com.uyscuti.sharedmodule.adapter.feed.TAG, "Share network error", e)
-                        revertShareState(data, previousShareStatus, previousShareCount)
-
-                        Toast.makeText(
-                            shareImageView.context,
-                            "Network error. Please check your connection.",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    }
-                }
-            }
-        }
-
-        private fun revertShareState(data: Post, previousStatus: Boolean, previousCount: Int) {
-            data.isShared = previousStatus
-            data.shareCount = previousCount
-            totalMixedShareCounts = previousCount
-            updateShareButtonUI(data.isShared)
-            updateMetricDisplay(shareCountTextView, data.shareCount, "share")
-            Log.d(TAG, "Reverted to previous state: isShared=$previousStatus, shareCount=$previousCount")
-        }
-
-        private fun updateShareButtonUI(isShared: Boolean) {
-            Log.d(TAG, "Updating share button UI: isShared=$isShared")
-            try {
-                when (shareImageView) {
-                    is ImageView -> {
-                        if (isShared) {
-                            (shareImageView as ImageView).setColorFilter(
-                                ContextCompat.getColor(itemView.context, R.color.bluejeans),
-                                PorterDuff.Mode.SRC_IN
-                            )
-                        } else {
-                            (shareImageView as ImageView).clearColorFilter()
+                        override fun onFailure(call: Call<ShareResponse>, t: Throwable) {
+                            shareImageView.alpha = 1f
+                            shareImageView.isEnabled = true
+                            data.shareCount = previousShareCount
+                            totalMixedShareCounts = data.shareCount
+                            updateMetricDisplay(shareCountTextView, data.shareCount, "share")
                         }
-                    }
-                    is ImageButton -> {
-                        if (isShared) {
-                            (shareImageView as ImageButton).setColorFilter(
-                                ContextCompat.getColor(itemView.context, R.color.bluejeans),
-                                PorterDuff.Mode.SRC_IN
-                            )
-                        } else {
-                            (shareImageView as ImageButton).clearColorFilter()
-                        }
-                    }
-                    else -> {
-                        Log.e(TAG, "shareImageView is not an ImageView or ImageButton: ${shareImageView::class.java.simpleName}")
-                    }
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Error updating share button UI", e)
+                    })
+
+                feedClickListener.feedShareClicked(absoluteAdapterPosition, data)
             }
         }
-
-        private fun showShareBottomSheet(data: Post, onShareConfirmed: () -> Unit) {
-            val context = shareImageView.context
-            val bottomSheetDialog = BottomSheetDialog(context)
-            val binding = BottomDialogForShareBinding.inflate(LayoutInflater.from(context))
-            bottomSheetDialog.setContentView(binding.root)
-
-            // Prepare share content
-            val shareText = "Check out this post on Flash!\n" +
-                    "By: ${data.author?.account?.username ?: "Unknown"}\n" +
-                    "${data.content ?: ""}"
-            val postUrl = data.files?.firstOrNull()?.url
-            val fullShareText = if (postUrl != null) "$shareText\n$postUrl" else shareText
-
-            // Setup share buttons
-            binding.btnWhatsApp.setOnClickListener {
-                shareToWhatsApp(context, fullShareText)
-                onShareConfirmed()
-                bottomSheetDialog.dismiss()
-            }
-
-            binding.btnSMS.setOnClickListener {
-                shareViaSMS(context, fullShareText)
-                onShareConfirmed()
-                bottomSheetDialog.dismiss()
-            }
-
-            binding.btnInstagram.setOnClickListener {
-                shareToInstagram(context, fullShareText)
-                onShareConfirmed()
-                bottomSheetDialog.dismiss()
-            }
-
-            binding.btnMessenger.setOnClickListener {
-                shareToMessenger(context, fullShareText)
-                onShareConfirmed()
-                bottomSheetDialog.dismiss()
-            }
-
-            binding.btnFacebook.setOnClickListener {
-                shareToFacebook(context, fullShareText)
-                onShareConfirmed()
-                bottomSheetDialog.dismiss()
-            }
-
-            binding.btnTelegram.setOnClickListener {
-                shareToTelegram(context, fullShareText)
-                onShareConfirmed()
-                bottomSheetDialog.dismiss()
-            }
-
-            // Setup action buttons (these don't count as shares)
-            binding.btnReport.setOnClickListener {
-                Toast.makeText(context, "Report functionality", Toast.LENGTH_SHORT).show()
-                bottomSheetDialog.dismiss()
-            }
-
-            binding.btnNotInterested.setOnClickListener {
-                Toast.makeText(context, "Not interested", Toast.LENGTH_SHORT).show()
-                bottomSheetDialog.dismiss()
-            }
-
-            binding.btnSaveVideo.setOnClickListener {
-                Toast.makeText(context, "Save post functionality", Toast.LENGTH_SHORT).show()
-                bottomSheetDialog.dismiss()
-            }
-
-            binding.btnDuet.setOnClickListener {
-                Toast.makeText(context, "Duet functionality", Toast.LENGTH_SHORT).show()
-                bottomSheetDialog.dismiss()
-            }
-
-            binding.btnReact.setOnClickListener {
-                Toast.makeText(context, "React functionality", Toast.LENGTH_SHORT).show()
-                bottomSheetDialog.dismiss()
-            }
-
-            binding.btnAddToFavorites.setOnClickListener {
-                Toast.makeText(context, "Add to favorites", Toast.LENGTH_SHORT).show()
-                bottomSheetDialog.dismiss()
-            }
-
-            // Setup cancel button
-            binding.btnCancel.setOnClickListener {
-                bottomSheetDialog.dismiss()
-            }
-
-            bottomSheetDialog.show()
-        }
-
-        // Share helper functions
-        private fun shareToWhatsApp(context: Context, text: String) {
-            val packages = listOf("com.whatsapp", "com.whatsapp.w4b")
-            shareToApp(context, text, packages, "WhatsApp")
-        }
-
-        private fun shareViaSMS(context: Context, text: String) {
-            try {
-                val intent = Intent(Intent.ACTION_SENDTO).apply {
-                    data = "smsto:".toUri()
-                    putExtra("sms_body", text)
-                }
-                context.startActivity(intent)
-            } catch (e: Exception) {
-                Toast.makeText(context, "SMS app not available", Toast.LENGTH_SHORT).show()
-            }
-        }
-
-        private fun shareToInstagram(context: Context, text: String) {
-            shareToApp(context, text, listOf("com.instagram.android"), "Instagram")
-        }
-
-        private fun shareToMessenger(context: Context, text: String) {
-            val packages = listOf("com.facebook.orca", "com.facebook.mlite")
-            shareToApp(context, text, packages, "Messenger")
-        }
-
-        private fun shareToFacebook(context: Context, text: String) {
-            val packages = listOf("com.facebook.katana", "com.facebook.lite")
-            shareToApp(context, text, packages, "Facebook")
-        }
-
-        private fun shareToTelegram(context: Context, text: String) {
-            val packages = listOf(
-                "org.telegram.messenger",
-                "org.telegram.messenger.web",
-                "org.thunderdog.challegram"
-            )
-            shareToApp(context, text, packages, "Telegram")
-        }
-
-        private fun shareToApp(context: Context, text: String, packageNames: List<String>, appName: String) {
-            try {
-                val intent = Intent(Intent.ACTION_SEND).apply {
-                    type = "text/plain"
-                    putExtra(Intent.EXTRA_TEXT, text)
-
-                    // Try to find an installed package
-                    val installedPackage = packageNames.firstOrNull { packageName ->
-                        try {
-                            context.packageManager.getPackageInfo(packageName, 0)
-                            true
-                        } catch (e: Exception) {
-                            false
-                        }
-                    }
-
-                    if (installedPackage != null) {
-                        setPackage(installedPackage)
-                    } else {
-                        throw Exception("App not installed")
-                    }
-                }
-                context.startActivity(intent)
-            } catch (e: Exception) {
-                Toast.makeText(context, "$appName is not installed", Toast.LENGTH_SHORT).show()
-            }
-        }
-
 
         private fun setupMoreOptionsButton(data: com.uyscuti.social.network.api.response.posts.Post) {
             moreOptionsButton.setOnClickListener {
@@ -6887,7 +6475,7 @@ class FeedAdapter(
             // Load thumbnail using Glide
             Glide.with(itemView.context)
                 .load(thumbnailUrl)
-                .placeholder(R.drawable.music_icon) // Add a placeholder image
+                .placeholder(R.drawable.music_placeholder) // Add a placeholder image
                 .into(ivThumbnail)
             tvDuration.text = video[0].content // Display content as title
             itemView.setOnClickListener {
@@ -6999,6 +6587,10 @@ class FeedAdapter(
                 showSendOfferBottomSheet(data)
             }
 
+            binding.makeCall.setOnClickListener {
+                onMakeCalledClicked(data.businessDetails?.businessProfile?.contact?.phoneNumber!!)
+            }
+
             binding.messageSeller.setOnClickListener {
                 setupDialogManager(data)
 
@@ -7024,6 +6616,7 @@ class FeedAdapter(
             bottomSheet.onOfferSubmitted = { amount, message ->
                 // Handle the submitted offer
                 Log.d("Offer", "Amount: MWK$amount, Message: $message")
+                onSendOfferClicked(amount, message, data)
 
             }
 
@@ -7033,13 +6626,13 @@ class FeedAdapter(
 
 
         private fun setupDialogManager(data: Post) {
-            val productReference = "#Is Product available\n${data.businessDetails?.itemName}\n${data.businessDetails?.description}\n\n${data.businessDetails?.images?.first()}"
+            val productReference = data.businessDetails?.images?.first()
             val dialogUserId = data.author.owner
             dialogManager = DialogManager(
                 context,
                 dialogViewModel!!,
                 dialogUserId,
-                productReference
+                productReference.toString()
             )
         }
     }
@@ -7151,30 +6744,38 @@ class FeedAdapter(
         val item = getItem(position)
         val contentType = item.contentType
 
-        val isStructurallyARepost = item.isReposted
-                || item.repostedUser != null
-                || (!item.originalPost.isNullOrEmpty())
-
-        if (isStructurallyARepost) {
-            Log.d(tag, "getItemViewType: repost (isReposted=${item.isReposted}, " +
-                    "hasRepostedUser=${item.repostedUser != null}, " +
-                    "hasOriginalPost=${!item.originalPost.isNullOrEmpty()})")
+        if (item.isReposted) {
+            Log.d(tag, "getItemViewType: reposted")
             return VIEW_TPE_REPOST_POST
         } else {
-            if (contentType.isNullOrEmpty()) {
-                if (item.isBusinessPost == true) {
+            if(contentType.isNullOrEmpty()) {
+                if (item.isBusinessPost == true){
                     return BUSINESS_POST_VIEW
                 } else {
                     return VIEW_TYPE_TEXT_FEED
                 }
+
             } else {
                 return when (item.contentType) {
-                    "text" -> VIEW_TYPE_TEXT_FEED
-                    "mixed_files" -> VIEW_TYPE_MIXED_FEED_FILES
-                    "videos" -> VIEW_TRENDING_SHORTS
-                    "vn" -> VIEW_TYPE_VOICE_NOTE
-                    else -> VIEW_TYPE_TEXT_FEED
+                    "text" -> {
+                        VIEW_TYPE_TEXT_FEED
+                    }
+                    "mixed_files" -> {
+                        VIEW_TYPE_MIXED_FEED_FILES
+                    }
+                    "videos" -> {
+                        VIEW_TRENDING_SHORTS
+                    }
+
+                    "vn" ->  {
+                        VIEW_TYPE_VOICE_NOTE
+                    }
+
+                    else -> {
+                        VIEW_TYPE_TEXT_FEED
+                    }
                 }
+
             }
         }
     }
