@@ -31,17 +31,17 @@
     </style>
 
     <style name="Widget.App.ActionMode" parent="Widget.AppCompat.ActionMode">
-<!--        <item name="titleTextStyle">?attr/textAppearanceHeadline6</item>-->
-<!--        <item name="subtitleTextStyle">?attr/textAppearanceSubtitle1</item>-->
+        <!--        <item name="titleTextStyle">?attr/textAppearanceHeadline6</item>-->
+        <!--        <item name="subtitleTextStyle">?attr/textAppearanceSubtitle1</item>-->
         <item name="background">@color/white</item>
     </style>
 
 
     <style name="Toolbar.SubTitle" parent="TextAppearance.Widget.AppCompat.Toolbar.Subtitle">
-       <item name="android:textColorSecondary">@color/white</item>
+        <item name="android:textColorSecondary">@color/white</item>
 
-       <item name="subtitleTextColor">@color/white_two</item>
-   </style>
+        <item name="subtitleTextColor">@color/white_two</item>
+    </style>
 
     <style name="Toolbar.TitleText" parent="TextAppearance.Widget.AppCompat.Toolbar.Title">
         <item name="android:textStyle">bold</item>
@@ -74,7 +74,7 @@
         <item name="textColorSearchUrl">@color/white</item>
         <item name="queryBackground">@android:color/transparent</item>
         <item name="submitBackground">@android:color/transparent</item>
-<!--        <item name="searchHintIcon">@drawable/baseline_search_24</item>-->
+        <!--        <item name="searchHintIcon">@drawable/baseline_search_24</item>-->
         <item name="closeIcon">@drawable/baseline_close_24</item>
         <item name="searchViewStyle">@style/AppTheme.SearchViewStyle</item>
     </style>
@@ -106,7 +106,7 @@
     <style name="StatusBarDark" parent="ThemeOverlay.AppCompat.Dark.ActionBar">
         <item name="android:statusBarColor">@android:color/background_dark</item>
         <item name="android:windowLightStatusBar">true</item>
-<!--        <item name="statusBarForeground" />-->
+        <!--        <item name="statusBarForeground" />-->
     </style>
 
     <style name="CustomMenuItemTextAppearance" parent="TextAppearance.AppCompat">
@@ -166,19 +166,11 @@
         <item name="android:background">@android:color/transparent</item>
     </style>
 
-    <string name="loading">Loading...</string>
-    <!-- Empty state strings -->
-    <string name="no_bookmarks">No bookmarks icon</string>
-    <string name="no_bookmarks_title">No Bookmarks Yet</string>
-    <string name="no_bookmarks_message">Posts you bookmark will appear here</string>
-
-    <!-- Privacy strings for favorites -->
-    <string name="private_favorites_icon">Private favorites icon</string>
-    <string name="private_favorites_title">Favorites are Private</string>
-    <string name="private_favorites_message">Only you can see your bookmarked posts</string>
-
-
-
+    <!-- WhatsApp Toolbar Theme -->
+    <style name="WhatsAppToolbar" parent="ThemeOverlay.MaterialComponents.Dark.ActionBar">
+        <item name="colorControlNormal">@android:color/white</item>
+        <item name="titleTextColor">@android:color/white</item>
+    </style>
 
 
 </resources>

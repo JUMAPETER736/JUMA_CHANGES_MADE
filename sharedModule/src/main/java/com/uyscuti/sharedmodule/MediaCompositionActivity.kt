@@ -6,6 +6,7 @@ import android.media.MediaMetadataRetriever
 import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Bundle
+import android.os.Environment
 import android.view.View
 import android.webkit.MimeTypeMap
 import android.widget.SeekBar
@@ -23,6 +24,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.io.FileOutputStream
 import java.net.HttpURLConnection
 import java.net.URL
 import java.util.Locale
@@ -421,5 +423,23 @@ class MediaCompositionActivity : AppCompatActivity() {
     }
 
 
+    private fun saveAlbumArt(albumArtBytes: ByteArray): File {
+        val outputDir: File =
+            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
+        val outputFile = File.createTempFile("album_art", ".jpg", outputDir)
 
+        val outputStream: FileOutputStream? = FileOutputStream(outputFile)
+        outputStream?.write(albumArtBytes)
+        outputStream?.close()
+
+        return outputFile
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        mediaPlayer?.release()
+        mediaPlayer = null
+        exoPlayer?.release()
+        exoPlayer = null
+    }
 }
