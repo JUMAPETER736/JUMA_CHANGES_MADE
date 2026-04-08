@@ -5,16 +5,21 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.uyscuti.sharedmodule.R
 import com.uyscuti.sharedmodule.adapter.CatalogueAdapter
+import com.uyscuti.sharedmodule.adapter.ProfileViewAdapter
 import com.uyscuti.sharedmodule.databinding.AllOtherUsersBusinessFragmentBinding
 import com.uyscuti.sharedmodule.model.Catalogue
+import com.uyscuti.sharedmodule.model.User
 import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
@@ -22,340 +27,173 @@ import kotlinx.coroutines.withContext
 import retrofit2.HttpException
 import javax.inject.Inject
 
+
 @AndroidEntryPoint
 class AllOtherUsersBusinessFragment : Fragment() {
 
-    private var _binding: AllOtherUsersBusinessFragmentBinding? = null
-    private val binding get() = _binding!!
-
-    private var userId: String? = null
-    private var username: String? = null
-
-    @Inject
-    lateinit var retrofitInstance: RetrofitInstance
-
-    private lateinit var catalogueAdapter: CatalogueAdapter
-
-    // Cache management
-    private var cachedCatalogue: List<Catalogue>? = null
-    private var cacheTimestamp: Long = 0L
-    private val CACHE_DURATION_MS = 5 * 60 * 1000L // 5 minutes
-
-    // Loading state
-    private var isLoading = false
-    private var hasLoadedOnce = false
-
     companion object {
-        private const val TAG = "AllOtherUsersBusinessFragment"
-        private const val ARG_USER_ID = "userId"
-        private const val ARG_USERNAME = "username"
 
-        // Static cache shared across all instances (optional - for cross-fragment caching)
-        private val staticCache = mutableMapOf<String, Pair<List<Catalogue>, Long>>()
+        fun newInstance(user: User): AllOtherUsersBusinessFragment {
+            val fragment = AllOtherUsersBusinessFragment()
+            val args = Bundle()
+            args.putSerializable("user", user)
 
-        fun newInstance(userId: String, username: String): AllOtherUsersBusinessFragment {
-            return AllOtherUsersBusinessFragment().apply {
-                arguments = Bundle().apply {
-                    putString(ARG_USER_ID, userId)
-                    putString(ARG_USERNAME, username)
-                }
-            }
+            fragment.arguments = args
+            return fragment
         }
     }
+
+
+    private lateinit var recyclerView: RecyclerView
+    private lateinit var profileViewAdapter: ProfileViewAdapter
+    private lateinit var businessProfileNotFound: TextView
+
+
+    @Inject
+    lateinit var retrofitInterface: RetrofitInstance
+    private lateinit var user: User
+
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         arguments?.let {
-            userId = it.getString(ARG_USER_ID)
-            username = it.getString(ARG_USERNAME)
-        }
-        // Validate required args
-        if (userId.isNullOrEmpty()) {
-            throw IllegalArgumentException("userId is required")
-        }
 
-        // Check static cache immediately
-        userId?.let { id ->
-            staticCache[id]?.let { (catalogue, timestamp) ->
-                if ((System.currentTimeMillis() - timestamp) < CACHE_DURATION_MS) {
-                    cachedCatalogue = catalogue
-                    cacheTimestamp = timestamp
-                    hasLoadedOnce = true
-                    Log.d(TAG, "⚡ Loaded from static cache in onCreate!")
-                }
-            }
+            user = it.getSerializable("user") as User
         }
     }
 
     override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
+
+        inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View {
-        _binding = AllOtherUsersBusinessFragmentBinding.inflate(inflater, container, false)
-        return binding.root
+    ): View? {
+
+        // Inflate the layout for this fragment
+        val view = inflater.inflate(R.layout.activity_profile_view, container, false)
+
+        recyclerView = view.findViewById(R.id.image_recycler_view)
+        businessProfileNotFound = view.findViewById(R.id.businessProfileNotFound)
+        recyclerView.layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.VERTICAL, false)
+        profileViewAdapter = ProfileViewAdapter(requireActivity())
+        recyclerView.adapter = profileViewAdapter
+        Log.d("onViewCreated", "onCreateView called")
+
+        return view
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // Setup RecyclerView with optimizations
-        setupRecyclerViewOptimized()
 
-        // Show cached data IMMEDIATELY if available
-        if (cachedCatalogue != null && isCacheValid()) {
-            Log.d(TAG, "Instant display from cache!")
-            displayCachedData()
-            // Still refresh in background if cache is getting old
-            if ((System.currentTimeMillis() - cacheTimestamp) > (CACHE_DURATION_MS / 2)) {
-                Log.d(TAG, "Refreshing stale cache in background")
-                fetchDataInBackground()
-            }
-        } else {
-            // No cache, load fresh data
-            fetchDataParallel()
-        }
-    }
+        Log.d("onViewCreated", "onViewCreated called")
+        val userId = user._id
+        val userName = user.username
+        val avatar = user.avatar
 
-    private fun setupRecyclerViewOptimized() {
-        binding.recyclerView.apply {
-            layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.VERTICAL, false)
-
-            // PERFORMANCE OPTIMIZATIONS
-            setHasFixedSize(true) // Size won't change
-            setItemViewCacheSize(20) // Cache more views
-
-            // Optimize nested scrolling
-            isNestedScrollingEnabled = true
-
-            // RecycledViewPool for better recycling
-            val viewPool = RecyclerView.RecycledViewPool()
-            viewPool.setMaxRecycledViews(0, 15)
-            setRecycledViewPool(viewPool)
+        userId ?: run {
+            // Handle the case where userId is null
+            Toast.makeText(requireContext(), "User ID is null", Toast.LENGTH_SHORT).show()
+            return
         }
 
-        catalogueAdapter = CatalogueAdapter(requireActivity(), ArrayList())
-        binding.recyclerView.adapter = catalogueAdapter
-        Log.d(TAG, "RecyclerView setup with optimizations")
+        fetchUserProfile(userId.toString(), userName, avatar.toString())
+        fetchUserCatalogue(userId.toString())
     }
 
-    private fun isCacheValid(): Boolean {
-        val isValid = cachedCatalogue != null &&
-                (System.currentTimeMillis() - cacheTimestamp) < CACHE_DURATION_MS
-        return isValid
-    }
+    private fun fetchUserProfile(userId: String, userName: String?, avatar: String?) {
 
-    private fun displayCachedData() {
-        cachedCatalogue?.let { catalogue ->
-            if (catalogue.isEmpty()) {
-                showEmptyState("No catalogue items found")
-            } else {
-                showContent()
-                catalogueAdapter = CatalogueAdapter(requireActivity(), ArrayList(catalogue))
-                binding.recyclerView.adapter = catalogueAdapter
-                Log.d(TAG, "⚡ Displayed ${catalogue.size} cached items instantly")
-            }
-        }
-    }
+        Log.d("onViewCreated", "fetchUserProfile called $userId")
 
-    //Fetch profile and catalogue simultaneously
-    private fun fetchDataParallel() {
-        if (userId.isNullOrEmpty() || isLoading) return
-
-        Log.d(TAG, "⚡ Starting parallel data fetch")
-        isLoading = true
-        showLoading()
-
-        lifecycleScope.launch {
+        CoroutineScope(Dispatchers.IO).launch {
             try {
-                // Launch both requests in parallel
-                val profileDeferred = async(Dispatchers.IO) {
-                    retrofitInstance.apiService.getUserBusinessProfile(userId!!)
-                }
+                // Fetch business profile
+                val profileResponse = retrofitInterface.apiService.getUserBusinessProfile(userId)
 
-                val catalogueDeferred = async(Dispatchers.IO) {
-                    retrofitInstance.apiService.getUserBusinessCatalogue(userId!!)
-                }
-
-                // Wait for both to complete
-                val profileResponse = profileDeferred.await()
-                val catalogueResponse = catalogueDeferred.await()
-
-                // Process profile response
                 withContext(Dispatchers.Main) {
                     if (profileResponse.isSuccessful) {
                         val businessProfile = profileResponse.body()
                         if (businessProfile != null) {
-                            Log.d(TAG, "Profile loaded")
-                        }
-                    } else {
-                        Log.e(TAG, "Profile error: ${parseErrorMessage(profileResponse)}")
-                    }
-                }
-
-                // Process catalogue response
-                withContext(Dispatchers.Main) {
-                    if (catalogueResponse.isSuccessful) {
-                        val businessCatalogue = catalogueResponse.body()?.data
-                        val catalogueList = ArrayList<Catalogue>()
-
-                        businessCatalogue?.products?.forEach { product ->
-                            catalogueList.add(
-                                Catalogue(
-                                    product._id,
-                                    product.itemName,
-                                    product.description,
-                                    product.price,
-                                    product.images ?: emptyList()
-                                )
-                            )
-                        }
-
-                        Log.d(TAG, "Loaded ${catalogueList.size} items in parallel")
-
-                        // Update both instance and static cache
-                        cachedCatalogue = catalogueList
-                        cacheTimestamp = System.currentTimeMillis()
-                        hasLoadedOnce = true
-
-                        userId?.let { id ->
-                            staticCache[id] = Pair(catalogueList, cacheTimestamp)
-                        }
-
-                        if (catalogueList.isEmpty()) {
-                            showEmptyState("No catalogue items found")
+                            // Update UI with the business profile
+                            profileViewAdapter.setBusinessProfile(businessProfile)
+                            profileViewAdapter.setNameAndAvatar(userName ?: "", avatar ?: "")
                         } else {
-                            showContent()
-                            catalogueAdapter = CatalogueAdapter(requireActivity(), catalogueList)
-                            binding.recyclerView.adapter = catalogueAdapter
+
+                            Log.e("ApiService", "No business profile found")
+                            businessProfileNotFound.visibility = View.VISIBLE
+                            recyclerView.visibility = View.GONE
+                            // Show toast message on main thread
+                            Toast.makeText(requireContext(), "No business profile found", Toast.LENGTH_SHORT).show()
                         }
                     } else {
-                        val errorMsg = parseErrorMessage(catalogueResponse)
-                        Log.e(TAG, "Catalogue error: $errorMsg")
-                        handleCatalogueError(errorMsg)
-                    }
+                        Log.e("ApiService", "Failed to get business profile: ${profileResponse.message()}")
 
-                    hideLoading()
-                    isLoading = false
+                    }
                 }
-            } catch (e: Exception) {
-                Log.e(TAG, "Error in parallel fetch", e)
+            } catch (e: HttpException) {
+                Log.e("ApiService", "Failed to fetch data: ${e.message}", e)
+                // Show toast message on main thread
+
+            } catch (e: Throwable) {
+                Log.e("ApiService", "Network error: ${e.message}", e)
+                // Show toast message on main thread
                 withContext(Dispatchers.Main) {
-                    handleCatalogueError("Error: ${e.localizedMessage}")
-                    hideLoading()
-                    isLoading = false
+                    Toast.makeText(requireContext(), "Network error: ${e.message}", Toast.LENGTH_SHORT).show()
                 }
             }
         }
     }
 
-    // Update cache without showing loading spinner
-    private fun fetchDataInBackground() {
-        if (userId.isNullOrEmpty() || isLoading) return
-
-        isLoading = true
-        Log.d(TAG, "Background refresh started")
-
-        lifecycleScope.launch {
+    private fun fetchUserCatalogue(userId: String) {
+        CoroutineScope(Dispatchers.IO).launch {
             try {
-                val catalogueResponse = withContext(Dispatchers.IO) {
-                    retrofitInstance.apiService.getUserBusinessCatalogue(userId!!)
-                }
+                // Fetch business catalogue
+                val catalogueResponse = retrofitInterface.apiService.getUserBusinessCatalogue(userId)
 
                 withContext(Dispatchers.Main) {
                     if (catalogueResponse.isSuccessful) {
                         val businessCatalogue = catalogueResponse.body()?.data
-                        val catalogueList = ArrayList<Catalogue>()
+                        val catalogueList = arrayListOf<Catalogue>()
 
-                        businessCatalogue?.products?.forEach { product ->
-                            catalogueList.add(
-                                Catalogue(
-                                    product._id,
-                                    product.itemName,
-                                    product.description,
-                                    product.price,
-                                    product.images ?: emptyList()
-                                )
-                            )
+                        businessCatalogue?.let {
+                            if (it.products.isNotEmpty()) {
+                                for (product in it.products) {
+                                    val catalogue = Catalogue(
+                                        product._id,
+                                        product.itemName,
+                                        product.description,
+                                        product.price,
+                                        product.images
+                                    )
+                                    catalogueList.add(catalogue)
+                                }
+                            }
                         }
 
-                        // Silently update cache
-                        cachedCatalogue = catalogueList
-                        cacheTimestamp = System.currentTimeMillis()
+                        // Update UI with catalogue list
+                        if (catalogueList.isNotEmpty()) {
+                            profileViewAdapter.setCatalogueList(catalogueList)
+                        }else {
 
-                        userId?.let { id ->
-                            staticCache[id] = Pair(catalogueList, cacheTimestamp)
                         }
+                    }else
+                    {
+                        Log.e("ApiService", "Failed to get business catalogue: ${catalogueResponse.message()}")
 
-                        // Update UI only if data changed
-                        if (catalogueList != cachedCatalogue) {
-                            catalogueAdapter = CatalogueAdapter(requireActivity(), catalogueList)
-                            binding.recyclerView.adapter = catalogueAdapter
-                            Log.d(TAG, "Background refresh completed - UI updated")
-                        } else {
-                            Log.d(TAG, "Background refresh completed - no changes")
-                        }
+
                     }
-                    isLoading = false
                 }
-            } catch (e: Exception) {
-                Log.e(TAG, "Background refresh failed (silent)", e)
-                isLoading = false
+            } catch (e: HttpException) {
+                Log.e("ApiService", "Failed to fetch data: ${e.message}", e)
+                // Show toast message on main thread
+
+            } catch (e: Throwable) {
+                Log.e("ApiService", "Network error: ${e.message}", e)
+                // Show toast message on main thread
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(requireContext(), "Network error: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
             }
         }
-    }
-
-    private fun handleProfileError(message: String) {
-        Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
-    }
-
-    private fun handleCatalogueError(message: String) {
-        Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
-        showEmptyState(message)
-    }
-
-    private fun showLoading() {
-
-        binding.emptyView.visibility = View.GONE
-        binding.recyclerView.visibility = View.GONE
-    }
-
-    private fun hideLoading() {
-        binding.progressBar.visibility = View.GONE
-    }
-
-    private fun showContent() {
-        binding.emptyView.visibility = View.GONE
-        binding.recyclerView.visibility = View.VISIBLE
-    }
-
-    private fun showEmptyState(message: String? = null) {
-        binding.emptyView.visibility = View.VISIBLE
-        binding.recyclerView.visibility = View.GONE
-        binding.progressBar.visibility = View.GONE
-
-        val emptyList = ArrayList<Catalogue>()
-        catalogueAdapter = CatalogueAdapter(requireActivity(), emptyList)
-        binding.recyclerView.adapter = catalogueAdapter
-    }
-
-    private fun parseErrorMessage(response: retrofit2.Response<*>?): String {
-        return response?.let {
-            try {
-                val errorBody = it.errorBody()?.string()
-                if (!errorBody.isNullOrEmpty()) {
-                    org.json.JSONObject(errorBody).optString("message", "")
-                } else {
-                    ""
-                }
-            } catch (e: Exception) {
-                ""
-            }
-        } ?: ""
-    }
-
-    override fun onDestroyView() {
-        super.onDestroyView()
-        _binding = null
     }
 }
