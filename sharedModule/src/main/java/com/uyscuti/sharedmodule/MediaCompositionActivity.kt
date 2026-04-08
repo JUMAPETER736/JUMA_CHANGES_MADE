@@ -379,5 +379,47 @@ class MediaCompositionActivity : AppCompatActivity() {
         return String.format("%02d:%02d", minutes, seconds)
     }
 
+    private fun formatFileSize(bytes: Long): String {
+        return when {
+            bytes < 1024 -> "$bytes B"
+            bytes < 1024 * 1024 -> String.format("%.1f KB", bytes / 1024.0)
+            bytes < 1024 * 1024 * 1024 -> String.format("%.1f MB", bytes / (1024.0 * 1024.0))
+            else -> String.format("%.1f GB", bytes / (1024.0 * 1024.0 * 1024.0))
+        }
+    }
+
+    private fun getDocumentExtension(documentPath: String): String {
+        val lastDotIndex = documentPath.lastIndexOf('.')
+        return if (lastDotIndex != -1) {
+            documentPath.substring(lastDotIndex + 1)
+        } else {
+            ""
+        }
+    }
+
+    private fun getAlbumArt(audioPath: String): Uri? {
+        val mediaMetadataRetriever = MediaMetadataRetriever()
+        return try {
+            mediaMetadataRetriever.setDataSource(audioPath)
+
+            val albumArtBytes = mediaMetadataRetriever.embeddedPicture
+
+            if (albumArtBytes != null) {
+                val albumArtFile = saveAlbumArt(albumArtBytes)
+                Uri.fromFile(albumArtFile)
+            } else {
+                null
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        } finally {
+            // Make sure to release the resources when done
+            mediaMetadataRetriever.release()
+        }
+
+    }
+
+
 
 }
