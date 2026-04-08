@@ -125,7 +125,7 @@ class UserProfileShortsViewModel @Inject constructor(
             try {
                 val response = retrofitInstance.apiService.myShorts(page.toString())
                 val responseBody = response.body()
-                val shortsEntity = responseBody?.data?.posts?.let { serverResponseToUserEntity(it) }
+                val shortsEntity = responseBody?.data?.shorts?.let { serverResponseToUserEntity(it) }
 
                 val hasNextPage = responseBody!!.data.hasNextPage
                 Log.d("getUserProfileShorts", "getUserProfileShorts: has next page $hasNextPage")
@@ -156,7 +156,7 @@ class UserProfileShortsViewModel @Inject constructor(
             val response = retrofitInstance.apiService.getShorts(page.toString())
             val responseBody = response.body()
             val shortsEntity =
-                responseBody?.data?.posts?.posts?.let { serverResponseToShortsEntity(it) }
+                responseBody?.data?.posts?.shorts?.let { serverResponseToShortsEntity(it) }
 
             userShortsLiveData.postValue(shortsEntity!!)
 

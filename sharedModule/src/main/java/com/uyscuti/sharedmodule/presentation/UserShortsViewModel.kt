@@ -65,7 +65,7 @@ class UserShortsViewModel @Inject constructor(
                 val responseBody = response.body()
                 Log.d("AllShorts", "Shorts List in page $currentPage ${responseBody?.data}")
 
-                val shortsEntity = responseBody?.data?.posts?.let { serverResponseToEntity(it) }
+                val shortsEntity = responseBody?.data?.shorts?.let { serverResponseToEntity(it) }
 
                 shortsEntity?.let { entityList ->
                     withContext(Dispatchers.IO) {

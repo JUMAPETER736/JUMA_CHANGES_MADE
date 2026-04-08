@@ -331,7 +331,7 @@ class OtherUserProfileShortsPlayerFragment : Fragment(), OnCommentsClickListener
 
 
                 val shortsEntity =
-                    responseBody?.data?.posts?.posts?.let { serverResponseToUserEntity(it) }
+                    responseBody?.data?.posts?.shorts?.let { serverResponseToUserEntity(it) }
 
                 // Now, insert yourEntity into the Room database
                 if (shortsEntity != null) {

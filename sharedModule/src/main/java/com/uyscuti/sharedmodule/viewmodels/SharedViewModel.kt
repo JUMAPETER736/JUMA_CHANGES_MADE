@@ -36,7 +36,7 @@ class SharedViewModel @Inject constructor(private val retrofitInstance: Retrofit
         viewModelScope.launch(Dispatchers.IO) {
             val response = retrofitInstance.apiService.getShorts(page.toString())
             val responseBody = response.body()
-            val shortsEntity = responseBody?.data?.posts?.posts?.let { serverResponseToUserEntity(it) }
+            val shortsEntity = responseBody?.data?.posts?.shorts?.let { serverResponseToUserEntity(it) }
 
             _storedShortsList.postValue(shortsEntity)
 

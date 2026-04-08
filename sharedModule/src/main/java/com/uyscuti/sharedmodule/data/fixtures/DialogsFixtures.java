@@ -1,9 +1,10 @@
 package com.uyscuti.sharedmodule.data.fixtures;
 
 
-import com.uyscuti.sharedmodule.data.model.Dialog;
-import com.uyscuti.sharedmodule.data.model.Message;
-import com.uyscuti.sharedmodule.data.model.User;
+
+import com.uyscuti.social.core.models.data.Dialog;
+import com.uyscuti.social.core.models.data.Message;
+import com.uyscuti.social.core.models.data.User;
 
 import java.util.ArrayList;
 import java.util.Calendar;
