@@ -7,6 +7,7 @@ import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Bundle
 import android.view.View
+import android.webkit.MimeTypeMap
 import android.widget.SeekBar
 import androidx.annotation.OptIn
 import androidx.appcompat.app.AppCompatActivity
@@ -23,6 +24,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.net.HttpURLConnection
 import java.net.URL
+import java.util.Locale
 
 class MediaCompositionActivity : AppCompatActivity() {
 
@@ -303,6 +305,43 @@ class MediaCompositionActivity : AppCompatActivity() {
                 detectFromExtension(uri)
             }
         }
+
+    private fun mapMimeType(mimeType: String): MediaType {
+        return when {
+            mimeType.startsWith("image/") -> MediaType.IMAGE
+            mimeType.startsWith("video/") -> MediaType.VIDEO
+            mimeType.startsWith("audio/") -> MediaType.AUDIO
+            mimeType.startsWith("application/") -> MediaType.DOCUMENT
+            else -> MediaType.UNKNOWN
+        }
+    }
+
+    private fun detectFromExtension(uri: Uri): MediaType {
+        val extension = MimeTypeMap.getFileExtensionFromUrl(uri.toString())
+            .lowercase(Locale.getDefault())
+
+        val mimeType = MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension)
+            ?: return MediaType.UNKNOWN
+
+        return mapMimeType(mimeType)
+    }
+
+
+
+
+    private fun getFileName(uri: Uri): String {
+        var result = "unknown"
+        contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+            if (cursor.moveToFirst()) {
+                val nameIndex = cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
+                if (nameIndex != -1) {
+                    result = cursor.getString(nameIndex)
+                }
+            }
+        }
+        return result
+    }
+
 
 
 
