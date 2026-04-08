@@ -328,18 +328,15 @@ class UserFollowingFragment : AppCompatActivity() {
 
     private fun filterList(query: String) {
         filteredFollowingList.clear()
-
         if (query.isEmpty()) {
             filteredFollowingList.addAll(followingList)
         } else {
             val filteredList = followingList.filter { user ->
-                user.firstName.contains(query, ignoreCase = true) ||
-                        user.lastName.contains(query, ignoreCase = true) ||
-                        user.username.contains(query, ignoreCase = true)
+                user.username.contains(query, ignoreCase = true) ||
+                        user.fullName.contains(query, ignoreCase = true)
             }
             filteredFollowingList.addAll(filteredList)
         }
-
         followingAdapter.notifyDataSetChanged()
 
         // Show/hide empty view
@@ -962,7 +959,7 @@ class FollowingAdapter(
         )
 
         // Convert to User model for Dialog
-        val userModel = com.uyscuti.sharedmodule.data.model.User(
+        val userModel = com.uyscuti.social.core.models.data.User(
             otherUserEntity.id,
             otherUserEntity.name,
             otherUserEntity.avatar,
@@ -971,11 +968,11 @@ class FollowingAdapter(
         )
 
         // Create ArrayList for Dialog constructor
-        val usersList = ArrayList<com.uyscuti.sharedmodule.data.model.User>()
+        val usersList = ArrayList<com.uyscuti.social.core.models.data.User>()
         usersList.add(userModel)
 
         // Create temporary dialog using Dialog constructor directly - using username
-        val tempDialog = com.uyscuti.sharedmodule.data.model.Dialog(
+        val tempDialog = com.uyscuti.social.core.models.data.Dialog(
             "temp_${followingUser.id}_${System.currentTimeMillis()}",
             followingUser.username,
             followingUser.avatar?.url ?: "",
