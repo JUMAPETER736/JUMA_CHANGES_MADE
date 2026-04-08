@@ -55,7 +55,7 @@ import com.uyscuti.social.core.common.data.room.entity.UserShortsEntity
 import com.uyscuti.sharedmodule.adapter.CommentAdapter
 import com.uyscuti.sharedmodule.adapter.OnClickListeners
 import com.uyscuti.sharedmodule.adapter.OnCommentsClickListener
-import com.uyscuti.sharedmodule.data.model.Comment
+import com.uyscuti.social.network.api.models.Comment
 import com.uyscuti.sharedmodule.R
 import com.uyscuti.sharedmodule.adapter.CommentsRecyclerViewAdapter
 import com.uyscuti.sharedmodule.adapter.OnViewRepliesClickListener
@@ -122,7 +122,7 @@ class UserProfileShortsPlayerActivity : AppCompatActivity(), OnCommentsClickList
     private lateinit var defaultDataSourceFactory: DefaultDataSourceFactory
     private lateinit var cacheDataSourceFactory: CacheDataSource.Factory
 
-    private val simpleCache: SimpleCache = FlashApplication.cache
+    private val simpleCache: SimpleCache? = FlashApplication.cache
     private val playbackStateListener: Player.Listener = playbackStateListener()
 
     private var exoPlayer: ExoPlayer? = null
@@ -253,7 +253,7 @@ class UserProfileShortsPlayerActivity : AppCompatActivity(), OnCommentsClickList
 
 
         cacheDataSourceFactory = CacheDataSource.Factory()
-            .setCache(simpleCache)
+            .setCache(simpleCache!!)
             .setUpstreamDataSourceFactory(httpDataSourceFactory)
             .setFlags(CacheDataSource.FLAG_IGNORE_CACHE_ON_ERROR)
         val mediaSourceFactory: MediaSource.Factory =
@@ -539,7 +539,7 @@ class UserProfileShortsPlayerActivity : AppCompatActivity(), OnCommentsClickList
 
 
                 val shortsEntity =
-                    responseBody?.data?.posts?.posts?.let { serverResponseToUserEntity(it) }
+                    responseBody?.data?.posts?.shorts?.let { serverResponseToUserEntity(it) }
 
                 // Now, insert yourEntity into the Room database
                 if (shortsEntity != null) {
@@ -1358,7 +1358,7 @@ class UserProfileShortsPlayerActivity : AppCompatActivity(), OnCommentsClickList
                 _id = "12", account = account, firstName = "", lastName = "",
                 avatar = null
             )
-            
+
             val comment = Comment(
                 __v = 1,
                 _id = adapter!!.itemCount.toString(),
@@ -1619,7 +1619,7 @@ class UserProfileShortsPlayerActivity : AppCompatActivity(), OnCommentsClickList
     ) {
     }
 
-    override fun onReplyButtonClick(position: Int, data: Comment) {
+    override fun onReplyButtonClick(position: Int, data: Comment,isMainComment: Boolean) {
     }
 
     override fun likeUnLikeComment(position: Int, data: Comment) {

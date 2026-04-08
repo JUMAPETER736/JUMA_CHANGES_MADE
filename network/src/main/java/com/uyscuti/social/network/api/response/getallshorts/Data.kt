@@ -8,7 +8,7 @@ data class Data(
     val limit: Int,
     val nextPage: Int,
     val page: Int,
-    val posts: List<Post>,
+    val shorts: List<Post>,
     val prevPage: Any,
     val serialNumberStartFrom: Int,
     val totalPages: Int,
