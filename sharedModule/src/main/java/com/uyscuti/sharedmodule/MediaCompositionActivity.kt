@@ -1,5 +1,6 @@
 package com.uyscuti.sharedmodule
 
+import android.content.ContentResolver
 import android.content.Intent
 import android.media.MediaMetadataRetriever
 import android.media.MediaPlayer
@@ -20,6 +21,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.net.HttpURLConnection
+import java.net.URL
 
 class MediaCompositionActivity : AppCompatActivity() {
 
@@ -263,7 +266,43 @@ class MediaCompositionActivity : AppCompatActivity() {
         // Show error state
     }
 
+    suspend fun detectMediaType(uri: Uri): MediaType {
+        return when (uri.scheme) {
+            ContentResolver.SCHEME_CONTENT,
+            ContentResolver.SCHEME_FILE -> detectFromLocalUri(uri)
 
+            "http", "https" -> detectFromRemoteUri(uri)
+
+            else -> MediaType.UNKNOWN
+        }
+    }
+
+
+    private fun detectFromLocalUri(uri: Uri): MediaType {
+        val mimeType = contentResolver.getType(uri) ?: return MediaType.UNKNOWN
+        return mapMimeType(mimeType)
+    }
+
+    private suspend fun detectFromRemoteUri(uri: Uri): MediaType =
+        withContext(Dispatchers.IO) {
+            try {
+                val connection = URL(uri.toString()).openConnection() as HttpURLConnection
+                connection.requestMethod = "HEAD"
+                connection.connectTimeout = 5000
+                connection.readTimeout = 5000
+
+                val mimeType = connection.contentType
+                connection.disconnect()
+
+                if (!mimeType.isNullOrEmpty()) {
+                    mapMimeType(mimeType)
+                } else {
+                    detectFromExtension(uri)
+                }
+            } catch (e: Exception) {
+                detectFromExtension(uri)
+            }
+        }
 
 
 
