@@ -1,4 +1,5 @@
 package com.uyscuti.social.network.api.response.posts
+import com.uyscuti.social.network.api.request.business.users.Contact
 import java.io.Serializable
 
 data class Post(
@@ -26,12 +27,26 @@ data class Post(
     var likes: Int,
     val numberOfPages: List<NumberOfPageX>,
     val originalPost: List<OriginalPost>,
-    val repostedByUserId: String?,
-    val repostedUser: RepostedUser?,
+    val repostedByUserId: String,
+    val repostedUser: RepostedUser,
     val repostedUsers: List<String>,
     val tags: List<Any?>,
     val thumbnail: List<ThumbnailX>,
     val updatedAt: String,
+    // Business/Shop related fields
+    val isBusinessPost: Boolean? = null,
+    val category: String? = null,
+    val businessDetails: BusinessPost? = null,
+
+    val likedByUserIds: List<String> = emptyList(),
+
+    // Favorites related fields
+    var isFavorited: Boolean? = null,
+    val favorites: List<String>? = null,
+
+    val bookmarkId: String? = null,
+    val bookmarkedBy: String? = null,
+    val bookmarkedAt: String? = null,
 
     // Share related fields
     var shareCount: Int = 0,
@@ -48,29 +63,16 @@ data class Post(
     val repostedAt: String? = null,
     val repostId: String? = null,
 
-    // Business/Shop related fields
-    val isBusinessPost: Boolean? = null,
-    val category: String? = null,
-    val businessDetails: BusinessPost? = null,
-
-    // Bookmark/Favorites related fields
-    var isFavorited: Boolean? = null,
-    val favorites: List<String>? = null,
-    val bookmarkId: String? = null,
-    val bookmarkedBy: String? = null,
-    val bookmarkedAt: String? = null,
-    val bookmarkedByUserIds: List<String> = emptyList(),
-
-    // Likes related fields
-    val likedByUserIds: List<String> = emptyList(),
-
     // Privacy / relationship flags
     var isInCloseFriends: Boolean? = null,
     var isPostsMuted: Boolean? = null,
     var isStoriesMuted: Boolean? = null,
     var isRestricted: Boolean? = null,
     var isFavorite: Boolean? = null,
-): Serializable
+
+    val bookmarkedByUserIds: List<String>? = null,
+
+    ): Serializable
 
 
 data class BusinessPost(
@@ -108,12 +110,14 @@ data class AvatarB(
     val _id: String
 ): Serializable
 
+
 data class BusinessProfile(
     val _id: String,
     val businessName: String,
     val businessType: String,
     val businessDescription: String,
-    val backgroundPhoto: BackgroundPhoto
+    val backgroundPhoto: BackgroundPhoto,
+    val contact: Contact
 ): Serializable
 
 data class BackgroundPhoto(
