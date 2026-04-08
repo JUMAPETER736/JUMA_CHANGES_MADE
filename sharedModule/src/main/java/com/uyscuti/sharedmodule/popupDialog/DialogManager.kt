@@ -3,9 +3,9 @@ package com.uyscuti.sharedmodule.popupDialog
 import android.content.Context
 import android.util.Log
 import com.uyscuti.sharedmodule.MessagesActivity
-import com.uyscuti.sharedmodule.data.model.Dialog
-import com.uyscuti.sharedmodule.data.model.Message
-import com.uyscuti.sharedmodule.data.model.User
+import com.uyscuti.social.core.models.data.Dialog
+import com.uyscuti.social.core.models.data.Message
+import com.uyscuti.social.core.models.data.User
 import com.uyscuti.sharedmodule.presentation.DialogViewModel
 import com.uyscuti.social.core.common.data.room.entity.DialogEntity
 import com.uyscuti.social.core.common.data.room.entity.MessageEntity
@@ -76,15 +76,15 @@ class DialogManager(
                 setStatus(status)
             }
             videoUrl != null -> Message(id, user, null, date).apply {
-                setVideo(Message.Video(videoUrl!!))
+                setVideo(Message.Video(videoUrl))
                 setStatus(status)
             }
             audioUrl != null -> Message(id, user, null, date).apply {
-                setAudio(Message.Audio(audioUrl!!, 0, getNameFromUrl(audioUrl!!)))
+                setAudio(Message.Audio(audioUrl, 0, getNameFromUrl(audioUrl!!)))
                 setStatus(status)
             }
             voiceUrl != null -> Message(id, user, null, date).apply {
-                setVoice(Message.Voice(voiceUrl!!, 10000))
+                setVoice(Message.Voice(voiceUrl, 10000))
                 setStatus(status)
             }
             docUrl != null -> Message(id, user, null, date).apply {
@@ -103,7 +103,7 @@ class DialogManager(
         return parts.last()
     }
 
-    private fun doInBackGround(user: User) {
+    private fun  doInBackGround(user: User) {
         val singleUserList = arrayListOf(user)
 
         Log.d("UserList", "Single User List Size : ${singleUserList.size}")

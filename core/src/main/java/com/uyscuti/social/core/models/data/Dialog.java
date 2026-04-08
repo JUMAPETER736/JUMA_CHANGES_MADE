@@ -1,11 +1,14 @@
 package com.uyscuti.social.core.models.data;
 
+import java.util.ArrayList;
+
+/*
+ * Created by troy379 on 04.04.17.
+ */
 import android.os.Parcel;
 import android.os.Parcelable;
 
 import com.uyscuti.social.chatsuit.commons.models.IDialog;
-
-import java.util.ArrayList;
 
 public class Dialog implements IDialog<Message>, Parcelable {
 
