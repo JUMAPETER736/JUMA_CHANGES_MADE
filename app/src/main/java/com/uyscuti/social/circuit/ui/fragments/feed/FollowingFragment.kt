@@ -381,6 +381,11 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
 
     }
 
+    fun forShow() {
+        Log.d("forShow", "forShow: is called")
+
+    }
+
     @RequiresExtension(extension = Build.VERSION_CODES.S, version = 7)
     fun getAllFeed(page: Int) {
 
@@ -450,12 +455,12 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
             Log.d(TAG, "CLEARED old cached posts from adapter and ViewModel")
         }
 
-
+        Log.d(TAG, "═══════════════════════════════════════")
         Log.d(TAG, "SIMPLE FOLLOWING FEED RULE:")
         Log.d(TAG, "Following ${followingUserIds.size} users")
         Log.d(TAG, "ONLY show posts BY these ${followingUserIds.size} people")
         Log.d(TAG, "Don't care about reposts content - only WHO posted it")
-
+        Log.d(TAG, "═══════════════════════════════════════")
 
         while (uniqueAuthors.size < followingUserIds.size && pageNum <= maxPages) {
             try {
@@ -474,9 +479,9 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
 
                         if (post.repostedUser != null) {
                             // This is a REPOST - check who REPOSTED it (not original author)
-                            posterAccountId = post.repostedUser!!.owner
-                            posterUsername = post.repostedUser!!.username.trim().lowercase()
-                            Log.d(TAG, "  REPOST by @${post.repostedUser!!.username} (ID: $posterAccountId)")
+                            posterAccountId = post.repostedUser.owner
+                            posterUsername = post.repostedUser.username.trim().lowercase()
+                            Log.d(TAG, "  REPOST by @${post.repostedUser.username} (ID: $posterAccountId)")
                         } else {
                             // This is an ORIGINAL POST - check the author
                             posterAccountId = post.author?.account?._id ?: return@mapNotNull null
@@ -525,12 +530,12 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
 
                 allFollowingPosts.addAll(filtered)
 
-
+                Log.d(TAG, "───────────────────────────────────────")
                 Log.d(TAG, "Page $pageNum Results:")
                 Log.d(TAG, "  Total posts: ${pagePosts.size}")
                 Log.d(TAG, "  Included: ${filtered.size}")
                 Log.d(TAG, "  Excluded: ${pagePosts.size - filtered.size}")
-
+                Log.d(TAG, "───────────────────────────────────────")
 
                 if (uniqueAuthors.size >= followingUserIds.size) break
                 pageNum++
@@ -545,11 +550,11 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
             progressBar.visibility = View.GONE
             isLoading = false
 
-
+            Log.d(TAG, "═══════════════════════════════════════")
             Log.d(TAG, "LOADING COMPLETE:")
             Log.d(TAG, "Total posts: ${allFollowingPosts.size}")
             Log.d(TAG, "ALL posts are BY people you follow")
-
+            Log.d(TAG, "═══════════════════════════════════════")
 
             if (allFollowingPosts.isEmpty()) {
                 // Make sure adapter is empty
@@ -600,8 +605,8 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
                         val posterUsername: String
 
                         if (post.repostedUser != null) {
-                            posterAccountId = post.repostedUser!!.owner
-                            posterUsername = post.repostedUser!!.username.trim().lowercase()
+                            posterAccountId = post.repostedUser.owner
+                            posterUsername = post.repostedUser.username.trim().lowercase()
                         } else {
                             posterAccountId = post.author?.account?._id ?: return@mapNotNull null
                             posterUsername = post.author.account.username.trim().lowercase()
@@ -650,6 +655,59 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
         }
     }
 
+    private fun refreshFeedAfterUnfollow() {
+        val currentUserId = getUserId(requireContext())
+        val allPosts = getFeedViewModel.getAllFeedData()
+
+        Log.d(TAG, "═══════════════════════════════════════")
+        Log.d(TAG, "REFRESHING AFTER UNFOLLOW")
+        Log.d(TAG, "Now following ${followingUserIds.size} users")
+        Log.d(TAG, "═══════════════════════════════════════")
+
+        val filteredData = allPosts.mapNotNull { post ->
+            try {
+                // WHO POSTED THIS?
+                val posterAccountId: String
+                val posterUsername: String
+
+                if (post.repostedUser != null) {
+                    posterAccountId = post.repostedUser.owner
+                    posterUsername = post.repostedUser.username.trim().lowercase()
+                } else {
+                    posterAccountId = post.author?.account?._id ?: return@mapNotNull null
+                    posterUsername = post.author.account.username.trim().lowercase()
+                }
+
+                // Skip own posts
+                if (posterAccountId == currentUserId) return@mapNotNull null
+
+                // DO I FOLLOW THE POSTER?
+                val isFollowingById = followingUserIds.contains(posterAccountId)
+                val isFollowingByUsername = followingUserMap.values.any {
+                    it.trim().lowercase() == posterUsername
+                }
+
+                if (isFollowingById || isFollowingByUsername) {
+                    Log.d(TAG, "  Keeping post by @$posterUsername (I follow them)")
+                    return@mapNotNull post
+                } else {
+                    Log.d(TAG, "  Removing post by @$posterUsername (I don't follow them)")
+                    return@mapNotNull null
+                }
+
+            } catch (e: Exception) {
+                return@mapNotNull null
+            }
+        }
+
+        followedPostsAdapter.submitItems(filteredData.toMutableList())
+
+
+        Log.d(TAG, "Posts before: ${allPosts.size}")
+        Log.d(TAG, "Posts after: ${filteredData.size}")
+        Log.d(TAG, "Removed: ${allPosts.size - filteredData.size} posts")
+
+    }
 
     private suspend fun loadMyFollowersList() {
         try {
@@ -662,7 +720,7 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
             }
 
             // Get YOUR followers (people who follow YOU)
-            val response = retrofitInstance.apiService.getUserFollowers(
+            val response = retrofitInstance.apiService.getOtherUserFollowers(
                 username = myUsername,
                 page = 1,
                 limit = 1000
@@ -704,7 +762,7 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
                 return
             }
 
-            val response = retrofitInstance.apiService.getUserFollowing(
+            val response = retrofitInstance.apiService.getOtherUserFollowing(
                 username = myUsername,
                 page = 1,
                 limit = 1000
@@ -782,6 +840,24 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
             Log.e(TAG, "Error loading blocked users: ${e.message}", e)
         }
     }
+
+
+    @RequiresExtension(extension = Build.VERSION_CODES.S, version = 7)
+    fun clearAndReloadFeed() {
+        Log.d(TAG, "Clearing and reloading Following feed")
+
+        // Clear all old data
+        getFeedViewModel.clearAllFeedData()
+        followedPostsAdapter.submitItems(mutableListOf())
+
+        // Reset state
+        hasLoadedFollowingList = false
+        isLoading = false
+
+        // Reload fresh data
+        getAllFeed(1)
+    }
+
 
 
     private fun handleError(message: String) {
@@ -906,66 +982,6 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
         }
     }
 
-    private fun refreshFeedAfterUnfollow() {
-        val currentUserId = getUserId(requireContext())
-        val allPosts = getFeedViewModel.getAllFeedData()
-
-        Log.d(TAG, "REFRESHING AFTER UNFOLLOW")
-        Log.d(TAG, "Now following ${followingUserIds.size} users")
-        Log.d(TAG, "Following IDs: $followingUserIds")
-
-        val filteredData = allPosts.filter { post ->
-            try {
-                // WHO POSTED THIS?
-                val posterAccountId: String = if (post.repostedUser != null) {
-                    post.repostedUser!!.owner
-                } else {
-                    post.author?.account?._id ?: return@filter false
-                }
-
-                val posterUsername: String = if (post.repostedUser != null) {
-                    post.repostedUser!!.username.trim().lowercase()
-                } else {
-                    post.author?.account?.username?.trim()?.lowercase() ?: return@filter false
-                }
-
-                // Skip own posts
-                if (posterAccountId == currentUserId) return@filter false
-
-                // DO I FOLLOW THE POSTER?
-                val isFollowingById = followingUserIds.contains(posterAccountId)
-                val isFollowingByUsername = followingUserMap.values.any {
-                    it.trim().lowercase() == posterUsername
-                }
-
-                val shouldKeep = isFollowingById || isFollowingByUsername
-
-                if (shouldKeep) {
-                    Log.d(TAG, "  ✓ Keeping post by @$posterUsername (ID: $posterAccountId)")
-                } else {
-                    Log.d(TAG, "  ✗ Removing post by @$posterUsername (ID: $posterAccountId)")
-                }
-
-                shouldKeep
-
-            } catch (e: Exception) {
-                Log.e(TAG, "Error filtering post: ${e.message}")
-                false
-            }
-        }
-
-        // Update ViewModel
-        getFeedViewModel.clearAllFeedData()
-        getFeedViewModel.addAllFeedData(filteredData.toMutableList())
-
-        // Force update adapter
-        followedPostsAdapter.submitItems(filteredData.toMutableList())
-        followedPostsAdapter.notifyDataSetChanged()
-
-        Log.d(TAG, "Posts before: ${allPosts.size}")
-        Log.d(TAG, "Posts after: ${filteredData.size}")
-        Log.d(TAG, "Removed: ${allPosts.size - filteredData.size} posts")
-    }
 
     override fun likeUnLikeFeed(position: Int, data: com.uyscuti.social.network.api.response.posts.Post) {
         try {
