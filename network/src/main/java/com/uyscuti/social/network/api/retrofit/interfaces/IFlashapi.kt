@@ -54,6 +54,7 @@ import com.uyscuti.social.network.api.response.business.response.post.comment.Co
 import com.uyscuti.social.network.api.response.business.response.post.likes.LikeResponse
 import com.uyscuti.social.network.api.response.chats.ChatsResponse
 import com.uyscuti.social.network.api.response.chats.FetchChatResponse
+import com.uyscuti.social.network.api.response.comment.CommentLocationResponse
 import com.uyscuti.social.network.api.response.comment.ShortCommentResponse
 import com.uyscuti.social.network.api.response.commentreply.CommentReplyResponse
 import com.uyscuti.social.network.api.response.comment.allcomments.AllShortComments
@@ -911,6 +912,12 @@ interface IFlashapi {
         @Part("accuracy") accuracy: RequestBody,
         @Part("range") range: RequestBody
     ): Response<BusinessLocationResponse>
+
+    @GET("business/product-posts/comments/locate/comment/")
+    suspend fun locateBusinessComment(
+        @Query("postId") postId: String,
+        @Query("commentId") commentId: String
+    ): Response<CommentLocationResponse>
 
 
     // ==================== BUSINESS - CATALOGUE & PRODUCTS ====================

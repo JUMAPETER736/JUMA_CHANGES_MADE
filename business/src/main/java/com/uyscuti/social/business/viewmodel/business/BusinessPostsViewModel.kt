@@ -7,11 +7,12 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.gson.JsonSyntaxException
-import com.uyscuti.sharedmodule.data.model.Comment
+import com.uyscuti.social.network.api.models.Comment
 import com.uyscuti.sharedmodule.utils.AudioDurationHelper.getFormattedDuration
 import com.uyscuti.sharedmodule.utils.generateMongoDBTimestamp
 import com.uyscuti.sharedmodule.utils.generateRandomId
 import com.uyscuti.sharedmodule.utils.getFileNameFromLocalPath
+import com.uyscuti.social.network.api.response.comment.CommentLocationData
 import com.uyscuti.social.network.api.response.comment.allcomments.Account
 import com.uyscuti.social.network.api.response.comment.allcomments.Author
 import com.uyscuti.social.network.api.response.comment.allcomments.Avatar
@@ -113,6 +114,7 @@ class BusinessPostsViewModel @Inject constructor(
                 } else if(contentType == "image") {
                     imageComment(
                         businessPostId,
+                        content!!,
                         file!!,
                         contentType,
                         localUpdateId,
@@ -121,6 +123,7 @@ class BusinessPostsViewModel @Inject constructor(
                 } else if(contentType == "video") {
                     videoComment(
                         businessPostId,
+                        content!!,
                         file!!,
                         contentType,
                         localUpdateId,
@@ -129,6 +132,7 @@ class BusinessPostsViewModel @Inject constructor(
                 } else if(contentType == "audio") {
                     audioComment(
                         businessPostId,
+                        content!!,
                         file!!,
                         contentType,
                         localUpdateId,
@@ -138,6 +142,7 @@ class BusinessPostsViewModel @Inject constructor(
                 } else if (contentType == "docs") {
                     documentComment(
                         businessPostId,
+                        content!!,
                         file!!,
                         contentType,
                         localUpdateId,
@@ -194,16 +199,18 @@ class BusinessPostsViewModel @Inject constructor(
                         isReply
                     )
                 } else if(contentType == "image") {
-                     imageComment(
+                    imageComment(
                         businessPostId,
+                        content!!,
                         file!!,
                         contentType,
                         localUpdateId,
-                         isReply
+                        isReply
                     )
                 } else if(contentType == "video") {
                     videoComment(
                         businessPostId,
+                        content!!,
                         file!!,
                         contentType,
                         localUpdateId
@@ -211,6 +218,7 @@ class BusinessPostsViewModel @Inject constructor(
                 } else if(contentType == "audio") {
                     audioComment(
                         businessPostId,
+                        content!!,
                         file!!,
                         contentType,
                         localUpdateId,
@@ -220,6 +228,7 @@ class BusinessPostsViewModel @Inject constructor(
                 } else if (contentType == "docs") {
                     documentComment(
                         businessPostId,
+                        content!!,
                         file!!,
                         contentType,
                         localUpdateId,
@@ -313,6 +322,7 @@ class BusinessPostsViewModel @Inject constructor(
 
     private suspend fun imageComment(
         businessPostId: String,
+        content: String,
         file: File,
         contentType: String,
         localUpdateId: String,
@@ -339,7 +349,7 @@ class BusinessPostsViewModel @Inject constructor(
             __v = 1,
             _id = "",
             author = author,
-            content = "",
+            content = content,
             createdAt = mongoDbTimeStamp,
             isLiked = false,
             likes = 0,
@@ -366,10 +376,12 @@ class BusinessPostsViewModel @Inject constructor(
         // Create RequestBody for required fields
         val contentTypeBody = contentType.toRequestBody("image/*".toMediaTypeOrNull())
         val localUpdateIdBody = localUpdateId.toRequestBody("text/plain".toMediaTypeOrNull())
+        val contentBody = content.toRequestBody("text/plain".toMediaTypeOrNull())
 
         if (isReply) {
             retrofitInstance.apiService.addReplyBusinessComment(
                 businessPostId,
+                content = contentBody,
                 contentType = contentTypeBody,
                 localUpdateId = localUpdateIdBody,
                 image = listOf(imageParts)
@@ -377,6 +389,7 @@ class BusinessPostsViewModel @Inject constructor(
         } else {
             retrofitInstance.apiService.addBusinessComment(
                 businessPostId,
+                content = contentBody,
                 contentType = contentTypeBody,
                 localUpdateId = localUpdateIdBody,
                 image = listOf(imageParts)
@@ -387,6 +400,7 @@ class BusinessPostsViewModel @Inject constructor(
 
     private suspend fun videoComment(
         businessPostId: String,
+        content: String,
         file: File,
         contentType: String,
         localUpdateId: String,
@@ -420,7 +434,7 @@ class BusinessPostsViewModel @Inject constructor(
             __v = 1,
             _id ="",
             author = author,
-            content = "",
+            content = content,
             createdAt = mongoDbTimeStamp,
             isLiked = false,
             likes = 0,
@@ -451,6 +465,7 @@ class BusinessPostsViewModel @Inject constructor(
         val localUpdateIdBody = localUpdateId.toRequestBody("text/plain".toMediaTypeOrNull())
         val durationBody = durationString.toRequestBody("text/plain".toMediaTypeOrNull())
         val fileTypeBody = file.extension.toRequestBody("text/plain".toMediaTypeOrNull())
+        val contentBody = content.toRequestBody("text/plain".toMediaTypeOrNull())
 
 
         val fileSizeBody = fileSizeString.toRequestBody("text/plain".toMediaTypeOrNull())
@@ -458,6 +473,7 @@ class BusinessPostsViewModel @Inject constructor(
         if (isReply) {
             retrofitInstance.apiService.addReplyBusinessComment(
                 businessPostId,
+                content = contentBody,
                 contentType = contentTypeBody,
                 localUpdateId = localUpdateIdBody,
                 video = listOf(videoParts),
@@ -469,6 +485,7 @@ class BusinessPostsViewModel @Inject constructor(
         } else {
             retrofitInstance.apiService.addBusinessComment(
                 businessPostId,
+                content = contentBody,
                 contentType = contentTypeBody,
                 localUpdateId = localUpdateIdBody,
                 video = listOf(videoParts),
@@ -483,6 +500,7 @@ class BusinessPostsViewModel @Inject constructor(
 
     private suspend fun audioComment(
         businessPostId: String,
+        content: String,
         file: File,
         contentType: String,
         localUpdateId: String,
@@ -515,7 +533,7 @@ class BusinessPostsViewModel @Inject constructor(
             __v = 1,
             _id = "",
             author = author,
-            content = "",
+            content = content,
             createdAt = mongoDbTimeStamp,
             isLiked = false,
             likes = 0,
@@ -551,11 +569,13 @@ class BusinessPostsViewModel @Inject constructor(
         val fileNameBody = fileName.toRequestBody("text/plain".toMediaTypeOrNull())
         val fileTypeBody = fileType.toRequestBody("text/plain".toMediaTypeOrNull())
         val fileSizeBody = fileSizeString.toRequestBody("text/plain".toMediaTypeOrNull())
+        val contentBody = content.toRequestBody("text/plain".toMediaTypeOrNull())
 
 
         if (isReply) {
             retrofitInstance.apiService.addReplyBusinessComment(
                 businessPostId,
+                content = contentBody,
                 contentType = contentTypeBody,
                 localUpdateId = localUpdateIdBody,
                 audio = listOf(audioParts),
@@ -567,6 +587,7 @@ class BusinessPostsViewModel @Inject constructor(
         } else {
             retrofitInstance.apiService.addBusinessComment(
                 businessPostId,
+                content = contentBody,
                 contentType = contentTypeBody,
                 localUpdateId = localUpdateIdBody,
                 audio = listOf(audioParts),
@@ -582,6 +603,7 @@ class BusinessPostsViewModel @Inject constructor(
 
     private suspend fun documentComment(
         businessPostId: String,
+        content: String,
         file: File,
         contentType: String,
         localUpdateId: String,
@@ -610,7 +632,7 @@ class BusinessPostsViewModel @Inject constructor(
             __v = 1,
             _id = "",
             author = author,
-            content = "",
+            content = content,
             createdAt = mongoDbTimeStamp,
             isLiked = false,
             likes = 0,
@@ -645,11 +667,13 @@ class BusinessPostsViewModel @Inject constructor(
         val fileNameBody = fileName.toRequestBody("text/plain".toMediaTypeOrNull())
         val fileSizeBody = fileSize.toRequestBody("text/plain".toMediaTypeOrNull())
         val fileTypeBody = fileType.toRequestBody("text/plain".toMediaTypeOrNull())
+        val contentBody = content.toRequestBody("text/plain".toMediaTypeOrNull())
 
 
         if (isReply) {
             retrofitInstance.apiService.addReplyBusinessComment(
                 businessPostId,
+                content = contentBody,
                 contentType = contentTypeBody,
                 localUpdateId = localUpdateIdBody,
                 docs = listOf(docsParts),
@@ -661,6 +685,7 @@ class BusinessPostsViewModel @Inject constructor(
         } else {
             retrofitInstance.apiService.addBusinessComment(
                 businessPostId,
+                content = contentBody,
                 contentType = contentTypeBody,
                 localUpdateId = localUpdateIdBody,
                 docs = listOf(docsParts),
@@ -733,13 +758,6 @@ class BusinessPostsViewModel @Inject constructor(
             )
         }
 
-        retrofitInstance.apiService.addBusinessComment(
-            businessPostId,
-            contentType = contentTypeBody,
-            localUpdateId = localUpdateIdBody,
-            gif = gifBody
-        )
-
     }
 
 
@@ -809,6 +827,17 @@ class BusinessPostsViewModel @Inject constructor(
                 )
             }
         }
+    }
+
+    suspend fun locateBusinessComment(
+        postId: String,
+        commentId: String
+    ): CommentLocationData? {
+        val response = retrofitInstance.apiService.locateBusinessComment(postId,commentId)
+        if (response.isSuccessful) {
+            return response.body()!!.data
+        }
+        return null
     }
 }
 
