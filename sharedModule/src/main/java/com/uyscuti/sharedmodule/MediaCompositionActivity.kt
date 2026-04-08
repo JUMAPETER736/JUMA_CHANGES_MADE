@@ -5,9 +5,14 @@ import android.net.Uri
 import android.os.Bundle
 import android.view.View
 import android.widget.SeekBar
+import androidx.annotation.OptIn
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.widget.addTextChangedListener
+import androidx.media3.common.MediaItem
+import androidx.media3.common.Player
+import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
+import com.bumptech.glide.Glide
 import com.uyscuti.sharedmodule.databinding.ActivityMediaCompositionBinding
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -116,6 +121,37 @@ class MediaCompositionActivity : AppCompatActivity() {
             }
         }
     }
+
+    private fun loadImage(uri: Uri) {
+        binding.imagePreview.visibility = View.VISIBLE
+        binding.topGradient.visibility = View.VISIBLE
+        Glide.with(this)
+            .load(uri)
+            .centerInside()
+            .into(binding.imagePreview)
+    }
+
+    private fun loadVideo(uri: Uri) {
+        binding.videoPreview.visibility = View.VISIBLE
+        binding.topGradient.visibility = View.VISIBLE
+
+        exoPlayer = ExoPlayer.Builder(this).build().apply {
+            binding.videoPreview.player = this
+            setMediaItem(MediaItem.fromUri(uri))
+            prepare()
+
+            addListener(object : Player.Listener {
+                @OptIn(UnstableApi::class)
+                override fun onPlaybackStateChanged(state: Int) {
+                    if (state == Player.STATE_READY) {
+                        binding.videoPreview.hideController()
+                    }
+                }
+            })
+        }
+    }
+
+    
 
 
 }
