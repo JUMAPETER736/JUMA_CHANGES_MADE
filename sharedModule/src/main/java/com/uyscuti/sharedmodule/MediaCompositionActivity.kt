@@ -1,5 +1,6 @@
 package com.uyscuti.sharedmodule
 
+import android.content.Intent
 import android.media.MediaMetadataRetriever
 import android.media.MediaPlayer
 import android.net.Uri
@@ -228,5 +229,42 @@ class MediaCompositionActivity : AppCompatActivity() {
             isPlaying = !isPlaying
         }
     }
+
+    private fun startSeekBarUpdate() {
+        binding.audioSeekBar.postDelayed(object : Runnable {
+            override fun run() {
+                mediaPlayer?.let {
+                    if (it.isPlaying) {
+                        binding.audioSeekBar.progress = it.currentPosition
+                        binding.audioCurrentTime.text = formatDuration(it.currentPosition.toLong())
+                    }
+                    binding.audioSeekBar.postDelayed(this, 100)
+                }
+            }
+        }, 100)
+    }
+
+
+    private fun sendMedia() {
+        val caption = binding.captionInput.text.toString()
+
+        // Return the result with caption and media URI
+        val resultIntent = Intent().apply {
+            putExtra(EXTRA_CAPTION, caption)
+            putExtra(EXTRA_MEDIA_URI, mediaUri)
+            putExtra(EXTRA_MEDIA_TYPE, mediaType.name)
+        }
+
+        setResult(RESULT_OK, resultIntent)
+        finish()
+    }
+
+    private fun showError() {
+        // Show error state
+    }
+
+
+
+
 
 }
