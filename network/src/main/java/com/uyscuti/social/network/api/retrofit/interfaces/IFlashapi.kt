@@ -242,11 +242,18 @@ interface IFlashapi {
     suspend fun followUnFollow(@Path("toBeFollowedUserId") toBeFollowedUserId: String): Response<FollowUnFollowResponse>
 
     @GET("social-media/profile/{username}/followers")
-    suspend fun getUserFollowers(
+    suspend fun getOtherUserFollowers(
         @Path("username") username: String,
         @Query("page") page: Int = 1,
         @Query("limit") limit: Int = 20
     ): Response<UserOtherFollowersResponse>
+
+    @GET("social-media/profile/{username}/following")
+    suspend fun getOtherUserFollowing(
+        @Path("username") username: String,
+        @Query("page") page: Int = 1,
+        @Query("limit") limit: Int = 20
+    ): Response<OtherUserFollowingResponse>
 
     @GET("social-media/profile/{username}/following")
     suspend fun getUserFollowing(
@@ -254,6 +261,13 @@ interface IFlashapi {
         @Query("page") page: Int = 1,
         @Query("limit") limit: Int = 20
     ): Response<OtherUserFollowingResponse>
+
+    @GET("social-media/profile/{username}/followers")
+    suspend fun getUserFollowers(
+        @Path("username") username: String,
+        @Query("page") page: Int = 1,
+        @Query("limit") limit: Int = 20
+    ): Response<UserOtherFollowersResponse>
 
 
     @DELETE("social-media/followers/{userId}")
@@ -1187,6 +1201,8 @@ interface IFlashapi {
         @Path("chatId") chatId: String,
         @Body body: Map<String, String>
     ): Response<BaseGroupResponse>
+
+
 
 
 
