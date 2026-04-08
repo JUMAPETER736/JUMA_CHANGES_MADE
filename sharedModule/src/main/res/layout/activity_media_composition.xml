@@ -97,7 +97,7 @@
                 android:layout_height="200dp"
                 android:scaleType="centerCrop"
                 android:layout_gravity="center"
-                android:src="@drawable/music_placeholder"/>
+                android:src="@drawable/music_icon"/>
 
             <!-- Audio Icon and Title -->
             <LinearLayout
@@ -244,7 +244,7 @@
                     android:layout_width="36dp"
                     android:layout_height="36dp"
                     android:layout_gravity="center"
-                    android:src="@drawable/document"
+                    android:src="@drawable/documents"
                     />
 
             </com.google.android.material.card.MaterialCardView>
