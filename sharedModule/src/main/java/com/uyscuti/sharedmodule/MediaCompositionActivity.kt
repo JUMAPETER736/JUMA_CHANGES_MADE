@@ -22,9 +22,11 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.File
 import java.net.HttpURLConnection
 import java.net.URL
 import java.util.Locale
+import java.util.concurrent.TimeUnit
 
 class MediaCompositionActivity : AppCompatActivity() {
 
@@ -327,8 +329,6 @@ class MediaCompositionActivity : AppCompatActivity() {
     }
 
 
-
-
     private fun getFileName(uri: Uri): String {
         var result = "unknown"
         contentResolver.query(uri, null, null, null, null)?.use { cursor ->
@@ -342,7 +342,42 @@ class MediaCompositionActivity : AppCompatActivity() {
         return result
     }
 
+    private fun getDocumentName(documentPath: String): String {
+        return File(documentPath).name
+    }
 
+    private fun getDocumentSize(documentPath: String): String {
+        val fileSize = File(documentPath).length()
+        val kb = fileSize / 1024.0
+        val mb = kb / 1024.0
+        val gb = mb / 1024.0
+
+        return when {
+            gb >= 1 -> String.format(Locale.US, "%.2f GB", gb)
+            mb >= 1 -> String.format(Locale.US, "%.2f MB", mb)
+            kb >= 1 -> String.format(Locale.US, "%.2f KB", kb)
+            else -> "$fileSize B"
+        }
+    }
+
+    private fun getFileSize(uri: Uri): Long {
+        var result = 0L
+        contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+            if (cursor.moveToFirst()) {
+                val sizeIndex = cursor.getColumnIndex(android.provider.OpenableColumns.SIZE)
+                if (sizeIndex != -1) {
+                    result = cursor.getLong(sizeIndex)
+                }
+            }
+        }
+        return result
+    }
+
+    private fun formatDuration(millis: Long): String {
+        val minutes = TimeUnit.MILLISECONDS.toMinutes(millis)
+        val seconds = TimeUnit.MILLISECONDS.toSeconds(millis) % 60
+        return String.format("%02d:%02d", minutes, seconds)
+    }
 
 
 }
