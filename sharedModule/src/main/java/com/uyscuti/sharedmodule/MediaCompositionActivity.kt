@@ -194,6 +194,39 @@ class MediaCompositionActivity : AppCompatActivity() {
         }
     }
 
-    
+    private fun loadDocument(uri: Uri) {
+        binding.documentPreview.visibility = View.VISIBLE
+
+        val fileName = getDocumentName(uri.toString())
+        val fileSize = getDocumentSize(uri.toString())
+
+        binding.documentName.text = fileName
+        binding.documentSize.text = fileSize
+
+        // Set icon based on file extension
+        val extension = getDocumentExtension(fileName)
+        val iconRes = when (extension.lowercase()) {
+            "pdf" -> R.drawable.pdf_document_svgrepo_com
+            "doc", "docx" -> R.drawable.word_document_svgrepo_com
+            "xls", "xlsx" -> R.drawable.excel_icon
+            "txt" -> R.drawable.txt_document_svgrepo_com
+            "ppt", "pptx" -> R.drawable.powerpoint_icon
+            else -> R.drawable.gdoc_document_svgrepo_com
+        }
+        binding.documentIcon.setImageResource(iconRes)
+    }
+
+    private fun togglePlayPause() {
+        mediaPlayer?.let { player ->
+            if (isPlaying) {
+                player.pause()
+                binding.playPauseButton.setImageResource(R.drawable.ic_play)
+            } else {
+                player.start()
+                binding.playPauseButton.setImageResource(R.drawable.baseline_pause_black)
+            }
+            isPlaying = !isPlaying
+        }
+    }
 
 }
