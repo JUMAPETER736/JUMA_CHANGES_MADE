@@ -72,7 +72,7 @@ import android.view.Gravity
 import android.widget.ImageButton
 import android.widget.LinearLayout
 import com.uyscuti.sharedmodule.MessagesActivity
-import com.uyscuti.sharedmodule.fragments.OtherUserBusinessProfileFragment
+import com.uyscuti.social.circuit.User_Interface.OtherUserProfile.AllOtherUsersBusinessFragment
 import com.uyscuti.social.network.api.models.Avatar
 import com.uyscuti.social.network.api.response.posts.Post
 
@@ -86,7 +86,6 @@ private const val TAG = "OtherUserProfileAccount"
 class OtherUserProfileAccount : AppCompatActivity() {
 
     companion object {
-
         private const val EXTRA_USER = "extra_user"
         private const val EXTRA_USER_ID = "extra_user_id"
         private const val EXTRA_USER_NAME = "extra_user_name"
@@ -769,7 +768,7 @@ class OtherUserProfileAccount : AppCompatActivity() {
             )
 
             // Convert to User model for Dialog
-            val userModel = com.uyscuti.sharedmodule.data.model.User(
+            val userModel = com.uyscuti.social.core.models.data.User(
                 otherUserEntity.id,
                 otherUserEntity.name,
                 otherUserEntity.avatar,
@@ -778,11 +777,11 @@ class OtherUserProfileAccount : AppCompatActivity() {
             )
 
             // Create ArrayList for Dialog constructor
-            val usersList = ArrayList<com.uyscuti.sharedmodule.data.model.User>()
+            val usersList = ArrayList<com.uyscuti.social.core.models.data.User>()
             usersList.add(userModel)
 
             // Create temporary dialog using Dialog constructor directly - using username
-            val tempDialog = com.uyscuti.sharedmodule.data.model.Dialog(
+            val tempDialog = com.uyscuti.social.core.models.data.Dialog(
                 "temp_${currentUserModel.id}_${System.currentTimeMillis()}",
                 currentUserModel.username,
                 currentUserModel.avatar?.url ?: "",
@@ -967,7 +966,6 @@ class OtherUserProfileAccount : AppCompatActivity() {
         loadProfileImage()
     }
 
-
     private fun showFullProfilePicture() {
 
         if (!avatarUrl.isNullOrEmpty()) {
@@ -991,13 +989,12 @@ class OtherUserProfileAccount : AppCompatActivity() {
         }
     }
 
-
     private fun handleAddFriend() {
         lifecycleScope.launch {
             try {
                 val response = apiService.followUnFollow(userId)
                 if (response.isSuccessful) {
-                   // Toast.makeText(this@OtherUserProfileAccount, "Friend request sent", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this@OtherUserProfileAccount, "Friend request sent", Toast.LENGTH_SHORT).show()
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Error adding friend", e)
@@ -1249,10 +1246,89 @@ class OtherUserProfileAccount : AppCompatActivity() {
 
         }.attach()
 
-
+        // Pre-load favorites data
+        preloadOtherFavoritesData()
     }
 
+    //The DATA Pre Loading
+    private fun preloadOtherFavoritesData() {
+        if (favoritesPreloaded) return
+        favoritesPreloaded = true
 
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                Log.d(TAG, "Pre-loading favorites data in background...")
+
+                // Load favorites in background
+                val response = retrofitInstance.apiService.getFavoriteFeed(page = "1")
+
+                if (response.isSuccessful) {
+                    val bookmarkedPosts = response.body()?.data?.bookmarkedPosts.orEmpty()
+
+                    // Transform and cache the data
+                    val transformedPosts = bookmarkedPosts
+                        .asSequence()
+                        .filter { it.bookmarkedBy == userId }
+                        .mapNotNull { bookmarkedPost ->
+                            try {
+                                Post(
+                                    _id = bookmarkedPost._id,
+                                    content = bookmarkedPost.content ?: "",
+                                    duration = bookmarkedPost.duration,
+                                    feedShortsBusinessId = bookmarkedPost.feedShortsBusinessId,
+                                    tags = bookmarkedPost.tags,
+                                    contentType = bookmarkedPost.contentType,
+                                    numberOfPages = bookmarkedPost.numberOfPages,
+                                    fileNames = bookmarkedPost.fileNames,
+                                    fileTypes = bookmarkedPost.fileTypes,
+                                    fileSizes = bookmarkedPost.fileSizes,
+                                    files = bookmarkedPost.files,
+                                    fileIds = bookmarkedPost.fileIds,
+                                    thumbnail = bookmarkedPost.thumbnail,
+                                    author = bookmarkedPost.author,
+                                    isReposted = bookmarkedPost.isReposted,
+                                    repostedByUserId = bookmarkedPost.repostedByUserId ?: "",
+                                    repostedUsers = bookmarkedPost.repostedUsers,
+                                    createdAt = bookmarkedPost.createdAt,
+                                    updatedAt = bookmarkedPost.updatedAt,
+                                    __v = bookmarkedPost.__v,
+                                    comments = bookmarkedPost.comments,
+                                    likes = bookmarkedPost.likes,
+                                    isLiked = bookmarkedPost.isLiked,
+                                    isFollowing = bookmarkedPost.isFollowing,
+                                    isBookmarked = true,
+                                    bookmarkCount = bookmarkedPost.bookmarkCount,
+                                    isInCloseFriends = bookmarkedPost.isInCloseFriends,
+                                    isPostsMuted = bookmarkedPost.isPostsMuted,
+                                    isStoriesMuted = bookmarkedPost.isStoriesMuted,
+                                    isFavorite = bookmarkedPost.isFavorite,
+                                    isRestricted = bookmarkedPost.isRestricted,
+                                    originalPost = bookmarkedPost.originalPost,
+                                    isExpanded = false,
+                                    isLocal = false,
+                                    repostCount = 0,
+                                    shareCount = 0,
+                                    repostedUser = bookmarkedPost.repostedUser ?: AllOtherUsersFavoritesFragment.emptyRepostedUser(),
+                                    isBusinessPost = false
+                                )
+                            } catch (e: Exception) {
+                                null
+                            }
+                        }
+                        .toList()
+
+                    // Cache the data
+                    if (transformedPosts.isNotEmpty()) {
+                        AllOtherUsersFavoritesFragment.favoritesCache[userId] = transformedPosts.toMutableList()
+                        AllOtherUsersFavoritesFragment.cacheTimestamp[userId] = System.currentTimeMillis()
+                        Log.d(TAG, "✓ Pre-loaded ${transformedPosts.size} favorites")
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error pre-loading favorites: ${e.message}")
+            }
+        }
+    }
 
     private fun setupScrollBehavior() {
 
@@ -1291,8 +1367,12 @@ class OtherUserProfileAccount : AppCompatActivity() {
         // Set username
         usernameText.text = "@$username"
 
-        profileImageView.setImageResource(R.drawable.flash21)
+        // Set profile image (you may need to load this with Glide/Picasso)
+        // Glide.with(this).load(userProfileImageUrl).into(profileImageView)
+        profileImageView.setImageResource(R.drawable.flash21) // Placeholder
 
+        // Show verification badge if user is verified
+        // verificationBadge.visibility = if (isUserVerified) View.VISIBLE else View.GONE
 
         // Generate QR code
         val profileUrl = "https://app.com/profile/$userId"
@@ -1531,7 +1611,7 @@ class OtherUserProfileAccount : AppCompatActivity() {
 
         val user = User(
             userId,
-            "",
+            avatarUrl,
             "",
             false,
             "user",
@@ -1573,7 +1653,7 @@ class OtherUserProfileAccount : AppCompatActivity() {
                 3 -> {
 
                     // Business Fragment
-                    OtherUserBusinessProfileFragment.newInstance(user)
+                    AllOtherUsersBusinessFragment.newInstance(user)
                 }
 
                 else -> throw IllegalStateException("Invalid position: $position")
