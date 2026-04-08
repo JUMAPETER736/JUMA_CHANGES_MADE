@@ -78,3 +78,59 @@
                 app:tint="#FFFFFF" />
 
         </com.google.android.material.card.MaterialCardView>
+
+        <!-- Play/Pause Button -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            app:cardBackgroundColor="@color/blueJeans"
+            app:cardCornerRadius="32dp"
+            app:cardElevation="8dp">
+
+            <ImageButton
+                android:id="@id/exo_play_pause"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:padding="16dp"
+                android:src="@drawable/exo_ic_play_circle_filled"
+                app:tint="#FFFFFF" />
+
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Forward Button -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginStart="24dp"
+            app:cardBackgroundColor="#40FFFFFF"
+            app:cardCornerRadius="24dp"
+            app:cardElevation="0dp">
+
+            <ImageButton
+                android:id="@id/exo_ffwd"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:padding="12dp"
+                android:src="@drawable/exo_ic_forward"
+                app:tint="#FFFFFF" />
+
+        </com.google.android.material.card.MaterialCardView>
+
+    </LinearLayout>
+
+
+    <!-- Fullscreen Button (Optional) -->
+    <ImageButton
+        android:id="@id/exo_fullscreen"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:layout_gravity="end"
+        android:layout_marginTop="8dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:src="@drawable/exo_ic_fullscreen_enter"
+        android:visibility="gone"
+        app:tint="#FFFFFF" />
+
+</LinearLayout>
