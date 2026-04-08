@@ -6475,7 +6475,7 @@ class FeedAdapter(
             // Load thumbnail using Glide
             Glide.with(itemView.context)
                 .load(thumbnailUrl)
-                .placeholder(R.drawable.music_placeholder) // Add a placeholder image
+                .placeholder(R.drawable.music_icon) // Add a placeholder image
                 .into(ivThumbnail)
             tvDuration.text = video[0].content // Display content as title
             itemView.setOnClickListener {

@@ -179,12 +179,41 @@
 
 
 
-                <TextView
-                    android:layout_width="wrap_content"
+                <LinearLayout
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="@string/price"
-                    android:layout_marginTop="4dp"
-                    />
+                    android:orientation="horizontal"
+                    >
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:text="@string/price"
+                        android:layout_weight="1"
+                        android:layout_marginTop="4dp"
+                        android:layout_gravity="bottom"
+                        />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:id="@+id/make_call"
+                        android:text="@string/make_call"
+                        android:layout_marginEnd="4dp"
+                        android:textColor="@color/black"
+                        android:textSize="@dimen/dimen_16"
+                        android:layout_marginBottom="4dp"
+                        android:paddingStart="8dp"
+                        android:paddingEnd="8dp"
+                        android:paddingBottom="4dp"
+                        android:paddingTop="4dp"
+                        android:background="@drawable/make_call_background"
+                        />
+
+
+                </LinearLayout>
+
+
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -201,7 +230,7 @@
                         android:textSize="16sp"
                         android:textStyle="bold"
                         android:layout_weight="1"
-                        android:layout_gravity="center"
+                        android:layout_gravity="bottom"
                         tools:text="MWK 299.99" />
 
                     <LinearLayout
@@ -210,6 +239,7 @@
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
                         android:background="@drawable/send_offer"
+                        android:layout_marginTop="4dp"
                         android:paddingStart="8dp"
                         android:paddingEnd="8dp"
                         android:paddingBottom="4dp"
@@ -224,6 +254,7 @@
                             android:background="@color/blueJeans"
                             android:textColor="@color/white"
                             android:textAlignment="center"
+                            android:textSize="@dimen/dimen_16"
                             />
 
                     </LinearLayout>
