@@ -2010,7 +2010,84 @@ class CatalogueDetailsActivity : AppCompatActivity(),
         }
     }
 
+    // Helper method to build ExoPlayer with cache
+    private fun buildExoPlayerWithCache(mediaItem: MediaItem): ExoPlayer {
+        httpDataSourceFactory = DefaultHttpDataSource.Factory()
+            .setAllowCrossProtocolRedirects(true)
 
+        defaultDataSourceFactory = DefaultDataSourceFactory(
+            this, httpDataSourceFactory
+        )
+
+        cacheDataSourceFactory = CacheDataSource.Factory()
+            .setCache(simpleCache!!)
+            .setUpstreamDataSourceFactory(httpDataSourceFactory)
+            .setFlags(CacheDataSource.FLAG_IGNORE_CACHE_ON_ERROR)
+
+        val mediaSourceFactory: MediaSource.Factory =
+            DefaultMediaSourceFactory(this)
+                .setDataSourceFactory(cacheDataSourceFactory)
+
+        val player = ExoPlayer.Builder(this)
+            .setMediaSourceFactory(mediaSourceFactory)
+            .build()
+
+        val mediaSource = ProgressiveMediaSource.Factory(cacheDataSourceFactory)
+            .createMediaSource(mediaItem)
+
+        player.setMediaSource(mediaSource)
+        return player
+    }
+
+    // Helper method to build ExoPlayer without cache (direct server playback)
+    private fun buildExoPlayerWithoutCache(mediaItem: MediaItem): ExoPlayer {
+        val directHttpDataSourceFactory = DefaultHttpDataSource.Factory()
+            .setAllowCrossProtocolRedirects(true)
+            .setConnectTimeoutMs(30000)
+            .setReadTimeoutMs(30000)
+
+        val player = ExoPlayer.Builder(this).build()
+
+        val mediaSource = ProgressiveMediaSource.Factory(directHttpDataSourceFactory)
+            .createMediaSource(mediaItem)
+
+        player.setMediaSource(mediaSource)
+        return player
+    }
+
+    // Helper method to check if error is cache-related
+    private fun isCacheError(error: PlaybackException): Boolean {
+        val cause = error.cause
+        return cause is IllegalStateException ||
+                cause?.cause is IllegalStateException ||
+                error.message?.contains("cache", ignoreCase = true) == true ||
+                cause?.message?.contains("SimpleCache", ignoreCase = true) == true
+    }
+
+    // Helper method to clear ExoPlayer cache
+    private fun clearExoPlayerCache() {
+        try {
+            simpleCache?.release()
+
+            val exoPlayerCacheDir = File(cacheDir, "exoplayer")
+            if (exoPlayerCacheDir.exists()) {
+                exoPlayerCacheDir.deleteRecursively()
+                Log.d("clearExoPlayerCache", "Cache cleared successfully")
+            }
+
+            // Reinitialize cache
+            val leastRecentlyUsedCacheEvictor =
+                LeastRecentlyUsedCacheEvictor(1024 * 1024 * 1024) // 1GB
+            val exoDatabaseProvider = ExoDatabaseProvider(this)
+            exoPlayerCacheDir.mkdirs()
+            simpleCache =
+                SimpleCache(exoPlayerCacheDir, leastRecentlyUsedCacheEvictor, exoDatabaseProvider)
+
+            Log.d("clearExoPlayerCache", "Cache reinitialized")
+        } catch (e: Exception) {
+            Log.e("clearExoPlayerCache", "Error clearing cache", e)
+        }
+    }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun audioWave(event: AudioPlayerHandler) {
