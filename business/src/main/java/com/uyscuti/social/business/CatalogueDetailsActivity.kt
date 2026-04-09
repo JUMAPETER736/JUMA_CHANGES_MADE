@@ -1716,6 +1716,55 @@ class CatalogueDetailsActivity : AppCompatActivity(),
         }
     }
 
+    private fun loadToTargetComment(commentId: String) {
+        isLoadingForTarget = true
+        showShimmer()
+
+        lifecycleScope.launch {
+            val commentLocation =
+                businessPostsViewModel.locateBusinessComment(businessPostId, commentId)
+            if (commentLocation != null) {
+                // check if it is a reply
+                if (commentLocation.location.parentCommentId != null) {
+                    loadPagesToTarget(
+                        commentLocation.location.parentPageNumber ?: 1,
+                        commentLocation.location.parentCommentId!!,
+                        commentLocation.comments
+                    )
+
+
+                } else {
+                    // top level comment
+                    loadPagesToTarget(
+                        commentLocation.location.pageNumber,
+                        commentId,
+                        commentLocation.comments
+                    )
+                }
+            }
+        }
+    }
+    
+    private suspend fun loadPagesToTarget(
+        targetPage: Int,
+        commentId: String,
+        comments: List<Comment>
+    ) {
+        commentAdapter!!.setmCurrentPage(targetPage)
+
+        commentAdapter?.submitItems(comments)
+
+        commentRecyclerView.post {
+            hideShimmer()
+            scrollToComment(commentId, targetPage)
+            if (comments.isEmpty()) {
+                updateUI(true)
+            } else {
+                updateUI(false)
+            }
+            isLoadingForTarget = false
+        }
+    }
 
     private fun commentAudioStartPlaying(
         audio: String,
