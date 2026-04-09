@@ -2118,6 +2118,62 @@ class CatalogueDetailsActivity : AppCompatActivity(),
         }
     }
 
+    private fun registerImagePicker() {
+        imagePickerLauncher =
+            registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+                if (result.resultCode == RESULT_OK) {
+                    // Handle image selection result here
+                    val data = result.data
+                    // Process the selected image data
+                    val imagePath = data?.getStringExtra("image_url")
+                    val caption = data?.getStringExtra("caption") ?: ""
+
+                    val filePath = PathUtil.getPath(
+                        this,
+                        imagePath!!.toUri()
+                    ) // Use the utility class to get the real file path
+                    Log.d("PhotoPicker", "File path: $filePath")
+                    Log.d("PhotoPicker", "File path: $isReply")
+
+                    val file = filePath?.let { File(it) }
+                    if (file?.exists() == true) {
+                        lifecycleScope.launch {
+                            val compressedImageFile =
+                                Compressor.compress(this@CatalogueDetailsActivity, file)
+                            Log.d(
+                                "PhotoPicker",
+                                "PhotoPicker: compressedImageFile absolutePath: ${compressedImageFile.absolutePath}"
+                            )
+
+                            val fileSizeInBytes = compressedImageFile.length()
+                            val fileSizeInKB = fileSizeInBytes / 1024
+                            val fileSizeInMB = fileSizeInKB / 1024
+
+                            Log.d(
+                                "PhotoPicker",
+                                "PhotoPicker: compressedImageFile size $fileSizeInKB KB, $fileSizeInMB MB"
+                            )
+
+                            if (!isReply) {
+                                uploadImageComment(
+                                    compressedImageFile.absolutePath,
+                                    caption,
+                                    isReply
+                                )
+                            } else {
+                                uploadImageComment(
+                                    compressedImageFile.absolutePath,
+                                    caption,
+                                    isReply
+                                )
+                            }
+                        }
+                    }
+
+                }
+            }
+    }
+
     private fun registerVideoPickerLauncher() {
         // Register the launcher in onCreate
         videoPickerLauncher =
