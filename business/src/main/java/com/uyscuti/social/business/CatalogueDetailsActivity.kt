@@ -2174,6 +2174,22 @@ class CatalogueDetailsActivity : AppCompatActivity(),
             }
     }
 
+    private fun registerDocPicker() {
+        docsPickerLauncher =
+            registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+                if (result.resultCode == RESULT_OK) {
+                    val data = result.data
+                    // Process the selected image data
+                    val docPath = data?.getStringExtra("doc_url")
+                    val caption = data?.getStringExtra("caption") ?: ""
+
+                    Log.d(TAG, "Path: $docPath caption: $caption")
+
+                    handleDocumentUri(getContentUriFromFilePath(this, docPath!!)!!, caption)
+                }
+            }
+    }
+
     private fun registerVideoPickerLauncher() {
         // Register the launcher in onCreate
         videoPickerLauncher =
@@ -2308,6 +2324,25 @@ class CatalogueDetailsActivity : AppCompatActivity(),
         }
     }
 
+    private fun setCommentAdapterPagination() {
+        commentAdapter!!.setOnPaginationListener(object : AdPaginatedAdapter.OnPaginationListener {
+
+            override fun onCurrentPage(page: Int) {
+                Log.d(TAG, "currentPage: page number $page")
+            }
+
+            override fun onNextPage(page: Int) {
+                lifecycleScope.launch(Dispatchers.Main) {
+                    Log.d(TAG, "onNextPage: page number $page")
+                    getBusinessComments(page)
+                }
+            }
+
+            override fun onFinish() {
+                Log.d(TAG, "finished: page number")
+            }
+        })
+    }
 
    private fun setRelativeLayoutToHalfScreenHeight() {
 
