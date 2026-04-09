@@ -460,16 +460,27 @@ class BusinessFragment : Fragment(),
             }
     }
 
+    private fun getContentUriFromFilePath(context: Context, filePath: String): Uri? {
+        val file = File(filePath)
+        val projection = arrayOf(MediaStore.Files.FileColumns._ID)
+        val selection = "${MediaStore.Files.FileColumns.DATA}=?"
+        val selectionArgs = arrayOf(file.absolutePath)
 
-    private val getDocumentContent =
-        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-            if (result.resultCode == RESULT_OK) {
-                result.data?.data?.let { uri ->
-                    // Handle the selected document URI
-                    handleDocumentUri(uri)
-                }
+        context.contentResolver.query(
+            MediaStore.Files.getContentUri("external"),
+            projection,
+            selection,
+            selectionArgs,
+            null
+        )?.use { cursor ->
+            if (cursor.moveToFirst()) {
+                val id =
+                    cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns._ID))
+                return ContentUris.withAppendedId(MediaStore.Files.getContentUri("external"), id)
             }
         }
+        return null
+    }
 
     private fun getFileNameWithExtension(uri: Uri): String {
         var fileName = "document_${System.currentTimeMillis()}"
@@ -493,6 +504,7 @@ class BusinessFragment : Fragment(),
 
         return fileName
     }
+
 
     private fun getFileFromUri(uri: Uri): File? {
         return try {
