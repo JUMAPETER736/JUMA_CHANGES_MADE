@@ -881,46 +881,48 @@ class BusinessFragment : Fragment(),
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
+
         // Inflate the layout for this fragment
         val view = inflater.inflate(R.layout.fragment_business, container, false)
 
-        settings = requireActivity().getSharedPreferences("BusinessProfile", Context.MODE_PRIVATE)
+        settings = requireActivity().getSharedPreferences("BusinessProfile", MODE_PRIVATE)
 
-        businessProfileId = settings.getString("businessId","").toString()
+        businessProfileId = settings.getString("businessId", "").toString()
         Log.d("BUSINESS_PROFILE_ID", "BUSINESS_PROFILE_ID: $businessProfileId")
 
-        val displayMetrics = resources.displayMetrics
-        val screenWidth = displayMetrics.widthPixels
-        val itemWidth = 225
-        val spanCount = screenWidth / itemWidth
-
-
         initViews(view)
+
+        remoteMessageRepository = RemoteMessageRepositoryImpl(retrofitInstance)
 
         registerVideoPickerLauncher()
         registerAudioPickerLauncher()
         registerGifPickerLauncher()
         registerCameraLauncher()
+        registerDocPicker()
+        registerImagePicker()
+        registerCategoryLauncher()
 
         businessRecycleView.layoutManager = LinearLayoutManager(requireActivity())
+
         businessAdapter = BusinessCatalogueAdapter(
             requireActivity(),
             retrofitInstance,
             localStorage,
-            catalogueList,
             onItemClick = { item ->
                 // Handle item click - navigate to detail screen
                 navigateToItemDetail(item)
             },
             this@BusinessFragment,
-            onBookmarkClick = {item ->
+            onBookmarkClick = { item ->
                 bookmarkBusinessPost(item)
             },
             onFollowClick = { item ->
                 followBusinessPostOwner(item)
             },
             onMessageClick = { user, post ->
-                val productReference = "#Is product available\n${post.itemName}\n${post.description}\n\n${post.images.first()}"
+
+                val productReference = post.images.first()
+
                 dialogManager = DialogManager(
                     requireActivity(),
                     dialogViewModel,
@@ -929,9 +931,48 @@ class BusinessFragment : Fragment(),
                 )
                 dialogManager.openChat(user)
             },
-            childFragmentManager
+            onSendOfferClicked = { amount, message, data ->
+                val user = User(
+                    data.owner,
+                    data.userDetails.username,
+                    data.userDetails.avatar,
+                    false,
+                    Date()
+                )
+
+                var messageToSend = ""
+
+                messageToSend = if (message.isEmpty()) {
+                    "" +
+                            "Hi! I'm interested in your ${data.itemName}." +
+                            "\nWould you accept MWK$amount ?" +
+                            "\nLet me know, thanks!"
+                } else {
+                    "" +
+                            "${data.itemName}.\n${data.description}." +
+                            "\nOffer Amount: MWK$amount ?" +
+                            "\n$message"
+                }
+
+                offerMessage = messageToSend
+
+                if (NetworkUtil.isConnected(requireActivity())) {
+                    addDialogInTheBackGround(user, messageToSend)
+                } else {
+                    showToast(requireActivity(), "You have no internet connection")
+                }
+            },
+            childFragmentManager,
+            onLoadMore = {
+                viewModel.loadMore()
+            }
         )
 
+        businessRecycleView.apply {
+            setHasFixedSize(true) // If item size is constant
+            itemAnimator = DefaultItemAnimator() // Ensure animations are enabled
+            setItemViewCacheSize(20) // Increase cache size
+        }
         businessRecycleView.adapter = businessAdapter
 
 
@@ -942,23 +983,7 @@ class BusinessFragment : Fragment(),
         businessRecycleView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
             override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
                 super.onScrolled(recyclerView, dx, dy)
-
-                // Only trigger when scrolling down
-                if (dy > 0) {
-                    val layoutManager = recyclerView.layoutManager as LinearLayoutManager
-                    val totalItemCount = layoutManager.itemCount
-                    val lastVisibleItemPosition = layoutManager.findLastVisibleItemPosition()
-
-                    // Load more when user is 3 items away from the end
-                    val threshold = 3
-
-                    if (lastVisibleItemPosition >= totalItemCount - threshold &&
-                        viewModel.canLoadMore()
-                    ) {
-                        viewModel.loadMore()
-                    }
-                }
-                if(dy > 0 && !isScrollingDown) {
+                if (dy > 0 && !isScrollingDown) {
                     isScrollingDown = true
                     EventBus.getDefault().post(HideBottomNav())
                 } else if (dy < 0 && isScrollingDown) {
