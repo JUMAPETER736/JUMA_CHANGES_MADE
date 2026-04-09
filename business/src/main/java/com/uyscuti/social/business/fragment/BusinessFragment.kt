@@ -1235,7 +1235,7 @@ class BusinessFragment : Fragment(),
 
             commentToAddReplies?.replies?.add(0, newReply)
 
-        } else if(comment.contentType == "gif") {
+        } else if (comment.contentType == "gif") {
             val newReply = com.uyscuti.social.network.api.response.commentreply.allreplies.Comment(
                 __v = comment.__v,
                 _id = comment._id,
@@ -1251,7 +1251,7 @@ class BusinessFragment : Fragment(),
 
             commentToAddReplies?.replies?.add(0, newReply)
 
-        } else if(comment.contentType == "video") {
+        } else if (comment.contentType == "video") {
             val newReply = com.uyscuti.social.network.api.response.commentreply.allreplies.Comment(
                 __v = comment.__v,
                 _id = comment._id,
@@ -1267,7 +1267,7 @@ class BusinessFragment : Fragment(),
             )
 
             commentToAddReplies?.replies?.add(0, newReply)
-        }  else if(comment.contentType == "audio") {
+        } else if (comment.contentType == "audio") {
             val newReply = com.uyscuti.social.network.api.response.commentreply.allreplies.Comment(
                 __v = comment.__v,
                 _id = comment._id,
@@ -1286,7 +1286,7 @@ class BusinessFragment : Fragment(),
             )
 
             commentToAddReplies?.replies?.add(0, newReply)
-        } else if(comment.contentType == "docs") {
+        } else if (comment.contentType == "docs") {
             val newReply = com.uyscuti.social.network.api.response.commentreply.allreplies.Comment(
                 __v = comment.__v,
                 _id = comment._id,
