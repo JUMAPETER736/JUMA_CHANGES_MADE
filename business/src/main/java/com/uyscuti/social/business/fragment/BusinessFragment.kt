@@ -996,6 +996,93 @@ class BusinessFragment : Fragment(),
         return view
     }
 
+    private fun addDialogInTheBackGround(user: User, lastMessage: String) {
+        val singleUserList = arrayListOf(user)
+
+        val message = Message(
+            user.id,
+            user,
+            lastMessage,
+            Date()
+        )
+
+        val tempDialog = Dialog(
+            user.id,
+            user.name,
+            user.avatar,
+            singleUserList,
+            message,
+            0
+        )
+
+        val messageId = "Text_${Random.Default.nextInt()}"
+
+        val textMessage = MessageEntity(
+            id = messageId,
+            chatId = user.id,
+            userName = "You",
+            user = user.toUserEntity(),
+            userId = localStorage.getUserId(),
+            text = lastMessage,
+            createdAt = System.currentTimeMillis(),
+            imageUrl = null,
+            voiceUrl = null,
+            voiceDuration = 0,
+            status = "Sending",
+            videoUrl = null,
+            audioUrl = null,
+            docUrl = null,
+            fileSize = 0
+        )
+
+        messageEntity = textMessage
+
+        val dialogEntity = DialogEntity(
+            id = tempDialog.dialogName,
+            dialogPhoto = tempDialog.dialogPhoto,
+            dialogName = tempDialog.dialogName,
+            users = listOf(user.toUserEntity()),
+            lastMessage = textMessage,
+            unreadCount = 0
+        )
+
+        insertDialog(dialogEntity)
+    }
+
+    private fun getNumberOfSheetsFromUri(uri: Uri): Int {
+        var numberOfSheets = 0
+        try {
+            requireActivity().contentResolver.openInputStream(uri)?.use { inputStream ->
+                // WorkbookFactory automatically handles both .xls and .xlsx
+                WorkbookFactory.create(inputStream).use { workbook ->
+                    numberOfSheets = workbook.numberOfSheets
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        return numberOfSheets
+    }
+
+    @SuppressLint("SetTextI18n")
+    private fun registerCategoryLauncher() {
+        categoryLauncher =
+            registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+                val data = result.data
+                if (data != null) {
+                    val doSearchForUser = data.getBooleanExtra("do_search", false)
+                    if (doSearchForUser) {
+                        query = data.getStringExtra("query_key").toString()
+                        businessRecycleView.isVisible = false
+                        emptyStateLayout.isVisible = false
+                        viewModel.searchItemsImmediate(query)
+                        categoryLayout.isVisible = true
+                        categoryTextView.text = "Search for $query"
+
+                    }
+                }
+            }
+    }
 
     private fun initViews(view: View) {
         businessRecycleView = view.findViewById(R.id.business_recycle_view)
