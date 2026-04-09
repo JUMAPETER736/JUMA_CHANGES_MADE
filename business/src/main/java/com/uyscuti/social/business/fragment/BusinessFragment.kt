@@ -774,6 +774,7 @@ class BusinessFragment : Fragment(),
     }
 
     private fun uploadVideoComment(
+        caption: String? = "",
         videoFilePathToUpload: String,
         isReply1: Boolean = false
     ) {
@@ -787,6 +788,7 @@ class BusinessFragment : Fragment(),
             if (isReply) {
                 businessPostsViewModel.addCommentReply(
                     commentId,
+                    content = caption,
                     contentType = "video",
                     localUpdateId = localUpdateId,
                     file = file,
@@ -796,6 +798,7 @@ class BusinessFragment : Fragment(),
             } else {
                 businessPostsViewModel.addComment(
                     businessPostId,
+                    content = caption,
                     contentType = "video",
                     localUpdateId = localUpdateId,
                     file = file
@@ -807,6 +810,7 @@ class BusinessFragment : Fragment(),
 
     private fun uploadImageComment(
         imageFilePathToUpload: String,
+        caption: String = "",
         isReply1: Boolean
     ) {
 
@@ -818,23 +822,25 @@ class BusinessFragment : Fragment(),
         val localUpdateId = generateRandomId()
 
         if (file.exists()) {
-           if (isReply) {
-               businessPostsViewModel.addCommentReply(
-                   commentId,
-                   contentType = "image",
-                   localUpdateId = localUpdateId,
-                   file = file,
-                   isReply = isReply1
-               )
-               isReply = false
-           } else {
+            if (isReply) {
+                businessPostsViewModel.addCommentReply(
+                    commentId,
+                    content = caption,
+                    contentType = "image",
+                    localUpdateId = localUpdateId,
+                    file = file,
+                    isReply = isReply1
+                )
+                isReply = false
+            } else {
                 businessPostsViewModel.addComment(
                     businessPostId,
+                    content = caption,
                     contentType = "image",
                     localUpdateId = localUpdateId,
                     file = file
                 )
-           }
+            }
         }
 
     }
