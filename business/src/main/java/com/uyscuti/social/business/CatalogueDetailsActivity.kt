@@ -2,6 +2,7 @@ package com.uyscuti.social.business
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.content.ContentUris
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -12,6 +13,7 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.provider.MediaStore
 import android.provider.OpenableColumns
 import android.util.DisplayMetrics
 import android.util.Log
@@ -26,17 +28,13 @@ import android.widget.SeekBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
-import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.ActivityResultLauncher
-import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.isVisible
 import androidx.lifecycle.lifecycleScope
 import androidx.media3.common.C
@@ -44,15 +42,18 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
+import androidx.media3.database.ExoDatabaseProvider
 import androidx.media3.datasource.DefaultDataSourceFactory
 import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.datasource.HttpDataSource
 import androidx.media3.datasource.cache.CacheDataSource
+import androidx.media3.datasource.cache.LeastRecentlyUsedCacheEvictor
 import androidx.media3.datasource.cache.SimpleCache
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.exoplayer.source.MediaSource
 import androidx.media3.exoplayer.source.ProgressiveMediaSource
+import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.daimajia.androidanimations.library.Techniques
@@ -66,8 +67,10 @@ import com.uyscuti.sharedmodule.adapter.MediaPagerAdapter
 import com.uyscuti.sharedmodule.adapter.OnViewRepliesClickListener
 import com.uyscuti.sharedmodule.adapter.notifications.AdPaginatedAdapter
 import com.uyscuti.sharedmodule.bottomSheet.SendOfferBottomSheet
-import com.uyscuti.sharedmodule.data.model.Comment
-import com.uyscuti.sharedmodule.data.model.User
+import com.uyscuti.social.network.api.models.Comment
+import com.uyscuti.social.core.models.data.Dialog
+import com.uyscuti.social.core.models.data.Message
+import com.uyscuti.social.core.models.data.User
 import com.uyscuti.sharedmodule.data.model.shortsmodels.OtherUsersProfile
 import com.uyscuti.sharedmodule.databinding.BottomDialogForShareBinding
 import com.uyscuti.sharedmodule.media.CameraActivity
@@ -79,10 +82,14 @@ import com.uyscuti.sharedmodule.presentation.DialogViewModel
 import com.uyscuti.sharedmodule.presentation.MessageViewModel
 import com.uyscuti.sharedmodule.ui.GifActivity
 import com.uyscuti.sharedmodule.uploads.AudioActivity
+import com.uyscuti.sharedmodule.uploads.DocumentsActivity
+import com.uyscuti.sharedmodule.uploads.ImagesActivity
 import com.uyscuti.sharedmodule.uploads.VideosActivity
 import com.uyscuti.sharedmodule.utils.AndroidUtil.showToast
 import com.uyscuti.sharedmodule.utils.AudioDurationHelper
 import com.uyscuti.sharedmodule.utils.AudioDurationHelper.getFormattedDuration
+import com.uyscuti.sharedmodule.utils.ChatManager
+import com.uyscuti.sharedmodule.utils.ChatManager.ChatManagerListener
 import com.uyscuti.sharedmodule.utils.NetworkUtil
 import com.uyscuti.sharedmodule.utils.PathUtil
 import com.uyscuti.sharedmodule.utils.Timer
@@ -106,6 +113,10 @@ import com.uyscuti.social.business.viewmodel.business.BusinessPostsViewModel
 import com.uyscuti.social.chatsuit.messages.CommentsInput
 import com.uyscuti.social.core.common.data.api.RemoteMessageRepository
 import com.uyscuti.social.core.common.data.api.RemoteMessageRepositoryImpl
+import com.uyscuti.social.core.common.data.room.entity.DialogEntity
+import com.uyscuti.social.core.common.data.room.entity.MessageEntity
+import com.uyscuti.social.core.common.data.room.entity.UserEntity
+import com.uyscuti.social.network.api.request.messages.SendMessageRequest
 import com.uyscuti.social.network.api.response.business.response.post.Post
 import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
 import com.uyscuti.social.network.utils.LocalStorage
@@ -118,8 +129,10 @@ import kotlinx.coroutines.Runnable
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.apache.poi.hssf.usermodel.HSSFWorkbook
 import org.apache.poi.hwpf.HWPFDocument
 import org.apache.poi.hwpf.usermodel.Range
+import org.apache.poi.xssf.usermodel.XSSFWorkbook
 import org.apache.poi.xwpf.usermodel.XWPFDocument
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
@@ -127,13 +140,12 @@ import org.greenrobot.eventbus.ThreadMode
 import java.io.File
 import java.io.IOException
 import java.io.InputStream
-import java.text.SimpleDateFormat
 import java.util.Date
-import java.util.Locale
-import java.util.TimeZone
 import javax.inject.Inject
+import kotlin.collections.mutableListOf
 import kotlin.getValue
 import kotlin.properties.Delegates
+import kotlin.random.Random
 
 @UnstableApi
 @AndroidEntryPoint
@@ -144,8 +156,8 @@ class CatalogueDetailsActivity : AppCompatActivity(),
     CommentsInput.GifListener,
     CommentsInput.AttachmentsListener,
     OnViewRepliesClickListener,
-    Timer.OnTimeTickListener
-{
+    Timer.OnTimeTickListener,
+    ChatManagerListener {
 
     private val TAG = "CatalogueDetailsActivity"
 
@@ -154,6 +166,8 @@ class CatalogueDetailsActivity : AppCompatActivity(),
     private lateinit var audioPickerLauncher: ActivityResultLauncher<Intent>
     private lateinit var videoPickerLauncher: ActivityResultLauncher<Intent>
     private lateinit var cameraLauncher: ActivityResultLauncher<Intent>
+    private lateinit var imagePickerLauncher: ActivityResultLauncher<Intent>
+    private lateinit var docsPickerLauncher: ActivityResultLauncher<Intent>
 
     private lateinit var mediaAdapter: MediaPagerAdapter
     private var commentAdapter: CommentsRecyclerViewAdapter? = null
@@ -161,10 +175,11 @@ class CatalogueDetailsActivity : AppCompatActivity(),
 
     private lateinit var dialogManager: DialogManager
     private val dialogViewModel: DialogViewModel by viewModels()
+    private val messageViewModel: MessageViewModel by viewModels()
+
+    private var messageEntity: MessageEntity? = null
 
     private val businessPostsViewModel: BusinessPostsViewModel by viewModels()
-
-    private val messageViewModel: MessageViewModel by viewModels()
     private lateinit var remoteMessageRepository: RemoteMessageRepository
 
     private lateinit var binding: ActivityCatalogueDetailsBinding
@@ -180,6 +195,10 @@ class CatalogueDetailsActivity : AppCompatActivity(),
 
     private var commentToAddReplies: Comment? = null
     private var commentPosition = 0
+
+    @Inject // or another appropriate scope
+    lateinit var chatManager: ChatManager
+    private var offerMessage = ""
 
 
     private var exoPlayer: ExoPlayer? = null
@@ -226,7 +245,7 @@ class CatalogueDetailsActivity : AppCompatActivity(),
     private var position: Int = 0
     var maxDuration = 0L
 
-    private val simpleCache: SimpleCache = FlashApplication.cache
+    private var simpleCache: SimpleCache? = FlashApplication.cache
 
 
     private lateinit var audioDurationTVCount: TextView
@@ -260,42 +279,42 @@ class CatalogueDetailsActivity : AppCompatActivity(),
     @Inject
     lateinit var retrofitIns: RetrofitInstance
 
+    private var targetCommentId: String? = null
+    private var isLoadingForTarget = false
+
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     @SuppressLint("MissingInflatedId", "SetTextI18n")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
         binding = ActivityCatalogueDetailsBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
-            insets
-        }
 
         remoteMessageRepository = RemoteMessageRepositoryImpl(retrofitIns)
 
         setRelativeLayoutToHalfScreenHeight()
 
         val businessCatalogue = intent.getSerializableExtra("catalogue") as Post
-        val position = intent.getIntExtra("position",0)
+        val position = intent.getIntExtra("position", 0)
+        val showComments = intent.getBooleanExtra("show_comments", false)
+        targetCommentId = intent.getStringExtra("commentId")
 
-        if(businessCatalogue.images.size < 2) {
+        if (businessCatalogue.images.size < 2) {
             binding.wormDotsIndicator.visibility = View.GONE
         }
 
-        if(businessCatalogue != null) {
-            mediaAdapter = MediaPagerAdapter(businessCatalogue.images as ArrayList<String>,this)
+        if (businessCatalogue != null) {
+            mediaAdapter = MediaPagerAdapter(businessCatalogue.images as ArrayList<String>, this)
             binding.catalogueDetailViewPager.adapter = mediaAdapter
 
-            if(position != 0) {
+            if (position != 0) {
                 binding.catalogueDetailViewPager.currentItem = position
             }
             binding.tvCatalogTitle.text = businessCatalogue.itemName
             binding.tvPrice.text = "MWK ${businessCatalogue.price}"
             binding.tvDescription.text = businessCatalogue.description
-            binding.tvPostTime.text = "Posted ${formattedMongoDateTime(businessCatalogue.createdAt)}"
+            binding.tvPostTime.text =
+                "Posted ${formattedMongoDateTime(businessCatalogue.createdAt)}"
             binding.tvUserName.text = "@${businessCatalogue.userDetails.username}"
 
             binding.messageUser.text = "Message ${binding.tvUserName.text}"
@@ -326,7 +345,7 @@ class CatalogueDetailsActivity : AppCompatActivity(),
 
         handleActionEvents(businessCatalogue)
 
-        if(localStorage.getUsername() == businessCatalogue.userDetails.username)
+        if (localStorage.getUsername() == businessCatalogue.userDetails.username)
             binding.btnFavorite.isEnabled = false
         else
             updateFollowButton(businessCatalogue.isFollowing)
@@ -337,6 +356,17 @@ class CatalogueDetailsActivity : AppCompatActivity(),
         registerVideoPickerLauncher()
         registerAudioPickerLauncher()
         registerCameraLauncher()
+        registerImagePicker()
+        registerDocPicker()
+
+        if (showComments) {
+            businessPostId = businessCatalogue._id
+            initCommentAdapter()
+            toggleBusinessCommentBottomSheet()
+            setCommentAdapterPagination()
+            loadToTargetComment(targetCommentId!!)
+
+        }
     }
 
     private fun setupInputManager() {
