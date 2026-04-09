@@ -631,100 +631,10 @@ class BusinessFragment : Fragment(),
         }
     }
 
-
-
-    private fun handleDocumentUri(uri: Uri) {
-        val file = getFileFromUri(uri)
-
-        requireActivity().contentResolver.query(uri, null, null, null, null)?.use { cursor ->
-            val nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
-            val sizeIndex = cursor.getColumnIndex(OpenableColumns.SIZE)
-            cursor.moveToFirst()
-            val fileName = cursor.getString(nameIndex)
-            val fileSize = cursor.getLong(sizeIndex)
-//            val numberOfPages = getNumberOfPagesFromUri(this, uri)
-            var numberOfPages = 0
-            val formattedFileSize = formatFileSize(fileSize)
-
-            val fileSizes = isFileSizeGreaterThan2MB(fileSize)
-            val documentType = fileType(fileName)
-            Log.d("handleDocumentUri", ": $fileName")
-            Log.d("handleDocumentUri", "uri $uri")
-            Log.d("handleDocumentUri", "formattedFileSize $formattedFileSize")
-            Log.d("handleDocumentUri", "Document type $documentType")
-
-            numberOfPages = when (documentType) {
-                "doc" -> {
-                    getNumberOfPagesFromUriForDoc(uri)
-                }
-
-                "docx", "xlsx", "pptx" -> {
-                    getNumberOfPagesFromUriForDocx(uri)
-                }
-
-                else -> {
-                    getNumberOfPagesFromUriForPDF(requireActivity(), uri)
-                }
-            }
-
-
-            Log.d("handleDocumentUri", "File path: ${file?.absolutePath}")
-
-            if (fileSizes) {
-                if (!isReply) {
-                    Log.d("handleDocumentUri", "handleDocumentUri for main document")
-
-                    uploadDocumentComment(
-                        file?.absolutePath!!,
-                        numberOfPages,
-                        formattedFileSize,
-                        documentType,
-                        fileName,
-                        isReply
-                    )
-                } else {
-                    Log.d("handleDocumentUri", "This is for document reply")
-                    uploadDocumentComment(
-                        file?.absolutePath!!,
-                        numberOfPages,
-                        formattedFileSize,
-                        documentType,
-                        fileName,
-                        isReply
-                    )
-                }
-
-            } else {
-
-                if (!isReply) {
-                    Log.d("handleDocumentUri", "handleDocumentUri for main document")
-                    uploadDocumentComment(
-                        file?.absolutePath!!,
-                        numberOfPages,
-                        formattedFileSize,
-                        documentType,
-                        fileName,
-                        isReply
-                    )
-                } else {
-                    Log.d("handleDocumentUri", "This is for document reply")
-                    uploadDocumentComment(
-                        file?.absolutePath!!,
-                        numberOfPages,
-                        formattedFileSize,
-                        documentType,
-                        fileName,
-                        isReply
-                    )
-                }
-            }
-
-        }
-    }
-
     private fun getNumberOfPagesFromUriForDoc(uri: Uri): Int {
         var numberOfPages = 0
-        val inputStream: InputStream = requireActivity().contentResolver.openInputStream(uri) ?: return 0
+        val inputStream: InputStream =
+            requireActivity().contentResolver.openInputStream(uri) ?: return 0
         val hwpfDocument = HWPFDocument(inputStream)
         val range = hwpfDocument.range
 
@@ -758,6 +668,7 @@ class BusinessFragment : Fragment(),
         }
         return numberOfPages
     }
+
 
     private fun getNumberOfPagesFromUriForDocx(uri: Uri): Int {
         var numberOfPages = 0
