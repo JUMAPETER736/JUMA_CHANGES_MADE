@@ -2777,6 +2777,85 @@ class BusinessFragment : Fragment(),
         }
     }
 
+    // Helper method to check if error is cache-related
+    private fun isCacheError(error: PlaybackException): Boolean {
+        val cause = error.cause
+        return cause is IllegalStateException ||
+                cause?.cause is IllegalStateException ||
+                error.message?.contains("cache", ignoreCase = true) == true ||
+                cause?.message?.contains("SimpleCache", ignoreCase = true) == true
+    }
+
+    // Helper method to clear ExoPlayer cache
+    private fun clearExoPlayerCache() {
+        try {
+            simpleCache?.release()
+
+            val exoPlayerCacheDir = File(requireActivity().cacheDir, "exoplayer")
+            if (exoPlayerCacheDir.exists()) {
+                exoPlayerCacheDir.deleteRecursively()
+                Log.d("clearExoPlayerCache", "Cache cleared successfully")
+            }
+
+            // Reinitialize cache
+            val leastRecentlyUsedCacheEvictor =
+                LeastRecentlyUsedCacheEvictor(1024 * 1024 * 1024) // 1GB
+            val exoDatabaseProvider = ExoDatabaseProvider(requireActivity())
+            exoPlayerCacheDir.mkdirs()
+            simpleCache =
+                SimpleCache(exoPlayerCacheDir, leastRecentlyUsedCacheEvictor, exoDatabaseProvider)
+
+            Log.d("clearExoPlayerCache", "Cache reinitialized")
+        } catch (e: Exception) {
+            Log.e("clearExoPlayerCache", "Error clearing cache", e)
+        }
+    }
+
+    // Helper method to build ExoPlayer with cache
+    private fun buildExoPlayerWithCache(mediaItem: MediaItem): ExoPlayer {
+        httpDataSourceFactory = DefaultHttpDataSource.Factory()
+            .setAllowCrossProtocolRedirects(true)
+
+        defaultDataSourceFactory = DefaultDataSourceFactory(
+            requireActivity(), httpDataSourceFactory
+        )
+
+        cacheDataSourceFactory = CacheDataSource.Factory()
+            .setCache(simpleCache!!)
+            .setUpstreamDataSourceFactory(httpDataSourceFactory)
+            .setFlags(CacheDataSource.FLAG_IGNORE_CACHE_ON_ERROR)
+
+        val mediaSourceFactory: MediaSource.Factory =
+            DefaultMediaSourceFactory(requireActivity())
+                .setDataSourceFactory(cacheDataSourceFactory)
+
+        val player = ExoPlayer.Builder(requireActivity())
+            .setMediaSourceFactory(mediaSourceFactory)
+            .build()
+
+        val mediaSource = ProgressiveMediaSource.Factory(cacheDataSourceFactory)
+            .createMediaSource(mediaItem)
+
+        player.setMediaSource(mediaSource)
+        return player
+    }
+
+    // Helper method to build ExoPlayer without cache (direct server playback)
+    private fun buildExoPlayerWithoutCache(mediaItem: MediaItem): ExoPlayer {
+        val directHttpDataSourceFactory = DefaultHttpDataSource.Factory()
+            .setAllowCrossProtocolRedirects(true)
+            .setConnectTimeoutMs(30000)
+            .setReadTimeoutMs(30000)
+
+        val player = ExoPlayer.Builder(requireActivity()).build()
+
+        val mediaSource = ProgressiveMediaSource.Factory(directHttpDataSourceFactory)
+            .createMediaSource(mediaItem)
+
+        player.setMediaSource(mediaSource)
+        return player
+    }
+
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun audioWave(event: AudioPlayerHandler) {
 
