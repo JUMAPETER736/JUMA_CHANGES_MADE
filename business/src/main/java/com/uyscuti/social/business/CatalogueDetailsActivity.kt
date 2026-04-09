@@ -1007,7 +1007,27 @@ class CatalogueDetailsActivity : AppCompatActivity(),
         }
     }
 
+    private fun getContentUriFromFilePath(context: Context, filePath: String): Uri? {
+        val file = File(filePath)
+        val projection = arrayOf(MediaStore.Files.FileColumns._ID)
+        val selection = "${MediaStore.Files.FileColumns.DATA}=?"
+        val selectionArgs = arrayOf(file.absolutePath)
 
+        context.contentResolver.query(
+            MediaStore.Files.getContentUri("external"),
+            projection,
+            selection,
+            selectionArgs,
+            null
+        )?.use { cursor ->
+            if (cursor.moveToFirst()) {
+                val id =
+                    cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns._ID))
+                return ContentUris.withAppendedId(MediaStore.Files.getContentUri("external"), id)
+            }
+        }
+        return null
+    }
 
     private fun getNumberOfPagesFromUriForDoc(uri: Uri): Int {
         var numberOfPages = 0
@@ -2514,16 +2534,17 @@ class CatalogueDetailsActivity : AppCompatActivity(),
                     val videoPath = data?.getStringExtra("video_url")
                     val uriString = data?.getStringExtra("vUri")
                     val vUri = Uri.parse(uriString)
+                    val caption = data?.getStringExtra("caption") ?: ""
 
                     val uri = Uri.parse(videoPath)
 
-                    if(videoPath != null) {
+                    if (videoPath != null) {
                         Log.d("VideoPicker", "File path: $videoPath")
                         val durationString = getFormattedDuration(videoPath)
                         val file = File(videoPath)
                         Log.d("VideoPicker", "File path durationString: $durationString")
 
-                        if(file.exists()) {
+                        if (file.exists()) {
                             val fileSizeInBytes = file.length()
                             val fileSizeInKB = fileSizeInBytes / 1024
                             val fileSizeInMB = fileSizeInKB / 1024
@@ -2534,19 +2555,19 @@ class CatalogueDetailsActivity : AppCompatActivity(),
 
                             if (fileSizeInGB.toInt() == 1) {
                                 showToast(this, "File size too large")
-                            } else if(fileSizeInMB > 10) {
+                            } else if (fileSizeInMB > 10) {
                                 Log.d("VideoPicker", "File size: greater than $fileSizeInMB MB")
-                                if(isReply) {
-                                    uploadVideoComment(videoPath, isReply)
+                                if (isReply) {
+                                    uploadVideoComment(videoPath, caption, isReply)
                                 } else {
-                                    uploadVideoComment(videoPath)
+                                    uploadVideoComment(videoPath, caption)
                                 }
                             } else {
                                 Log.d("VideoPicker", "File size: less than $fileSizeInMB MB")
-                                if(isReply) {
-                                    uploadVideoComment(videoPath, isReply)
+                                if (isReply) {
+                                    uploadVideoComment(videoPath, caption, isReply)
                                 } else {
-                                    uploadVideoComment(videoPath)
+                                    uploadVideoComment(videoPath, caption)
                                 }
                             }
                         }
@@ -2559,48 +2580,52 @@ class CatalogueDetailsActivity : AppCompatActivity(),
     }
 
     private fun registerAudioPickerLauncher() {
-        audioPickerLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        audioPickerLauncher =
+            registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
 
-            val data = result.data
-            val audioPath = data?.getStringExtra("audio_url")
-            val uriString = data?.getStringExtra("aUri")
+                val data = result.data
+                val audioPath = data?.getStringExtra("audio_url")
+                val uriString = data?.getStringExtra("aUri")
+                val caption = data?.getStringExtra("caption") ?: ""
 
-            if (audioPath != null) {
-                Log.d("AudioPicker", "File path: $audioPath")
-                val durationString = getFormattedDuration(audioPath)
-                val fileName = getFileNameFromLocalPath(audioPath)
+                if (audioPath != null) {
+                    Log.d("AudioPicker", "File path: $audioPath")
+                    val durationString = getFormattedDuration(audioPath)
+                    val fileName = getFileNameFromLocalPath(audioPath)
 
-                Log.d("AudioPicker", "File name: $fileName")
-                Log.d("AudioPicker", "durationString: $durationString")
+                    Log.d("AudioPicker", "File name: $fileName")
+                    Log.d("AudioPicker", "durationString: $durationString")
 //                        Log.d("AudioPicker", "reverseDurationString: $reverseDurationString")
-                val file = File(audioPath)
+                    val file = File(audioPath)
 
-                var fileSizeInBytes by Delegates.notNull<Long>()
-                var fileSizeInKB by Delegates.notNull<Long>()
-                var fileSizeInMB by Delegates.notNull<Long>()
+                    var fileSizeInBytes by Delegates.notNull<Long>()
+                    var fileSizeInKB by Delegates.notNull<Long>()
+                    var fileSizeInMB by Delegates.notNull<Long>()
 
 
-                fileSizeInBytes = file.length()
-                fileSizeInKB = fileSizeInBytes / 1024
-                fileSizeInMB = fileSizeInKB / 1024
+                    fileSizeInBytes = file.length()
+                    fileSizeInKB = fileSizeInBytes / 1024
+                    fileSizeInMB = fileSizeInKB / 1024
 
-                if (isReply) {
-                    uploadAudioComment(
-                        file.absolutePath,
-                        isReply1 = isReply,
-                        fileType = file.extension
-                    )
-                } else {
-                    Log.d("AudioPicker", "Calling upload audio comment")
-                    uploadAudioComment(
-                        file.absolutePath,
-                        isReply1 = isReply,
-                        fileType = file.extension
-                    )
+                    if (isReply) {
+                        uploadAudioComment(
+                            file.absolutePath,
+                            caption,
+                            isReply1 = isReply,
+                            fileType = file.extension
+                        )
+                    } else {
+                        Log.d("AudioPicker", "Calling upload audio comment")
+                        uploadAudioComment(
+                            file.absolutePath,
+                            caption,
+                            isReply1 = isReply,
+                            fileType = file.extension
+                        )
+                    }
+
                 }
-
             }
-        }
 
     }
 
