@@ -45,7 +45,7 @@
     <string name="search">Search</string>
     <string name="close">Close</string>
     <string name="repost">Repost</string>
-    <string name="by_enabling_this_feature_every_customer_using_flash_app_will_be_receiving_a_notification_with_a_radius_of_5_meters_depending_on_your_current_location_this_will_make_it_easier_to_advertise_your_business_everywhere_you_go">By enabling this feature, every customer using Flash App will be receiving a notification with a radius of 5 meters depending on your current location. This will make it easier to advertise your business everywhere you go.</string>
+    <string name="by_enabling_this_feature_every_customer_using_flash_app_will_be_receiving_a_notification_with_a_radius_of_5_meters_depending_on_your_current_location_this_will_make_it_easier_to_advertise_your_business_everywhere_you_go">By enabling this feature, every customer using Flash App will be receiving a notification within a specified radius, depending on your current location. This will make it easier to advertise your business everywhere you go.</string>
     <string name="enable_walking_billboard">Enable walking billboard.</string>
     <string name="tag_where_your_business_is_situated_this_information_can_be_used_for_various_purposes_including_advertising_and_reaching_out_to_potential_customers_in_that_area">Tag where your business is situated. This information can be used for various purposes, including advertising and reaching out to potential customers in that area.</string>
     <string name="tag_your_business_location">Tag your business location.</string>
@@ -66,4 +66,49 @@
     <string name="mwk">MWK</string>
     <string name="offer_price">Offer price</string>
     <string name="be_the_first_to_comment">Be the first to comment</string>
+    <string name="post">POST</string>
+    <string name="item_name">Item name</string>
+    <string name="loading_more">Loading more...</string>
+    <string name="search_marketplace">Search Market</string>
+    <string name="market">Market</string>
+    <string name="categories">Categories</string>
+    <string name="category_icon">Category icon</string>
+    <string name="no_categories_found">No categories found</string>
+    <string name="try_searching_with_different_keywords">Try searching with different keywords</string>
+
+    <string-array name="category_array">
+        <item>Select category</item>
+        <item>Vehicles</item>
+        <item>Property rentals</item>
+        <item>Property for sale</item>
+        <item>Classifieds</item>
+        <item>Electronics</item>
+        <item>Clothing</item>
+        <item>Family</item>
+        <item>Free</item>
+        <item>Garden</item>
+        <item>Hobbies</item>
+        <item>Home goods</item>
+        <item>Home improvements</item>
+        <item>Entertainment</item>
+        <item>Musical instruments</item>
+        <item>Office supplies</item>
+        <item>Pet supplies</item>
+        <item>Sporting goods</item>
+        <item>Toys</item>
+        <item>Furniture</item>
+        <item>Appliances</item>
+        <item>Phones</item>
+        <item>Baby-Kids</item>
+        <item>Bags-Luggage</item>
+        <item>Books-Movies-Music</item>
+        <item>Health-Beauty</item>
+        <item>Jewelry</item>
+        <item>Tools</item>
+        <item>Bicycles</item>
+        <item>Arts-Crafts</item>
+        <item>Tickets</item>
+        <item>Garage sale</item>
+    </string-array>
+
 </resources>

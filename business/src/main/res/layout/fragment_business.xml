@@ -95,6 +95,61 @@
 
                     </androidx.cardview.widget.CardView>
 
+                    <!-- Categories Header -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:visibility="gone"
+                        android:id="@+id/category_layout"
+                        >
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/categories"
+                            android:textSize="17sp"
+                            android:textStyle="bold"
+                            android:textColor="#1C1E21"
+                            android:id="@+id/category"
+                            android:padding="16dp" />
+
+                        <!-- Divider -->
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="1dp"
+                            android:background="#E4E6EB" />
+
+                    </LinearLayout>
+
+                    <!-- Categories Empty State -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:orientation="vertical"
+                        android:gravity="center"
+                        android:id="@+id/emptyStateLayout"
+                        android:visibility="gone"
+                        >
+
+                        <ImageView
+                            android:layout_width="100dp"
+                            android:layout_height="100dp"
+                            android:src="@drawable/search"
+                            />
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:id="@+id/emptyState"
+                            android:textSize="@dimen/dimen_16"
+                            tools:text="No product found in that category"
+                            android:padding="8dp"
+                            android:gravity="center"
+                            />
+
+                    </LinearLayout>
+
                     <androidx.recyclerview.widget.RecyclerView
                         android:id="@+id/business_recycle_view"
                         android:layout_width="match_parent"
