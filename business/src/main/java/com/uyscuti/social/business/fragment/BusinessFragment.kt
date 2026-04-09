@@ -1002,17 +1002,20 @@ class BusinessFragment : Fragment(),
         progressBar = view.findViewById(R.id.progress_bar)
         errorTextView = view.findViewById(R.id.tv_error)
         swipeRefreshLayout = view.findViewById(R.id.swipe_refresh_layout)
-        searchContainer = view.findViewById(R.id.search_container)
-
         sellerButton = view.findViewById(R.id.btn_seller)
         category = view.findViewById(R.id.btn_category)
+        categoryTextView = view.findViewById(R.id.category)
+        categoryLayout = view.findViewById(R.id.category_layout)
+        emptyStateLayout = view.findViewById(R.id.emptyStateLayout)
+        emptyStateTextView = view.findViewById(R.id.emptyState)
         motionLayout = view.findViewById(R.id.motionLayout)
         vnLayout = view.findViewById(R.id.VnLayout)
         replyToLayout = view.findViewById(R.id.replyToLayout)
         textInput = view.findViewById(R.id.input)
 
         emojiPopup = EmojiPopup(motionLayout, textInput.inputEditText)
-        inputMethodManager = requireActivity().getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
+        inputMethodManager =
+            requireActivity().getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
         textInput.setInputListener(this)
         textInput.setAttachmentsListener(this)
         textInput.setVoiceListener(this)
@@ -1059,20 +1062,86 @@ class BusinessFragment : Fragment(),
 
         val factory = BusinessCatalogueViewModelFactory(repository)
 
-        viewModel = ViewModelProvider(this,factory)[BusinessCatalogueViewModel::class.java]
+        viewModel = ViewModelProvider(this, factory)[BusinessCatalogueViewModel::class.java]
 
         // Setup swipe to refresh
         swipeRefreshLayout.setOnRefreshListener {
-            viewModel.refreshCatalogue()
+            if (viewModel.isInSearchMode()) {
+                // Refresh search results
+                viewModel.searchItemsImmediate(
+                    query,
+                    refresh = true
+                )
+                businessRecycleView.isVisible = false
+                emptyStateLayout.isVisible = false
+            } else {
+                // Refresh regular catalogue
+                businessRecycleView.isVisible = false
+                viewModel.refreshCatalogue()
+            }
         }
     }
 
+    @SuppressLint("SetTextI18n")
     private fun observeViewModel() {
         // Observe catalogue items and update adapter
         viewModel.catalogueItems.observe(viewLifecycleOwner) { items ->
-            businessAdapter.updateCatalogue(items)
-            errorTextView.visibility = if (items.isEmpty()) View.VISIBLE else View.GONE
-            errorTextView.text = if (items.isEmpty()) "No items found" else ""
+            val currentMode = viewModel.isInSearchMode()
+            val currentQuery = if (currentMode) query else ""  // Or get from viewModel
+
+            // Detect ANY change that needs animation disable
+            val modeChanged = isInSearchMode != currentMode
+            val queryChanged = isInSearchMode && currentMode && (lastSearchQuery != currentQuery)
+            val needsNoAnimation = modeChanged || queryChanged
+
+            if (items.isNotEmpty()) {
+                if (needsNoAnimation) {
+                    // Disable animations for mode change OR query change
+                    val itemAnimator = businessRecycleView.itemAnimator
+                    businessRecycleView.itemAnimator = null
+
+                    businessAdapter.submitList(null)
+
+                    businessRecycleView.post {
+                        businessAdapter.submitList(items.toList())
+
+                        businessRecycleView.postDelayed({
+                            businessRecycleView.itemAnimator = itemAnimator
+                        }, 100)
+                    }
+
+                    if (modeChanged) {
+                        businessAdapter.resetPagination()
+                    }
+                } else {
+                    // Same mode, same query - pagination or refresh
+                    businessAdapter.updateCatalogue(items)
+                }
+
+                // Update tracking variables
+                isInSearchMode = currentMode
+                lastSearchQuery = currentQuery
+
+                emptyStateLayout.isVisible = false
+                businessRecycleView.isVisible = true
+
+            } else {
+                isInSearchMode = currentMode
+                lastSearchQuery = currentQuery
+
+                if (currentMode) {
+                    emptyStateLayout.isVisible = true
+                    emptyStateTextView.text = "Search results not found for '$currentQuery'."
+                    businessRecycleView.isVisible = false
+                }
+            }
+        }
+
+        // 2. Observe paginated items (NEW PAGE DATA)
+        viewModel.newPageItems.observe(viewLifecycleOwner) { newItems ->
+            if (newItems != null && newItems.isNotEmpty()) {
+                businessAdapter.appendCatalogue(newItems)
+            }
         }
 
         catalogueViewModel.cataloguePost.observe(viewLifecycleOwner) { post ->
@@ -1088,10 +1157,10 @@ class BusinessFragment : Fragment(),
                 if (commentState.isReply) {
                     processReplyComments(commentState.comment)
                 } else {
-                    commentAdapter!!.submitItem(commentState.comment,0)
+                    commentAdapter!!.submitItem(commentState.comment, 0)
                     businessAdapter.updateCommentCount(postPosition)
 
-                    if(commentAdapter!!.itemCount == 1) {
+                    if (commentAdapter!!.itemCount == 1) {
                         updateUI(false)
                     }
                 }
@@ -1101,13 +1170,24 @@ class BusinessFragment : Fragment(),
 
         // Observe loading state
         viewModel.isLoading.observe(viewLifecycleOwner) { isLoading ->
-           // progressBar.visibility = if (isLoading) View.VISIBLE else View.GONE
             swipeRefreshLayout.isRefreshing = isLoading
         }
 
-        //  observe more loading state
+        // 4. Observe pagination loading state
         viewModel.isLoadingMore.observe(viewLifecycleOwner) { isLoadingMore ->
-           businessAdapter.setLoadingMore(isLoadingMore)
+            businessRecycleView.post {
+                businessAdapter.setLoadingMore(isLoadingMore)
+            }
+
+            // Stop swipe refresh if it's active
+            if (!isLoadingMore) {
+                swipeRefreshLayout.isRefreshing = false
+            }
+        }
+
+        // 5. Observe pagination availability
+        viewModel.hasMoreData.observe(viewLifecycleOwner) { hasMore ->
+            businessAdapter.setHasMoreData(hasMore)
         }
 
 
@@ -1119,25 +1199,6 @@ class BusinessFragment : Fragment(),
             }
         }
 
-        // Alternative: Observe UI state for comprehensive state management
-        viewModel.uiState.observe(viewLifecycleOwner) { state ->
-            when (state) {
-                is BusinessCatalogueViewModel.CatalogueUiState.Loading -> {
-                   // progressBar.visibility = View.VISIBLE
-                    errorTextView.visibility = View.GONE
-                }
-                is BusinessCatalogueViewModel.CatalogueUiState.Success -> {
-                    progressBar.visibility = View.GONE
-                    businessAdapter.updateCatalogue(state.items)
-                    errorTextView.visibility = if (state.items.isEmpty()) View.VISIBLE else View.GONE
-                }
-                is BusinessCatalogueViewModel.CatalogueUiState.Error -> {
-                    progressBar.visibility = View.GONE
-                    errorTextView.visibility = View.VISIBLE
-                    errorTextView.text = state.message
-                }
-            }
-        }
     }
 
     private fun processReplyComments(comment: Comment) {
