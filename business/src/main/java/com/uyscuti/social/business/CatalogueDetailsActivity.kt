@@ -744,23 +744,41 @@ class CatalogueDetailsActivity : AppCompatActivity(),
             itemImage = data.images.first()
         )
 
+        val user = User(
+            data.owner,
+            data.userDetails.username,
+            data.userDetails.avatar,
+            false,
+            Date()
+        )
+
         // Set callback for when offer is submitted
         bottomSheet.onOfferSubmitted = { amount, message ->
             // Handle the submitted offer
             Log.d("Offer", "Amount: MWK$amount, Message: $message")
 
-            val currentUsername = localStorage.getUsername()
-            val messageToSend = "Offer from @$currentUsername\nOffer amount$amount"
+            var messageToSend = ""
 
-            Log.d("Offer", "messageToSend $messageToSend")
+            messageToSend = if (message.isEmpty()) {
+                "" +
+                        "Hi! I'm interested in your ${data.itemName}." +
+                        "\nWould you accept MWK$amount ?" +
+                        "\nLet me know, thanks!"
+            } else {
+                "" +
+                        "${data.itemName}.\n${data.description}." +
+                        "\nOffer Amount: MWK$amount ?" +
+                        "\n$message"
+            }
+
+            Log.d("Offer", "messageToSend: $messageToSend")
+
+            offerMessage = messageToSend
 
             if (NetworkUtil.isConnected(this)) {
-                CoroutineScope(Dispatchers.IO).launch {
-                    val result = remoteMessageRepository.sendMessage(data.owner,messageToSend)
-                    Log.d(TAG, "Message Result: $result")
-                }
+                addDialogInTheBackGround(user, messageToSend)
             } else {
-                showToast(this,"You have no internet connection")
+                showToast(this, "You have no internet connection")
             }
 
         }
@@ -768,6 +786,74 @@ class CatalogueDetailsActivity : AppCompatActivity(),
     }
 
 
+    private fun addDialogInTheBackGround(user: User, lastMessage: String) {
+        val singleUserList = arrayListOf(user)
+
+        val message = Message(
+            user.id,
+            user,
+            lastMessage,
+            Date()
+        )
+
+        val tempDialog = Dialog(
+            user.id,
+            user.name,
+            user.avatar,
+            singleUserList,
+            message,
+            0
+        )
+
+        val messageId = "Text_${Random.Default.nextInt()}"
+
+        val textMessage = MessageEntity(
+            id = messageId,
+            chatId = user.id,
+            userName = "You",
+            user = user.toUserEntity(),
+            userId = localStorage.getUserId(),
+            text = lastMessage,
+            createdAt = System.currentTimeMillis(),
+            imageUrl = null,
+            voiceUrl = null,
+            voiceDuration = 0,
+            status = "Sending",
+            videoUrl = null,
+            audioUrl = null,
+            docUrl = null,
+            fileSize = 0
+        )
+
+        messageEntity = textMessage
+
+        val dialogEntity = DialogEntity(
+            id = tempDialog.dialogName,
+            dialogPhoto = tempDialog.dialogPhoto,
+            dialogName = tempDialog.dialogName,
+            users = listOf(user.toUserEntity()),
+            lastMessage = textMessage,
+            unreadCount = 0
+        )
+
+        insertDialog(dialogEntity)
+    }
+
+    private fun User.toUserEntity(): UserEntity {
+        return UserEntity(
+            id,
+            name,
+            avatar,
+            lastSeen = Date(),
+            true
+        )
+    }
+
+    private fun insertDialog(dialog: DialogEntity) {
+        CoroutineScope(Dispatchers.IO).launch {
+            dialogViewModel.insertDialog(dialog)
+        }
+    }
 
 
     private val getDocumentContent =
@@ -1040,7 +1126,8 @@ class CatalogueDetailsActivity : AppCompatActivity(),
         }
 
     private fun openImagePicker() {
-        pickMultipleMedia.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+        val intent = Intent(this, ImagesActivity::class.java)
+        imagePickerLauncher.launch(intent)
     }
 
     private fun uploadVideoComment(
