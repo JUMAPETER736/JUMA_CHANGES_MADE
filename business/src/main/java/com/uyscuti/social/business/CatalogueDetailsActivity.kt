@@ -1744,7 +1744,7 @@ class CatalogueDetailsActivity : AppCompatActivity(),
             }
         }
     }
-    
+
     private suspend fun loadPagesToTarget(
         targetPage: Int,
         commentId: String,
@@ -1764,6 +1764,34 @@ class CatalogueDetailsActivity : AppCompatActivity(),
             }
             isLoadingForTarget = false
         }
+    }
+
+    private fun scrollToComment(commentId: String, currentPage: Int) {
+        val position = commentAdapter?.findCommentPosition(commentId)
+
+        if (position != -1) {
+            val layoutManager = commentRecyclerView.layoutManager as LinearLayoutManager
+
+            // Scroll to position with offset
+            layoutManager.scrollToPositionWithOffset(position!!, commentRecyclerView.height / 3)
+
+            commentRecyclerView.postDelayed({
+                highlightComment(position, currentPage)
+            }, 300)
+        } else {
+            // showError("Comment not available")
+        }
+    }
+
+    private fun highlightComment(position: Int, currentPage: Int) {
+        commentAdapter?.setHighlightedPosition(position)
+        commentRecyclerView.postDelayed({
+            commentAdapter?.clearHighlight()
+
+            if (!isLoadingForTarget) {
+                commentAdapter?.setmCurrentPage(currentPage)
+            }
+        }, 4000)
     }
 
     private fun commentAudioStartPlaying(
