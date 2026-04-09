@@ -1007,6 +1007,8 @@ class CatalogueDetailsActivity : AppCompatActivity(),
         }
     }
 
+
+
     private fun getNumberOfPagesFromUriForDoc(uri: Uri): Int {
         var numberOfPages = 0
         val inputStream: InputStream = contentResolver.openInputStream(uri) ?: return 0
@@ -1132,6 +1134,7 @@ class CatalogueDetailsActivity : AppCompatActivity(),
 
     private fun uploadVideoComment(
         videoFilePathToUpload: String,
+        caption: String,
         isReply1: Boolean = false
     ) {
         Log.d("uploadVideoComment", "uploadVideoComment: $videoFilePathToUpload")
@@ -1144,6 +1147,7 @@ class CatalogueDetailsActivity : AppCompatActivity(),
             if (isReply) {
                 businessPostsViewModel.addCommentReply(
                     commentId,
+                    content = caption,
                     contentType = "video",
                     localUpdateId = localUpdateId,
                     file = file,
@@ -1153,7 +1157,45 @@ class CatalogueDetailsActivity : AppCompatActivity(),
             } else {
                 businessPostsViewModel.addComment(
                     businessPostId,
+                    content = caption,
                     contentType = "video",
+                    localUpdateId = localUpdateId,
+                    file = file
+                )
+            }
+        }
+
+    }
+
+    private fun uploadImageComment(
+        imageFilePathToUpload: String,
+        caption: String = "",
+        isReply1: Boolean
+    ) {
+
+        Log.d("uploadImageComment", "uploadImageComment: $imageFilePathToUpload")
+        Log.d("uploadImageComment", "uploadImageComment: isReply is $isReply")
+
+        val file = File(imageFilePathToUpload)
+
+        val localUpdateId = generateRandomId()
+
+        if (file.exists()) {
+            if (isReply) {
+                businessPostsViewModel.addCommentReply(
+                    commentId,
+                    content = caption,
+                    contentType = "image",
+                    localUpdateId = localUpdateId,
+                    file = file,
+                    isReply = isReply1
+                )
+                isReply = false
+            } else {
+                businessPostsViewModel.addComment(
+                    businessPostId,
+                    content = caption,
+                    contentType = "image",
                     localUpdateId = localUpdateId,
                     file = file
                 )
