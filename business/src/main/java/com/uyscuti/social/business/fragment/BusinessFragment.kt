@@ -669,7 +669,6 @@ class BusinessFragment : Fragment(),
         return numberOfPages
     }
 
-
     private fun getNumberOfPagesFromUriForDocx(uri: Uri): Int {
         var numberOfPages = 0
         val inputStream: InputStream = requireActivity().contentResolver.openInputStream(uri) ?: return 0
@@ -685,63 +684,9 @@ class BusinessFragment : Fragment(),
 
     }
 
-    private val pickMultipleMedia =
-        registerForActivityResult(ActivityResultContracts.PickMultipleVisualMedia(2)) { uris ->
-            // Callback is invoked after the user selects media items or closes the
-            // photo picker.
-            if (uris.isNotEmpty()) {
-                for (uri in uris) {
-                    val filePath = PathUtil.getPath(
-                        requireActivity(),
-                        uri
-                    ) // Use the utility class to get the real file path
-                    Log.d("PhotoPicker", "File path: $filePath")
-                    Log.d("PhotoPicker", "File path: $isReply")
-                    Log.d(
-                        "PhotoPicker", "Selected image path from camera: $uri"
-                    )
-
-                    val file = filePath?.let { File(it) }
-                    if (file?.exists() == true) {
-                        lifecycleScope.launch {
-                            val compressedImageFile = Compressor.compress(requireActivity(), file)
-                            Log.d(
-                                "PhotoPicker",
-                                "PhotoPicker: compressedImageFile absolutePath: ${compressedImageFile.absolutePath}"
-                            )
-
-                            val fileSizeInBytes = compressedImageFile.length()
-                            val fileSizeInKB = fileSizeInBytes / 1024
-                            val fileSizeInMB = fileSizeInKB / 1024
-
-                            Log.d(
-                                "PhotoPicker",
-                                "PhotoPicker: compressedImageFile size $fileSizeInKB KB, $fileSizeInMB MB"
-                            )
-
-                            if (!isReply) {
-                               uploadImageComment(
-                                   compressedImageFile.absolutePath,
-                                   isReply
-                                   )
-                            } else {
-                                uploadImageComment(
-                                    compressedImageFile.absolutePath,
-                                    isReply
-                                )
-                            }
-                        }
-                    }
-
-                }
-
-            } else {
-                Log.d("PhotoPicker", "No media selected")
-            }
-        }
-
     private fun uploadDocumentComment(
         documentFilePathToUpload: String,
+        caption: String = "",
         numberOfPages: Int,
         fileSize: String,
         fileType: String,
@@ -753,13 +698,14 @@ class BusinessFragment : Fragment(),
 
         val localUpdateId = generateRandomId()
         Log.d("UploadingDocument", "File exist: ${file.exists()}")
-        if(file.exists()) {
+        if (file.exists()) {
             Log.d("UploadingDocument", "Upload document called")
 
             if (isReply) {
                 businessPostsViewModel.addCommentReply(
                     commentId,
                     file = file,
+                    content = caption,
                     contentType = "docs",
                     localUpdateId = localUpdateId,
                     numberOfPages = numberOfPages,
@@ -774,6 +720,7 @@ class BusinessFragment : Fragment(),
                 businessPostsViewModel.addComment(
                     businessPostId,
                     file = file,
+                    content = caption,
                     contentType = "docs",
                     localUpdateId = localUpdateId,
                     numberOfPages = numberOfPages,
@@ -789,6 +736,7 @@ class BusinessFragment : Fragment(),
 
     private fun uploadAudioComment(
         audio: String,
+        caption: String? = "",
         contentType: String = "audio",
         isReply1: Boolean,
         fileType: String
@@ -800,6 +748,7 @@ class BusinessFragment : Fragment(),
             if (isReply) {
                 businessPostsViewModel.addCommentReply(
                     commentId,
+                    content = caption,
                     file = file,
                     contentType = contentType,
                     localUpdateId = localUpdateId,
@@ -811,6 +760,7 @@ class BusinessFragment : Fragment(),
             } else {
                 businessPostsViewModel.addComment(
                     businessPostId,
+                    content = caption,
                     file = file,
                     contentType = contentType,
                     localUpdateId = localUpdateId,
