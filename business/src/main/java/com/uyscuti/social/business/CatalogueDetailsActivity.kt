@@ -382,7 +382,7 @@ class CatalogueDetailsActivity : AppCompatActivity(),
     private fun toggleBusinessCommentBottomSheet() {
         val currentVisibility = binding.motionLayout.visibility
 
-        if(currentVisibility == View.VISIBLE) {
+        if (currentVisibility == View.VISIBLE) {
             binding.motionLayout.visibility = View.GONE
             binding.VnLayout.visibility = View.GONE
 
@@ -402,6 +402,11 @@ class CatalogueDetailsActivity : AppCompatActivity(),
             binding.motionLayout.transitionToStart()
         }
 
+    }
+
+    override fun onResume() {
+        super.onResume()
+        chatManager.listener = this
     }
 
     private fun onGoBack() {
@@ -430,7 +435,7 @@ class CatalogueDetailsActivity : AppCompatActivity(),
         val newBookmarkStatus = !post.isBookmarked
         post.isBookmarked = newBookmarkStatus
 
-        post.bookmarkCount = if(newBookmarkStatus) post.bookmarkCount + 1 else maxOf(
+        post.bookmarkCount = if (newBookmarkStatus) post.bookmarkCount + 1 else maxOf(
             0,
             post.bookmarkCount - 1
         )
@@ -471,12 +476,12 @@ class CatalogueDetailsActivity : AppCompatActivity(),
             if (commentState.isReply) {
                 processReplyComments(commentState.comment)
             } else {
-                commentAdapter!!.submitItem(commentState.comment,0)
+                commentAdapter!!.submitItem(commentState.comment, 0)
                 var commentCount = data.comments
                 ++commentCount
                 binding.buCommentCount.text = commentCount.toString()
                 data.comments = commentCount
-                if(commentAdapter!!.itemCount == 1) {
+                if (commentAdapter!!.itemCount == 1) {
                     updateUI(false)
                 }
             }
@@ -518,7 +523,7 @@ class CatalogueDetailsActivity : AppCompatActivity(),
 
             commentToAddReplies?.replies?.add(0, newReply)
 
-        } else if(comment.contentType == "gif") {
+        } else if (comment.contentType == "gif") {
             val newReply = com.uyscuti.social.network.api.response.commentreply.allreplies.Comment(
                 __v = comment.__v,
                 _id = comment._id,
@@ -534,7 +539,7 @@ class CatalogueDetailsActivity : AppCompatActivity(),
 
             commentToAddReplies?.replies?.add(0, newReply)
 
-        } else if(comment.contentType == "video") {
+        } else if (comment.contentType == "video") {
             val newReply = com.uyscuti.social.network.api.response.commentreply.allreplies.Comment(
                 __v = comment.__v,
                 _id = comment._id,
@@ -550,7 +555,7 @@ class CatalogueDetailsActivity : AppCompatActivity(),
             )
 
             commentToAddReplies?.replies?.add(0, newReply)
-        }  else if(comment.contentType == "audio") {
+        } else if (comment.contentType == "audio") {
             val newReply = com.uyscuti.social.network.api.response.commentreply.allreplies.Comment(
                 __v = comment.__v,
                 _id = comment._id,
@@ -569,7 +574,7 @@ class CatalogueDetailsActivity : AppCompatActivity(),
             )
 
             commentToAddReplies?.replies?.add(0, newReply)
-        } else if(comment.contentType == "docs") {
+        } else if (comment.contentType == "docs") {
             val newReply = com.uyscuti.social.network.api.response.commentreply.allreplies.Comment(
                 __v = comment.__v,
                 _id = comment._id,
@@ -677,10 +682,11 @@ class CatalogueDetailsActivity : AppCompatActivity(),
                 isPaused -> resumeRecordingVn()
                 isRecording -> pauseRecordingVn()
                 else -> {
-                    if( ContextCompat.checkSelfPermission(
+                    if (ContextCompat.checkSelfPermission(
                             this,
                             Manifest.permission.RECORD_AUDIO
-                        ) == PackageManager.PERMISSION_GRANTED) {
+                        ) == PackageManager.PERMISSION_GRANTED
+                    ) {
                         startRecordingVn()
                     } else {
                         requestPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
@@ -691,7 +697,7 @@ class CatalogueDetailsActivity : AppCompatActivity(),
         }
 
         binding.moreOptions.setOnClickListener {
-            Toast.makeText(this,"More Options Clicked", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "More Options Clicked", Toast.LENGTH_SHORT).show()
         }
 
         binding.btnFavorite.setOnClickListener {
@@ -785,7 +791,6 @@ class CatalogueDetailsActivity : AppCompatActivity(),
         bottomSheet.show(supportFragmentManager, "SendOfferBottomSheet")
     }
 
-
     private fun addDialogInTheBackGround(user: User, lastMessage: String) {
         val singleUserList = arrayListOf(user)
 
@@ -839,6 +844,18 @@ class CatalogueDetailsActivity : AppCompatActivity(),
         insertDialog(dialogEntity)
     }
 
+    private fun insertDialog(dialog: DialogEntity) {
+        CoroutineScope(Dispatchers.IO).launch {
+            dialogViewModel.insertDialog(dialog)
+        }
+    }
+
+    private suspend fun insertMessage(message: MessageEntity) {
+        CoroutineScope(Dispatchers.IO).launch {
+            messageViewModel.insertMessage(message)
+        }
+    }
+
     private fun User.toUserEntity(): UserEntity {
         return UserEntity(
             id,
@@ -848,24 +865,6 @@ class CatalogueDetailsActivity : AppCompatActivity(),
             true
         )
     }
-
-    private fun insertDialog(dialog: DialogEntity) {
-        CoroutineScope(Dispatchers.IO).launch {
-            dialogViewModel.insertDialog(dialog)
-        }
-    }
-
-
-    private val getDocumentContent =
-        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-            if (result.resultCode == RESULT_OK) {
-                result.data?.data?.let { uri ->
-                    // Handle the selected document URI
-                    handleDocumentUri(uri)
-                }
-            }
-        }
-
 
     private fun getFileNameWithExtension(uri: Uri): String {
         var fileName = "document_${System.currentTimeMillis()}"
@@ -1015,28 +1014,6 @@ class CatalogueDetailsActivity : AppCompatActivity(),
         }
     }
 
-    private fun getContentUriFromFilePath(context: Context, filePath: String): Uri? {
-        val file = File(filePath)
-        val projection = arrayOf(MediaStore.Files.FileColumns._ID)
-        val selection = "${MediaStore.Files.FileColumns.DATA}=?"
-        val selectionArgs = arrayOf(file.absolutePath)
-
-        context.contentResolver.query(
-            MediaStore.Files.getContentUri("external"),
-            projection,
-            selection,
-            selectionArgs,
-            null
-        )?.use { cursor ->
-            if (cursor.moveToFirst()) {
-                val id =
-                    cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns._ID))
-                return ContentUris.withAppendedId(MediaStore.Files.getContentUri("external"), id)
-            }
-        }
-        return null
-    }
-
     private fun getNumberOfPagesFromUriForDoc(uri: Uri): Int {
         var numberOfPages = 0
         val inputStream: InputStream = contentResolver.openInputStream(uri) ?: return 0
@@ -1074,6 +1051,39 @@ class CatalogueDetailsActivity : AppCompatActivity(),
         return numberOfPages
     }
 
+    private fun getNumberOfSheetsFromUri(uri: Uri): Int {
+        try {
+            var numberOfPages = 0
+            val inputStream = contentResolver.openInputStream(uri)
+            val mimeType = contentResolver.getType(uri)
+
+            val workbook = when {
+                // .xlsx (newer format)
+                mimeType == "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" ||
+                        uri.path?.endsWith(".xlsx", ignoreCase = true) == true -> {
+                    XSSFWorkbook(inputStream)
+                }
+                // .xls (older format)
+                mimeType == "application/vnd.ms-excel" ||
+                        uri.path?.endsWith(".xls", ignoreCase = true) == true -> {
+                    HSSFWorkbook(inputStream)
+                }
+
+                else -> null
+            }
+
+            workbook?.let {
+                numberOfPages = it.numberOfSheets
+                it.close()
+            }
+            inputStream?.close()
+
+            return numberOfPages
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        return 0
+    }
 
     private fun getNumberOfPagesFromUriForDocx(uri: Uri): Int {
         var numberOfPages = 0
@@ -1091,35 +1101,32 @@ class CatalogueDetailsActivity : AppCompatActivity(),
     }
 
     private fun openDocPickerLauncher() {
-        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
-            addCategory(Intent.CATEGORY_OPENABLE)
-            type = "application/*"
-        }
-
-        getDocumentContent.launch(intent)
-
+        val intent = Intent(this, DocumentsActivity::class.java)
+        docsPickerLauncher.launch(intent)
     }
 
-    private val pickMultipleMedia =
-        registerForActivityResult(ActivityResultContracts.PickMultipleVisualMedia(2)) { uris ->
-            // Callback is invoked after the user selects media items or closes the
-            // photo picker.
-            if (uris.isNotEmpty()) {
-                for (uri in uris) {
+    private fun registerImagePicker() {
+        imagePickerLauncher =
+            registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+                if (result.resultCode == RESULT_OK) {
+                    // Handle image selection result here
+                    val data = result.data
+                    // Process the selected image data
+                    val imagePath = data?.getStringExtra("image_url")
+                    val caption = data?.getStringExtra("caption") ?: ""
+
                     val filePath = PathUtil.getPath(
                         this,
-                        uri
+                        imagePath!!.toUri()
                     ) // Use the utility class to get the real file path
                     Log.d("PhotoPicker", "File path: $filePath")
                     Log.d("PhotoPicker", "File path: $isReply")
-                    Log.d(
-                        "PhotoPicker", "Selected image path from camera: $uri"
-                    )
 
                     val file = filePath?.let { File(it) }
                     if (file?.exists() == true) {
                         lifecycleScope.launch {
-                            val compressedImageFile = Compressor.compress(this@CatalogueDetailsActivity, file)
+                            val compressedImageFile =
+                                Compressor.compress(this@CatalogueDetailsActivity, file)
                             Log.d(
                                 "PhotoPicker",
                                 "PhotoPicker: compressedImageFile absolutePath: ${compressedImageFile.absolutePath}"
@@ -1137,11 +1144,13 @@ class CatalogueDetailsActivity : AppCompatActivity(),
                             if (!isReply) {
                                 uploadImageComment(
                                     compressedImageFile.absolutePath,
+                                    caption,
                                     isReply
                                 )
                             } else {
                                 uploadImageComment(
                                     compressedImageFile.absolutePath,
+                                    caption,
                                     isReply
                                 )
                             }
@@ -1149,11 +1158,8 @@ class CatalogueDetailsActivity : AppCompatActivity(),
                     }
 
                 }
-
-            } else {
-                Log.d("PhotoPicker", "No media selected")
             }
-        }
+    }
 
     private fun openImagePicker() {
         val intent = Intent(this, ImagesActivity::class.java)
@@ -1232,40 +1238,6 @@ class CatalogueDetailsActivity : AppCompatActivity(),
 
     }
 
-    private fun uploadImageComment(
-        imageFilePathToUpload: String,
-        isReply1: Boolean
-    ) {
-
-        Log.d("uploadImageComment", "uploadImageComment: $imageFilePathToUpload")
-        Log.d("uploadImageComment", "uploadImageComment: isReply is $isReply")
-
-        val file = File(imageFilePathToUpload)
-
-        val localUpdateId = generateRandomId()
-
-        if (file.exists()) {
-            if (isReply) {
-                businessPostsViewModel.addCommentReply(
-                    commentId,
-                    contentType = "image",
-                    localUpdateId = localUpdateId,
-                    file = file,
-                    isReply = isReply1
-                )
-                isReply = false
-            } else {
-                businessPostsViewModel.addComment(
-                    businessPostId,
-                    contentType = "image",
-                    localUpdateId = localUpdateId,
-                    file = file
-                )
-            }
-        }
-
-    }
-
     private fun uploadDocumentComment(
         documentFilePathToUpload: String,
         caption: String,
@@ -1316,8 +1288,10 @@ class CatalogueDetailsActivity : AppCompatActivity(),
 
     }
 
+
     private fun uploadAudioComment(
         audio: String,
+        caption: String = "",
         contentType: String = "audio",
         isReply1: Boolean,
         fileType: String
@@ -1329,6 +1303,7 @@ class CatalogueDetailsActivity : AppCompatActivity(),
             if (isReply) {
                 businessPostsViewModel.addCommentReply(
                     commentId,
+                    content = caption,
                     file = file,
                     contentType = contentType,
                     localUpdateId = localUpdateId,
@@ -1340,6 +1315,7 @@ class CatalogueDetailsActivity : AppCompatActivity(),
             } else {
                 businessPostsViewModel.addComment(
                     businessPostId,
+                    content = caption,
                     file = file,
                     contentType = contentType,
                     localUpdateId = localUpdateId,
@@ -1550,7 +1526,6 @@ class CatalogueDetailsActivity : AppCompatActivity(),
         val TAG = "inflateWave"
         Log.d("playVnAudioBtn", "inflateWave: outputvn $outputVN")
 
-        val audioFile = File(outputVN)
         binding.wave.visibility = View.VISIBLE
         binding.playerTimerTv.visibility = View.VISIBLE
         Log.d(TAG, "render: does not start with http")
@@ -1856,7 +1831,7 @@ class CatalogueDetailsActivity : AppCompatActivity(),
             if (!isReply) {
 
                 if (recordedAudioFiles.size != 1) {
-                    uploadAudioComment(outputVnFile, isReply1 = isReply,  fileType = "vnAudio")
+                    uploadAudioComment(outputVnFile, isReply1 = isReply, fileType = "vnAudio")
                 } else {
                     uploadAudioComment(outputVnFile, isReply1 = isReply, fileType = "vnAudio")
                 }
@@ -1875,83 +1850,6 @@ class CatalogueDetailsActivity : AppCompatActivity(),
         }
     }
 
-    private fun loadToTargetComment(commentId: String) {
-        isLoadingForTarget = true
-        showShimmer()
-
-        lifecycleScope.launch {
-            val commentLocation =
-                businessPostsViewModel.locateBusinessComment(businessPostId, commentId)
-            if (commentLocation != null) {
-                // check if it is a reply
-                if (commentLocation.location.parentCommentId != null) {
-                    loadPagesToTarget(
-                        commentLocation.location.parentPageNumber ?: 1,
-                        commentLocation.location.parentCommentId!!,
-                        commentLocation.comments
-                    )
-
-
-                } else {
-                    // top level comment
-                    loadPagesToTarget(
-                        commentLocation.location.pageNumber,
-                        commentId,
-                        commentLocation.comments
-                    )
-                }
-            }
-        }
-    }
-
-    private suspend fun loadPagesToTarget(
-        targetPage: Int,
-        commentId: String,
-        comments: List<Comment>
-    ) {
-        commentAdapter!!.setmCurrentPage(targetPage)
-
-        commentAdapter?.submitItems(comments)
-
-        commentRecyclerView.post {
-            hideShimmer()
-            scrollToComment(commentId, targetPage)
-            if (comments.isEmpty()) {
-                updateUI(true)
-            } else {
-                updateUI(false)
-            }
-            isLoadingForTarget = false
-        }
-    }
-
-    private fun scrollToComment(commentId: String, currentPage: Int) {
-        val position = commentAdapter?.findCommentPosition(commentId)
-
-        if (position != -1) {
-            val layoutManager = commentRecyclerView.layoutManager as LinearLayoutManager
-
-            // Scroll to position with offset
-            layoutManager.scrollToPositionWithOffset(position!!, commentRecyclerView.height / 3)
-
-            commentRecyclerView.postDelayed({
-                highlightComment(position, currentPage)
-            }, 300)
-        } else {
-            // showError("Comment not available")
-        }
-    }
-
-    private fun highlightComment(position: Int, currentPage: Int) {
-        commentAdapter?.setHighlightedPosition(position)
-        commentRecyclerView.postDelayed({
-            commentAdapter?.clearHighlight()
-
-            if (!isLoadingForTarget) {
-                commentAdapter?.setmCurrentPage(currentPage)
-            }
-        }, 4000)
-    }
 
     private fun commentAudioStartPlaying(
         audio: String,
@@ -2234,7 +2132,10 @@ class CatalogueDetailsActivity : AppCompatActivity(),
                                 CoroutineScope(Dispatchers.Main).launch {
                                     audioSeekBar.progress = it.currentPosition.toInt()
                                     seekBarProgress = it.currentPosition.toFloat()
-                                    commentAdapter!!.setSecondSeekBarProgress(seekBarProgress, currentCommentAudioPosition)
+                                    commentAdapter!!.setSecondSeekBarProgress(
+                                        seekBarProgress,
+                                        currentCommentAudioPosition
+                                    )
                                     audioDurationTVCount.text = String.format(
                                         "%s",
                                         TrimVideoUtils.stringForTime(it.currentPosition.toFloat())
@@ -2277,7 +2178,11 @@ class CatalogueDetailsActivity : AppCompatActivity(),
         )
 
         audioPlayPauseBtn.setImageResource(R.drawable.play_svgrepo_com)
-        commentAdapter!!.updatePlaybackButton(currentCommentAudioPosition, isReply, audioPlayPauseBtn)
+        commentAdapter!!.updatePlaybackButton(
+            currentCommentAudioPosition,
+            isReply,
+            audioPlayPauseBtn
+        )
         exoPlayer?.pause()
     }
 
@@ -2394,7 +2299,7 @@ class CatalogueDetailsActivity : AppCompatActivity(),
 
 
     private fun setupDialogManager(data: Post) {
-        val productReference = "#Is Product Available\n${data.itemName}\n${data.description}\n\n${data.images.first()}"
+        val productReference = data.images.first()
         dialogManager = DialogManager(
             this,
             dialogViewModel,
@@ -2447,90 +2352,25 @@ class CatalogueDetailsActivity : AppCompatActivity(),
 
                 when (mediaType) {
                     CameraActivity.MEDIA_TYPE_PHOTO -> {
-                        Log.d("From Camera activity", "Image url: $mediaUri \n Image path: $mediaPath")
+                        Log.d(
+                            "From Camera activity",
+                            "Image url: $mediaUri \n Image path: $mediaPath"
+                        )
                         //handlePhotoResult(mediaUri, mediaPath)
                     }
+
                     CameraActivity.MEDIA_TYPE_VIDEO -> {
-                        Log.d("From Camera activity", "Video url: $mediaUri \n Video path: $mediaPath")
-                      //  handleVideoResult(mediaUri, mediaPath)
+                        Log.d(
+                            "From Camera activity",
+                            "Video url: $mediaUri \n Video path: $mediaPath"
+                        )
+                        //  handleVideoResult(mediaUri, mediaPath)
                     }
                 }
             } else {
                 Toast.makeText(this, "Camera cancelled", Toast.LENGTH_SHORT).show()
             }
         }
-    }
-
-    private fun registerImagePicker() {
-        imagePickerLauncher =
-            registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-                if (result.resultCode == RESULT_OK) {
-                    // Handle image selection result here
-                    val data = result.data
-                    // Process the selected image data
-                    val imagePath = data?.getStringExtra("image_url")
-                    val caption = data?.getStringExtra("caption") ?: ""
-
-                    val filePath = PathUtil.getPath(
-                        this,
-                        imagePath!!.toUri()
-                    ) // Use the utility class to get the real file path
-                    Log.d("PhotoPicker", "File path: $filePath")
-                    Log.d("PhotoPicker", "File path: $isReply")
-
-                    val file = filePath?.let { File(it) }
-                    if (file?.exists() == true) {
-                        lifecycleScope.launch {
-                            val compressedImageFile =
-                                Compressor.compress(this@CatalogueDetailsActivity, file)
-                            Log.d(
-                                "PhotoPicker",
-                                "PhotoPicker: compressedImageFile absolutePath: ${compressedImageFile.absolutePath}"
-                            )
-
-                            val fileSizeInBytes = compressedImageFile.length()
-                            val fileSizeInKB = fileSizeInBytes / 1024
-                            val fileSizeInMB = fileSizeInKB / 1024
-
-                            Log.d(
-                                "PhotoPicker",
-                                "PhotoPicker: compressedImageFile size $fileSizeInKB KB, $fileSizeInMB MB"
-                            )
-
-                            if (!isReply) {
-                                uploadImageComment(
-                                    compressedImageFile.absolutePath,
-                                    caption,
-                                    isReply
-                                )
-                            } else {
-                                uploadImageComment(
-                                    compressedImageFile.absolutePath,
-                                    caption,
-                                    isReply
-                                )
-                            }
-                        }
-                    }
-
-                }
-            }
-    }
-
-    private fun registerDocPicker() {
-        docsPickerLauncher =
-            registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-                if (result.resultCode == RESULT_OK) {
-                    val data = result.data
-                    // Process the selected image data
-                    val docPath = data?.getStringExtra("doc_url")
-                    val caption = data?.getStringExtra("caption") ?: ""
-
-                    Log.d(TAG, "Path: $docPath caption: $caption")
-
-                    handleDocumentUri(getContentUriFromFilePath(this, docPath!!)!!, caption)
-                }
-            }
     }
 
     private fun registerVideoPickerLauncher() {
@@ -2639,60 +2479,79 @@ class CatalogueDetailsActivity : AppCompatActivity(),
 
     }
 
-    private fun  registerGifPickerLauncher() {
-        gifsPickerLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-            val data = result.data
-            val gifUri = data?.getStringExtra("gifUri")
-            Log.d(TAG, "Gif Uri $gifUri")
+    private fun registerGifPickerLauncher() {
+        gifsPickerLauncher =
+            registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+                val data = result.data
+                val gifUri = data?.getStringExtra("gifUri")
+                Log.d(TAG, "Gif Uri $gifUri")
 
-            if(gifUri!!.isNotEmpty()) {
+                if (gifUri!!.isNotEmpty()) {
 
-                val localUpdateId = generateRandomId()
+                    val localUpdateId = generateRandomId()
 
-                if (isReply) {
-                    businessPostsViewModel.addCommentReply(
-                        commentId,
-                        contentType = "gif",
-                        localUpdateId = localUpdateId,
-                        gif = gifUri,
-                        isReply = isReply
-                    )
-                    isReply = false
-                } else {
-                    businessPostsViewModel.addComment(
-                        businessPostId,
-                        contentType = "gif",
-                        localUpdateId = localUpdateId,
-                        gif = gifUri
-                    )
+                    if (isReply) {
+                        businessPostsViewModel.addCommentReply(
+                            commentId,
+                            contentType = "gif",
+                            localUpdateId = localUpdateId,
+                            gif = gifUri,
+                            isReply = isReply
+                        )
+                        isReply = false
+                    } else {
+                        businessPostsViewModel.addComment(
+                            businessPostId,
+                            contentType = "gif",
+                            localUpdateId = localUpdateId,
+                            gif = gifUri
+                        )
+                    }
+
                 }
 
             }
+    }
 
+    private fun registerDocPicker() {
+        docsPickerLauncher =
+            registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+                if (result.resultCode == RESULT_OK) {
+                    val data = result.data
+                    // Process the selected image data
+                    val docPath = data?.getStringExtra("doc_url")
+                    val caption = data?.getStringExtra("caption") ?: ""
+
+                    Log.d(TAG, "Path: $docPath caption: $caption")
+
+                    handleDocumentUri(getContentUriFromFilePath(this, docPath!!)!!, caption)
+                }
+            }
+    }
+
+    private fun getContentUriFromFilePath(context: Context, filePath: String): Uri? {
+        val file = File(filePath)
+        val projection = arrayOf(MediaStore.Files.FileColumns._ID)
+        val selection = "${MediaStore.Files.FileColumns.DATA}=?"
+        val selectionArgs = arrayOf(file.absolutePath)
+
+        context.contentResolver.query(
+            MediaStore.Files.getContentUri("external"),
+            projection,
+            selection,
+            selectionArgs,
+            null
+        )?.use { cursor ->
+            if (cursor.moveToFirst()) {
+                val id =
+                    cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns._ID))
+                return ContentUris.withAppendedId(MediaStore.Files.getContentUri("external"), id)
+            }
         }
+        return null
     }
 
-    private fun setCommentAdapterPagination() {
-        commentAdapter!!.setOnPaginationListener(object : AdPaginatedAdapter.OnPaginationListener {
-
-            override fun onCurrentPage(page: Int) {
-                Log.d(TAG, "currentPage: page number $page")
-            }
-
-            override fun onNextPage(page: Int) {
-                lifecycleScope.launch(Dispatchers.Main) {
-                    Log.d(TAG, "onNextPage: page number $page")
-                    getBusinessComments(page)
-                }
-            }
-
-            override fun onFinish() {
-                Log.d(TAG, "finished: page number")
-            }
-        })
-    }
-
-   private fun setRelativeLayoutToHalfScreenHeight() {
+    private fun setRelativeLayoutToHalfScreenHeight() {
 
         // Get display metrics
         val displayMetrics = DisplayMetrics()
@@ -2728,31 +2587,115 @@ class CatalogueDetailsActivity : AppCompatActivity(),
 
             toggleBusinessCommentBottomSheet()
 
-            commentAdapter!!.setOnPaginationListener(object : AdPaginatedAdapter.OnPaginationListener {
+            setCommentAdapterPagination()
 
-                override fun onCurrentPage(page: Int) {
-                    Log.d(TAG, "currentPage: page number $page")
-                }
-
-                override fun onNextPage(page: Int) {
-                    lifecycleScope.launch(Dispatchers.Main) {
-                        Log.d(TAG, "onNextPage: page number $page")
-                        getBusinessComments(page)
-                    }
-                }
-
-                override fun onFinish() {
-                    Log.d(TAG, "finished: page number")
-                }
-            })
-
-            lifecycleScope.launch(Dispatchers.Main) {
-                getBusinessComments(commentAdapter!!.startPage)
-            }
-
+            loadInitialComments()
         }
     }
 
+    private fun loadToTargetComment(commentId: String) {
+        isLoadingForTarget = true
+        showShimmer()
+
+        lifecycleScope.launch {
+            val commentLocation =
+                businessPostsViewModel.locateBusinessComment(businessPostId, commentId)
+            if (commentLocation != null) {
+                // check if it is a reply
+                if (commentLocation.location.parentCommentId != null) {
+                    loadPagesToTarget(
+                        commentLocation.location.parentPageNumber ?: 1,
+                        commentLocation.location.parentCommentId!!,
+                        commentLocation.comments
+                    )
+
+
+                } else {
+                    // top level comment
+                    loadPagesToTarget(
+                        commentLocation.location.pageNumber,
+                        commentId,
+                        commentLocation.comments
+                    )
+                }
+            }
+        }
+    }
+
+    private suspend fun loadPagesToTarget(
+        targetPage: Int,
+        commentId: String,
+        comments: List<Comment>
+    ) {
+        commentAdapter!!.setmCurrentPage(targetPage)
+
+        commentAdapter?.submitItems(comments)
+
+        commentRecyclerView.post {
+            hideShimmer()
+            scrollToComment(commentId, targetPage)
+            if (comments.isEmpty()) {
+                updateUI(true)
+            } else {
+                updateUI(false)
+            }
+            isLoadingForTarget = false
+        }
+    }
+
+    private fun scrollToComment(commentId: String, currentPage: Int) {
+        val position = commentAdapter?.findCommentPosition(commentId)
+
+        if (position != -1) {
+            val layoutManager = commentRecyclerView.layoutManager as LinearLayoutManager
+
+            // Scroll to position with offset
+            layoutManager.scrollToPositionWithOffset(position!!, commentRecyclerView.height / 3)
+
+            commentRecyclerView.postDelayed({
+                highlightComment(position, currentPage)
+            }, 300)
+        } else {
+            // showError("Comment not available")
+        }
+    }
+
+    private fun highlightComment(position: Int, currentPage: Int) {
+        commentAdapter?.setHighlightedPosition(position)
+        commentRecyclerView.postDelayed({
+            commentAdapter?.clearHighlight()
+
+            if (!isLoadingForTarget) {
+                commentAdapter?.setmCurrentPage(currentPage)
+            }
+        }, 4000)
+    }
+
+    private fun setCommentAdapterPagination() {
+        commentAdapter!!.setOnPaginationListener(object : AdPaginatedAdapter.OnPaginationListener {
+
+            override fun onCurrentPage(page: Int) {
+                Log.d(TAG, "currentPage: page number $page")
+            }
+
+            override fun onNextPage(page: Int) {
+                lifecycleScope.launch(Dispatchers.Main) {
+                    Log.d(TAG, "onNextPage: page number $page")
+                    getBusinessComments(page)
+                }
+            }
+
+            override fun onFinish() {
+                Log.d(TAG, "finished: page number")
+            }
+        })
+    }
+
+    private fun loadInitialComments() {
+        lifecycleScope.launch(Dispatchers.Main) {
+            getBusinessComments(commentAdapter!!.startPage)
+        }
+    }
 
 
     private fun getBusinessComments(page: Int) {
@@ -2760,7 +2703,7 @@ class CatalogueDetailsActivity : AppCompatActivity(),
         lifecycleScope.launch(Dispatchers.IO) {
 
             withContext(Dispatchers.Main) {
-                if(page == 1) {
+                if (page == 1) {
                     showShimmer()
                 } else {
                     showProgressBar()
@@ -2769,17 +2712,18 @@ class CatalogueDetailsActivity : AppCompatActivity(),
 
             try {
 
-                val commentsWithReplies = businessPostsViewModel.getBusinessPostComments(businessPostId, page)
+                val commentsWithReplies =
+                    businessPostsViewModel.getBusinessPostComments(businessPostId, page)
                 withContext(Dispatchers.Main) {
 
-                    if(page == 1) {
+                    if (page == 1) {
                         hideShimmer()
                     } else {
                         hideProgressBar()
                     }
 
                     commentAdapter!!.submitItems(commentsWithReplies)
-                    if(commentsWithReplies.isEmpty()) {
+                    if (commentsWithReplies.isEmpty()) {
                         updateUI(true)
                     } else {
                         updateUI(false)
@@ -2916,7 +2860,7 @@ class CatalogueDetailsActivity : AppCompatActivity(),
         bindingDialog.btnCancel.setOnClickListener {
             bottomSheetDialog.dismiss()
         }
-        
+
 
         binding.buShare.setOnClickListener { bottomSheetDialog.show() }
     }
@@ -2977,7 +2921,12 @@ class CatalogueDetailsActivity : AppCompatActivity(),
 
 
     // Generic function to try multiple package names
-    private fun shareToApp(context: Context, text: String, packages: List<String>, appName: String) {
+    private fun shareToApp(
+        context: Context,
+        text: String,
+        packages: List<String>,
+        appName: String
+    ) {
         try {
             for (packageName in packages) {
                 val intent = Intent(Intent.ACTION_SEND).apply {
@@ -2999,8 +2948,6 @@ class CatalogueDetailsActivity : AppCompatActivity(),
     }
 
 
-
-
     private fun updateFollowButton(isFollowing: Boolean) {
         if (isFollowing) {
             binding.btnFavorite.text = resources.getString(R.string.following)
@@ -3020,7 +2967,7 @@ class CatalogueDetailsActivity : AppCompatActivity(),
         val newLikeStatus = !data.isLiked
         data.isLiked = newLikeStatus
 
-        data.likes = if(newLikeStatus) data.likes + 1 else maxOf(
+        data.likes = if (newLikeStatus) data.likes + 1 else maxOf(
             0,
             data.likes - 1
         )
@@ -3066,7 +3013,7 @@ class CatalogueDetailsActivity : AppCompatActivity(),
 
             lifecycleScope.launch(Dispatchers.IO) {
                 val success = businessPostsViewModel.followUnfollowBusinessPostOwner(data.owner)
-                if (success){
+                if (success) {
                     withContext(Dispatchers.Main) {
                         updateFollowButton(newFollowStatus)
                         binding.btnFavorite.isEnabled = true
@@ -3238,6 +3185,7 @@ class CatalogueDetailsActivity : AppCompatActivity(),
         isVnAudioToPlay = isVnAudio
 
         wavePosition = position
+        currentCommentAudioPosition = position
 
         if (currentCommentAudioPath == audioToPlayPath) {
 
@@ -3269,7 +3217,7 @@ class CatalogueDetailsActivity : AppCompatActivity(),
                 exoPlayer?.pause()
                 isDurationOnPause = true
 
-            }  else {
+            } else {
                 Log.d(
                     "toggleAudioPlayer",
                     "toggleAudioPlayer: current player is not playing then play"
@@ -3287,9 +3235,6 @@ class CatalogueDetailsActivity : AppCompatActivity(),
             }
 
             commentAudioStartPlaying(audioToPlayPath, audioPlayPauseBtn, progress, position)
-
-
-            currentCommentAudioPosition = position
             currentCommentAudioPath = audioToPlayPath
         }
     }
@@ -3297,26 +3242,39 @@ class CatalogueDetailsActivity : AppCompatActivity(),
     @SuppressLint("SetTextI18n")
     override fun onReplyButtonClick(
         position: Int,
-        data: Comment
+        data: Comment,
+        isMainComment: Boolean
     ) {
 
-        isReply = true
-        var username = data.author!!.account.username
-
-        binding.replyToLayout.visibility = View.VISIBLE
-
-        binding.replyToTextView.text = "Replying to $username"
-        commentId = data._id
         commentToAddReplies = data
-        commentPosition = position
+        commentPosition = commentAdapter!!.findCommentPosition(data._id)
+        var username = ""
+        isReply = true
+
+        if (isMainComment) {
+            username = data.author!!.account.username
+            binding.replyToLayout.visibility = View.VISIBLE
+
+            binding.replyToTextView.text = "Replying to $username"
+            commentId = data._id
+        } else {
+
+            username = data.replies[position].author!!.account.username
+
+            binding.replyToLayout.visibility = View.VISIBLE
+
+            binding.replyToTextView.text = "Replying to $username"
+            commentId = data.replies[position]._id
+        }
+
+        binding.input.inputEditText.setText("@$username")
+        binding.input.inputEditText.setSelection(binding.input.inputEditText.text!!.length)
 
         binding.exitReply.setOnClickListener {
             binding.replyToLayout.visibility = View.GONE
             binding.input.inputEditText.setText("")
             isReply = false
         }
-        binding.input.inputEditText.setText("@$username")
-        binding.input.inputEditText.setSelection(binding.input.inputEditText.text!!.length)
     }
 
     override fun likeUnLikeComment(
@@ -3347,11 +3305,11 @@ class CatalogueDetailsActivity : AppCompatActivity(),
         mainComment: Comment
     ) {
         if (NetworkUtil.isConnected(this)) {
-            if(replyData.isLiked) {
+            if (replyData.isLiked) {
                 replyData.copy(
                     likes = replyData.likes + 1
                 )
-            }  else {
+            } else {
                 replyData.copy(
                     likes = replyData.likes - 1
                 )
@@ -3361,7 +3319,7 @@ class CatalogueDetailsActivity : AppCompatActivity(),
             commentAdapter?.updateItem(mainCommentPosition, mainComment)
             businessPostsViewModel.likeUnlikeBusinessCommentReplies(replyData._id)
 
-        }  else {
+        } else {
             showToast(this, "Like failed. No internet access.")
         }
 
@@ -3374,6 +3332,20 @@ class CatalogueDetailsActivity : AppCompatActivity(),
         amplitude = if (amplitude > 0) amplitude else 130f
 
         binding.waveForm.addAmplitude(amplitude)
+    }
+
+    override fun onDialogUpdated(newDialogId: String) {
+        CoroutineScope(Dispatchers.IO).launch {
+            val result = remoteMessageRepository.sendMessage(
+                newDialogId,
+                SendMessageRequest(content = offerMessage)
+            )
+
+            messageEntity?.chatId = newDialogId
+            messageEntity?.status = "Sent"
+            CoroutineScope(Dispatchers.IO).launch { insertMessage(messageEntity!!) }
+            Log.d("Catalogue", "Chat: $newDialogId Message Result: $result")
+        }
     }
 
 }
