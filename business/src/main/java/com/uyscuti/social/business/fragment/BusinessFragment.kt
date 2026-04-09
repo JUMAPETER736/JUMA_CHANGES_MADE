@@ -2662,52 +2662,62 @@ class BusinessFragment : Fragment(),
             startWaveRunnable()
         }
 
-
         audioPlayPauseBtn.setImageResource(R.drawable.baseline_pause_black)
 
         try {
-
             val file = File(audio)
 
             if (file.exists()) {
+                // Local file playback
                 val fileUrl = Uri.fromFile(file)
-                exoPlayer = ExoPlayer.Builder(requireActivity())
-                    .build()
+                exoPlayer = ExoPlayer.Builder(requireActivity()).build()
 
                 Log.d("commentAudioStartPlaying", "commentAudioStartPlaying: Local file $fileUrl")
 
-                val localFileUri =
-                    Uri.parse(fileUrl.toString()) // Replace with the path to your local file
+                val localFileUri = Uri.parse(fileUrl.toString())
                 val mediaItem = MediaItem.fromUri(localFileUri)
                 exoPlayer!!.setMediaItem(mediaItem)
             } else {
+                // Server file playback
                 Log.d("commentAudioStartPlaying", "commentAudioStartPlaying: server file $audio")
 
                 val audioUri = Uri.parse(audio)
                 Log.d("commentAudioStartPlaying", "audioUri $audioUri")
                 val mediaItem = MediaItem.fromUri(audioUri)
 
-                httpDataSourceFactory = DefaultHttpDataSource.Factory()
-                    .setAllowCrossProtocolRedirects(true)
-                defaultDataSourceFactory = DefaultDataSourceFactory(
-                    requireActivity(), httpDataSourceFactory
-                )
-                cacheDataSourceFactory = CacheDataSource.Factory()
-                    .setCache(simpleCache)
-                    .setUpstreamDataSourceFactory(httpDataSourceFactory)
-                    .setFlags(CacheDataSource.FLAG_IGNORE_CACHE_ON_ERROR)
-                val mediaSourceFactory: MediaSource.Factory =
-                    DefaultMediaSourceFactory(requireActivity())
-                        .setDataSourceFactory(cacheDataSourceFactory)
-                exoPlayer = ExoPlayer.Builder(requireActivity())
-                    .setMediaSourceFactory(mediaSourceFactory)
-                    .build()
+                // Try playing with cache first
+                try {
+                    exoPlayer = buildExoPlayerWithCache(mediaItem)
+                    Log.d("commentAudioStartPlaying", "Using cached playback")
+                } catch (cacheException: Exception) {
+                    Log.e(
+                        "commentAudioStartPlaying",
+                        "Cache error, clearing and retrying",
+                        cacheException
+                    )
 
-                // Create media source
-                val mediaSource = ProgressiveMediaSource.Factory(cacheDataSourceFactory)
-                    .createMediaSource(mediaItem)
+                    // Clear corrupted cache
+                    clearExoPlayerCache()
 
-                exoPlayer!!.setMediaSource(mediaSource)
+                    // Retry with fresh cache
+                    try {
+                        exoPlayer = buildExoPlayerWithCache(mediaItem)
+                        Log.d("commentAudioStartPlaying", "Cache cleared, using fresh cache")
+                    } catch (retryException: Exception) {
+                        Log.e(
+                            "commentAudioStartPlaying",
+                            "Cache still failing, playing directly from server",
+                            retryException
+                        )
+
+                        // Fallback to direct server playback without cache
+                        exoPlayer = buildExoPlayerWithoutCache(mediaItem)
+                        Log.d(
+                            "commentAudioStartPlaying",
+                            "Playing directly from server without cache"
+                        )
+                    }
+                }
             }
 
             exoPlayer!!.prepare()
@@ -2722,17 +2732,35 @@ class BusinessFragment : Fragment(),
                     playbackState: Int
                 ) {
                     if (playbackState == Player.STATE_READY && exoPlayer!!.duration != C.TIME_UNSET) {
-
+                        // Player ready
                     }
                 }
 
                 override fun onPlayerError(error: PlaybackException) {
                     super.onPlayerError(error)
                     error.printStackTrace()
-                    showToast(requireActivity(), "Can't play this audio")
+
+                    // Check if error is cache-related
+                    if (isCacheError(error)) {
+                        Log.e("commentAudioStartPlaying", "Cache error detected during playback")
+                        clearExoPlayerCache()
+
+                        // Retry without cache
+                        try {
+                            exoPlayer?.release()
+                            exoPlayer = buildExoPlayerWithoutCache(MediaItem.fromUri(audio))
+                            exoPlayer!!.prepare()
+                            exoPlayer!!.seekTo(progress.toLong())
+                            exoPlayer!!.playWhenReady = true
+                            exoPlayer!!.addListener(playbackStateListener())
+                            Log.d("commentAudioStartPlaying", "Retrying playback without cache")
+                        } catch (e: Exception) {
+                            showToast(requireActivity(), "Can't play this audio")
+                        }
+                    } else {
+                        showToast(requireActivity(), "Can't play this audio")
+                    }
                 }
-
-
             })
 
             if (isReplyVnPlaying) {
@@ -2745,8 +2773,8 @@ class BusinessFragment : Fragment(),
         } catch (e: Exception) {
             Log.d("commentAudioStartPlaying", "commentAudioStartPlaying: error: ${e.message}")
             e.printStackTrace()
+            showToast(requireActivity(), "Error playing audio")
         }
-
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
@@ -3072,28 +3100,44 @@ class BusinessFragment : Fragment(),
         }
     }
 
+
     @SuppressLint("SetTextI18n")
     override fun onReplyButtonClick(
         position: Int,
-        data: Comment
+        data: Comment,
+        isMainComment: Boolean
     ) {
-        isReply = true
-        var username = data.author!!.account.username
 
-        replyToLayout.visibility = View.VISIBLE
-
-        replyToTextView.text = "Replying to $username"
-        commentId = data._id
         commentToAddReplies = data
-        commentPosition = position
+        commentPosition = commentAdapter!!.findCommentPosition(data._id)
+        var username = ""
+        isReply = true
+
+        if (isMainComment) {
+            username = data.author!!.account.username
+            replyToLayout.visibility = View.VISIBLE
+
+            replyToTextView.text = "Replying to $username"
+            commentId = data._id
+        } else {
+
+            username = data.replies[position].author!!.account.username
+
+            replyToLayout.visibility = View.VISIBLE
+
+            replyToTextView.text = "Replying to $username"
+            commentId = data.replies[position]._id
+        }
+
+        textInput.inputEditText.setText("@$username")
+        textInput.inputEditText.setSelection(textInput.inputEditText.text!!.length)
 
         exitReply.setOnClickListener {
             replyToLayout.visibility = View.GONE
             textInput.inputEditText.setText("")
             isReply = false
         }
-        textInput.inputEditText.setText("@$username")
-        textInput.inputEditText.setSelection(textInput.inputEditText.text!!.length)
+
 
     }
 
