@@ -918,7 +918,7 @@ class CatalogueDetailsActivity : AppCompatActivity(),
         }
     }
 
-    private fun handleDocumentUri(uri: Uri) {
+    private fun handleDocumentUri(uri: Uri, caption: String) {
         val file = getFileFromUri(uri)
 
         contentResolver.query(uri, null, null, null, null)?.use { cursor ->
@@ -943,8 +943,12 @@ class CatalogueDetailsActivity : AppCompatActivity(),
                     getNumberOfPagesFromUriForDoc(uri)
                 }
 
-                "docx", "xlsx", "pptx" -> {
+                "docx", "pptx" -> {
                     getNumberOfPagesFromUriForDocx(uri)
+                }
+
+                "xlsx", "xls" -> {
+                    getNumberOfSheetsFromUri(uri)
                 }
 
                 else -> {
@@ -961,6 +965,7 @@ class CatalogueDetailsActivity : AppCompatActivity(),
 
                     uploadDocumentComment(
                         file?.absolutePath!!,
+                        caption,
                         numberOfPages,
                         formattedFileSize,
                         documentType,
@@ -971,6 +976,7 @@ class CatalogueDetailsActivity : AppCompatActivity(),
                     Log.d("handleDocumentUri", "This is for document reply")
                     uploadDocumentComment(
                         file?.absolutePath!!,
+                        caption,
                         numberOfPages,
                         formattedFileSize,
                         documentType,
@@ -985,6 +991,7 @@ class CatalogueDetailsActivity : AppCompatActivity(),
                     Log.d("handleDocumentUri", "handleDocumentUri for main document")
                     uploadDocumentComment(
                         file?.absolutePath!!,
+                        caption,
                         numberOfPages,
                         formattedFileSize,
                         documentType,
@@ -995,6 +1002,7 @@ class CatalogueDetailsActivity : AppCompatActivity(),
                     Log.d("handleDocumentUri", "This is for document reply")
                     uploadDocumentComment(
                         file?.absolutePath!!,
+                        caption,
                         numberOfPages,
                         formattedFileSize,
                         documentType,
@@ -1260,6 +1268,7 @@ class CatalogueDetailsActivity : AppCompatActivity(),
 
     private fun uploadDocumentComment(
         documentFilePathToUpload: String,
+        caption: String,
         numberOfPages: Int,
         fileSize: String,
         fileType: String,
@@ -1271,12 +1280,13 @@ class CatalogueDetailsActivity : AppCompatActivity(),
 
         val localUpdateId = generateRandomId()
         Log.d("UploadingDocument", "File exist: ${file.exists()}")
-        if(file.exists()) {
+        if (file.exists()) {
             Log.d("UploadingDocument", "Upload document called")
 
             if (isReply) {
                 businessPostsViewModel.addCommentReply(
                     commentId,
+                    content = caption,
                     file = file,
                     contentType = "docs",
                     localUpdateId = localUpdateId,
@@ -1291,6 +1301,7 @@ class CatalogueDetailsActivity : AppCompatActivity(),
             } else {
                 businessPostsViewModel.addComment(
                     businessPostId,
+                    content = caption,
                     file = file,
                     contentType = "docs",
                     localUpdateId = localUpdateId,
@@ -1304,7 +1315,6 @@ class CatalogueDetailsActivity : AppCompatActivity(),
         }
 
     }
-
 
     private fun uploadAudioComment(
         audio: String,
