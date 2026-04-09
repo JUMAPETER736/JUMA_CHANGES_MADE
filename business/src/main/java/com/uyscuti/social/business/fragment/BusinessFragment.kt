@@ -3,6 +3,7 @@ package com.uyscuti.social.business.fragment
 import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Activity.RESULT_OK
+import android.content.ContentUris
 import android.content.Context
 import android.content.Context.INPUT_METHOD_SERVICE
 import android.content.Context.MODE_PRIVATE
@@ -18,6 +19,7 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.provider.MediaStore
 import android.provider.OpenableColumns
 import android.util.Log
 import android.util.TypedValue
@@ -36,13 +38,12 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.ActivityResultLauncher
-import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
-import androidx.cardview.widget.CardView
 import androidx.constraintlayout.motion.widget.MotionLayout
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
+import androidx.core.net.toUri
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
@@ -52,15 +53,18 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
+import androidx.media3.database.ExoDatabaseProvider
 import androidx.media3.datasource.DefaultDataSourceFactory
 import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.datasource.HttpDataSource
 import androidx.media3.datasource.cache.CacheDataSource
+import androidx.media3.datasource.cache.LeastRecentlyUsedCacheEvictor
 import androidx.media3.datasource.cache.SimpleCache
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.exoplayer.source.MediaSource
 import androidx.media3.exoplayer.source.ProgressiveMediaSource
+import androidx.recyclerview.widget.DefaultItemAnimator
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
@@ -73,7 +77,10 @@ import com.uyscuti.sharedmodule.FlashApplication
 import com.uyscuti.sharedmodule.adapter.CommentsRecyclerViewAdapter
 import com.uyscuti.sharedmodule.adapter.OnViewRepliesClickListener
 import com.uyscuti.sharedmodule.adapter.notifications.AdPaginatedAdapter
-import com.uyscuti.sharedmodule.data.model.Comment
+import com.uyscuti.social.network.api.models.Comment
+import com.uyscuti.social.core.models.data.Dialog
+import com.uyscuti.social.core.models.data.Message
+import com.uyscuti.social.core.models.data.User
 import com.uyscuti.sharedmodule.media.CameraActivity
 import com.uyscuti.sharedmodule.model.AudioPlayerHandler
 import com.uyscuti.sharedmodule.model.CommentAudioPlayerHandler
@@ -83,12 +90,17 @@ import com.uyscuti.sharedmodule.model.ShowBottomNav
 import com.uyscuti.sharedmodule.popupDialog.BusinessProfileDialogFragment
 import com.uyscuti.sharedmodule.popupDialog.DialogManager
 import com.uyscuti.sharedmodule.presentation.DialogViewModel
+import com.uyscuti.sharedmodule.presentation.MessageViewModel
 import com.uyscuti.sharedmodule.ui.GifActivity
 import com.uyscuti.sharedmodule.uploads.AudioActivity
+import com.uyscuti.sharedmodule.uploads.DocumentsActivity
+import com.uyscuti.sharedmodule.uploads.ImagesActivity
 import com.uyscuti.sharedmodule.uploads.VideosActivity
 import com.uyscuti.sharedmodule.utils.AndroidUtil.showToast
 import com.uyscuti.sharedmodule.utils.AudioDurationHelper
 import com.uyscuti.sharedmodule.utils.AudioDurationHelper.getFormattedDuration
+import com.uyscuti.sharedmodule.utils.ChatManager
+import com.uyscuti.sharedmodule.utils.ChatManager.ChatManagerListener
 import com.uyscuti.sharedmodule.utils.NetworkUtil
 import com.uyscuti.sharedmodule.utils.PathUtil
 import com.uyscuti.sharedmodule.utils.Timer
@@ -120,6 +132,12 @@ import com.uyscuti.social.business.viewmodel.business.BusinessCatalogueViewModel
 import com.uyscuti.social.business.viewmodel.business.BusinessCatalogueViewModelFactory
 import com.uyscuti.social.business.viewmodel.business.BusinessPostsViewModel
 import com.uyscuti.social.chatsuit.messages.CommentsInput
+import com.uyscuti.social.core.common.data.api.RemoteMessageRepository
+import com.uyscuti.social.core.common.data.api.RemoteMessageRepositoryImpl
+import com.uyscuti.social.core.common.data.room.entity.DialogEntity
+import com.uyscuti.social.core.common.data.room.entity.MessageEntity
+import com.uyscuti.social.core.common.data.room.entity.UserEntity
+import com.uyscuti.social.network.api.request.messages.SendMessageRequest
 import com.uyscuti.social.network.api.response.business.response.post.Post
 import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
 import com.uyscuti.social.network.utils.LocalStorage
@@ -135,6 +153,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import org.apache.poi.hwpf.HWPFDocument
 import org.apache.poi.hwpf.usermodel.Range
+import org.apache.poi.ss.usermodel.WorkbookFactory
 import org.apache.poi.xwpf.usermodel.XWPFDocument
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
@@ -142,9 +161,11 @@ import org.greenrobot.eventbus.ThreadMode
 import java.io.File
 import java.io.IOException
 import java.io.InputStream
+import java.util.Date
 import javax.inject.Inject
 import kotlin.getValue
 import kotlin.properties.Delegates
+import kotlin.random.Random
 
 // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
 private const val ARG_PARAM1 = "param1"
@@ -162,8 +183,8 @@ class BusinessFragment : Fragment(),
     CommentsInput.GifListener,
     CommentsInput.AttachmentsListener,
     OnViewRepliesClickListener,
-    Timer.OnTimeTickListener
-{
+    Timer.OnTimeTickListener,
+    ChatManagerListener {
 
     @Inject
     lateinit var retrofitInstance: RetrofitInstance
@@ -191,7 +212,6 @@ class BusinessFragment : Fragment(),
     private lateinit var click: View
     private lateinit var emojiPopup: EmojiPopup
     private lateinit var inputMethodManager: InputMethodManager
-    private var catalogueList: ArrayList<Post> = ArrayList()
 
     private lateinit var sellerButton: MaterialButton
     private lateinit var category: MaterialButton
@@ -223,14 +243,12 @@ class BusinessFragment : Fragment(),
     private val catalogueViewModel: CatalogueAdapterViewModel by activityViewModels()
 
 
-    private var isScrollingDown  = false
+    private var isScrollingDown = false
     private var isReply = false
 
     private var emojiShowing = false
 
     private lateinit var businessProfileId: String
-
-    private lateinit var searchContainer: CardView
 
     @Inject
     lateinit var localStorage: LocalStorage
@@ -239,6 +257,16 @@ class BusinessFragment : Fragment(),
     private lateinit var audioPickerLauncher: ActivityResultLauncher<Intent>
     private lateinit var videoPickerLauncher: ActivityResultLauncher<Intent>
     private lateinit var gifsPickerLauncher: ActivityResultLauncher<Intent>
+    private lateinit var imagePickerLauncher: ActivityResultLauncher<Intent>
+    private lateinit var docsPickerLauncher: ActivityResultLauncher<Intent>
+    private lateinit var categoryLauncher: ActivityResultLauncher<Intent>
+    private var query = ""
+    private lateinit var categoryTextView: TextView
+    private lateinit var categoryLayout: LinearLayout
+    private lateinit var emptyStateTextView: TextView
+    private lateinit var emptyStateLayout: LinearLayout
+    private var isInSearchMode = false
+    private var lastSearchQuery = ""
 
     private lateinit var repository: IFlashApiRepositoryImplementation
     private var exoPlayer: ExoPlayer? = null
@@ -255,7 +283,7 @@ class BusinessFragment : Fragment(),
     private lateinit var cacheDataSourceFactory: CacheDataSource.Factory
 
 
-    private val simpleCache: SimpleCache = FlashApplication.cache
+    private var simpleCache: SimpleCache? = FlashApplication.cache
 
     private var isReplyVnPlaying = false
     private var isVnAudioToPlay = false
@@ -325,6 +353,14 @@ class BusinessFragment : Fragment(),
 
     private lateinit var dialogManager: DialogManager
 
+    @Inject // or another appropriate scope
+    lateinit var chatManager: ChatManager
+    private var offerMessage = ""
+
+    private val messageViewModel: MessageViewModel by activityViewModels()
+    private var messageEntity: MessageEntity? = null
+
+    private lateinit var remoteMessageRepository: RemoteMessageRepository
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
