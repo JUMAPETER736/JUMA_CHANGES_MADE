@@ -1064,26 +1064,6 @@ class BusinessFragment : Fragment(),
         return numberOfSheets
     }
 
-    @SuppressLint("SetTextI18n")
-    private fun registerCategoryLauncher() {
-        categoryLauncher =
-            registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-                val data = result.data
-                if (data != null) {
-                    val doSearchForUser = data.getBooleanExtra("do_search", false)
-                    if (doSearchForUser) {
-                        query = data.getStringExtra("query_key").toString()
-                        businessRecycleView.isVisible = false
-                        emptyStateLayout.isVisible = false
-                        viewModel.searchItemsImmediate(query)
-                        categoryLayout.isVisible = true
-                        categoryTextView.text = "Search for $query"
-
-                    }
-                }
-            }
-    }
-
     private fun initViews(view: View) {
         businessRecycleView = view.findViewById(R.id.business_recycle_view)
         progressBar = view.findViewById(R.id.progress_bar)
@@ -1288,6 +1268,22 @@ class BusinessFragment : Fragment(),
 
     }
 
+    private fun User.toUserEntity(): UserEntity {
+        return UserEntity(
+            id,
+            name,
+            avatar,
+            lastSeen = Date(),
+            true
+        )
+    }
+
+    private fun insertDialog(dialog: DialogEntity) {
+        CoroutineScope(Dispatchers.IO).launch {
+            dialogViewModel.insertDialog(dialog)
+        }
+    }
+
     private fun processReplyComments(comment: Comment) {
 
         if (comment.contentType == "text") {
@@ -1437,17 +1433,18 @@ class BusinessFragment : Fragment(),
 
                     val videoPath = data?.getStringExtra("video_url")
                     val uriString = data?.getStringExtra("vUri")
+                    val caption = data?.getStringExtra("caption") ?: ""
                     val vUri = Uri.parse(uriString)
 
                     val uri = Uri.parse(videoPath)
 
-                    if(videoPath != null) {
+                    if (videoPath != null) {
                         Log.d("VideoPicker", "File path: $videoPath")
                         val durationString = getFormattedDuration(videoPath)
                         val file = File(videoPath)
                         Log.d("VideoPicker", "File path durationString: $durationString")
 
-                        if(file.exists()) {
+                        if (file.exists()) {
                             val fileSizeInBytes = file.length()
                             val fileSizeInKB = fileSizeInBytes / 1024
                             val fileSizeInMB = fileSizeInKB / 1024
@@ -1458,19 +1455,19 @@ class BusinessFragment : Fragment(),
 
                             if (fileSizeInGB.toInt() == 1) {
                                 showToast(requireActivity(), "File size too large")
-                            } else if(fileSizeInMB > 10) {
+                            } else if (fileSizeInMB > 10) {
                                 Log.d("VideoPicker", "File size: greater than $fileSizeInMB MB")
-                                if(isReply) {
-                                    uploadVideoComment(videoPath, isReply)
+                                if (isReply) {
+                                    uploadVideoComment(caption, videoPath, isReply)
                                 } else {
-                                    uploadVideoComment(videoPath)
+                                    uploadVideoComment(caption, videoPath)
                                 }
                             } else {
                                 Log.d("VideoPicker", "File size: less than $fileSizeInMB MB")
-                                if(isReply) {
-                                    uploadVideoComment(videoPath, isReply)
+                                if (isReply) {
+                                    uploadVideoComment(caption, videoPath, isReply)
                                 } else {
-                                    uploadVideoComment(videoPath)
+                                    uploadVideoComment(caption, videoPath)
                                 }
                             }
                         }
@@ -1482,39 +1479,39 @@ class BusinessFragment : Fragment(),
 
     }
 
-    private fun  registerGifPickerLauncher() {
-        gifsPickerLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-            val data = result.data
-            val gifUri = data?.getStringExtra("gifUri")
-            Log.d(TAG, "Gif Uri $gifUri")
+    private fun registerGifPickerLauncher() {
+        gifsPickerLauncher =
+            registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+                val data = result.data
+                val gifUri = data?.getStringExtra("gifUri")
+                Log.d(TAG, "Gif Uri $gifUri")
 
-            if(gifUri!!.isNotEmpty()) {
+                if (gifUri!!.isNotEmpty()) {
 
-                val localUpdateId = generateRandomId()
+                    val localUpdateId = generateRandomId()
 
-                if (isReply) {
-                    businessPostsViewModel.addCommentReply(
-                        commentId,
-                        contentType = "gif",
-                        localUpdateId = localUpdateId,
-                        gif = gifUri,
-                        isReply = isReply
-                    )
-                    isReply = false
-                } else {
-                    businessPostsViewModel.addComment(
-                        businessPostId,
-                        contentType = "gif",
-                        localUpdateId = localUpdateId,
-                        gif = gifUri
-                    )
+                    if (isReply) {
+                        businessPostsViewModel.addCommentReply(
+                            commentId,
+                            contentType = "gif",
+                            localUpdateId = localUpdateId,
+                            gif = gifUri,
+                            isReply = isReply
+                        )
+                        isReply = false
+                    } else {
+                        businessPostsViewModel.addComment(
+                            businessPostId,
+                            contentType = "gif",
+                            localUpdateId = localUpdateId,
+                            gif = gifUri
+                        )
+                    }
+
                 }
 
             }
-
-        }
     }
-
 
     private fun registerCameraLauncher() {
         cameraLauncher = registerForActivityResult(
@@ -1530,11 +1527,18 @@ class BusinessFragment : Fragment(),
 
                 when (mediaType) {
                     CameraActivity.MEDIA_TYPE_PHOTO -> {
-                        Log.d("From Camera activity", "Image url: $mediaUri \n Image path: $mediaPath")
+                        Log.d(
+                            "From Camera activity",
+                            "Image url: $mediaUri \n Image path: $mediaPath"
+                        )
                         //handlePhotoResult(mediaUri, mediaPath)
                     }
+
                     CameraActivity.MEDIA_TYPE_VIDEO -> {
-                        Log.d("From Camera activity", "Video url: $mediaUri \n Video path: $mediaPath")
+                        Log.d(
+                            "From Camera activity",
+                            "Video url: $mediaUri \n Video path: $mediaPath"
+                        )
                         //  handleVideoResult(mediaUri, mediaPath)
                     }
                 }
@@ -1543,8 +1547,6 @@ class BusinessFragment : Fragment(),
             }
         }
     }
-
-
 
     private fun registerAudioPickerLauncher() {
         audioPickerLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -1593,19 +1595,35 @@ class BusinessFragment : Fragment(),
     }
 
     private fun openDocPickerLauncher() {
-        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
-            addCategory(Intent.CATEGORY_OPENABLE)
-            type = "application/*"
-        }
+        val intent = Intent(requireActivity(), DocumentsActivity::class.java)
+        docsPickerLauncher.launch(intent)
 
-        getDocumentContent.launch(intent)
+    }
 
+    @SuppressLint("SetTextI18n")
+    private fun registerCategoryLauncher() {
+        categoryLauncher =
+            registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+                val data = result.data
+                if (data != null) {
+                    val doSearchForUser = data.getBooleanExtra("do_search", false)
+                    if (doSearchForUser) {
+                        query = data.getStringExtra("query_key").toString()
+                        businessRecycleView.isVisible = false
+                        emptyStateLayout.isVisible = false
+                        viewModel.searchItemsImmediate(query)
+                        categoryLayout.isVisible = true
+                        categoryTextView.text = "Search for $query"
+
+                    }
+                }
+            }
     }
 
     private fun openImagePicker() {
-        pickMultipleMedia.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+        val intent = Intent(requireActivity(), ImagesActivity::class.java)
+        imagePickerLauncher.launch(intent)
     }
-
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -1613,17 +1631,24 @@ class BusinessFragment : Fragment(),
         val callback = object : OnBackPressedCallback(true) {
 
             override fun handleOnBackPressed() {
+
                 if (motionLayout.isVisible) {
                     toggleBusinessCommentBottomSheet()
-                } else {
+                } else if(viewModel.isInSearchMode()) {
+                    viewModel.clearSearch()
+                    categoryTextView.text = ""
+                    categoryLayout.isVisible = false
+                    emptyStateLayout.isVisible = false
+                }
+                else {
                     isEnabled = false
                     requireActivity().onBackPressed()
                 }
             }
         }
-            profileDeferred = lifecycleScope.async {
-                setUpBusinessProfile()
-            }
+        profileDeferred = lifecycleScope.async {
+            setUpBusinessProfile()
+        }
 
         requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, callback)
     }
