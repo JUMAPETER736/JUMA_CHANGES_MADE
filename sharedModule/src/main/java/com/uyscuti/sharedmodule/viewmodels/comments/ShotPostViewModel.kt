@@ -311,3 +311,82 @@ class ShotPostViewModel@Inject constructor(
         }
 
     }
+
+
+    private suspend fun imageComment(
+        postId: String,
+        content: String,
+        file: File,
+        contentType: String,
+        localUpdateId: String,
+        isReply: Boolean = false
+    ) {
+
+        val mongoDbTimeStamp = generateMongoDBTimestamp()
+
+        Log.d("uploadImageComment", "File exists, creating comment.......")
+        val profilePic2 = settings.getString("profile_pic", "").toString()
+        val avatar = Avatar("", "", url = profilePic2)
+        val account =
+            Account(_id = "", avatar = avatar, "", localStorage.getUsername())
+        val author =
+            Author(_id = "12", account = account, firstName = "", lastName = "", avatar = null)
+
+        val imageFile = CommentFiles(
+            _id = localUpdateId,
+            url = file.absolutePath,
+            localPath = file.absolutePath
+        )
+
+        val comment = Comment(
+            __v = 1,
+            _id = "",
+            author = author,
+            content = content,
+            createdAt = mongoDbTimeStamp,
+            isLiked = false,
+            likes = 0,
+            postId = postId,
+            updatedAt = mongoDbTimeStamp,
+            replyCount = 0,
+            images = mutableListOf(imageFile),
+            audios = mutableListOf(),
+            docs = mutableListOf(),
+            gifs = "",
+            thumbnail = mutableListOf(),
+            videos = mutableListOf(),
+            contentType = "image",
+            localUpdateId = localUpdateId
+        )
+
+        _commentsMutableLiveData.postValue(CommentState(isReply, comment))
+
+        val imageParts = file.let {
+            val requestFile = it.asRequestBody("multipart/form-data".toMediaTypeOrNull())
+            MultipartBody.Part.createFormData("image", it.name, requestFile)
+        }
+
+        // Create RequestBody for required fields
+        val contentTypeBody = contentType.toRequestBody("image/*".toMediaTypeOrNull())
+        val localUpdateIdBody = localUpdateId.toRequestBody("text/plain".toMediaTypeOrNull())
+        val contentBody = content.toRequestBody("text/plain".toMediaTypeOrNull())
+
+        if (isReply) {
+            retrofitInstance.apiService.addShotReplyComment(
+                postId,
+                content = contentBody,
+                contentType = contentTypeBody,
+                localUpdateId = localUpdateIdBody,
+                image = listOf(imageParts)
+            )
+        } else {
+            retrofitInstance.apiService.addShotComment(
+                postId,
+                content = contentBody,
+                contentType = contentTypeBody,
+                localUpdateId = localUpdateIdBody,
+                image = listOf(imageParts)
+            )
+        }
+
+    }
