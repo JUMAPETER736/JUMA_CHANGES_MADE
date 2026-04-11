@@ -775,14 +775,13 @@ class ShotPostViewModel@Inject constructor(
                         postId = firstComment.postId,
                         updatedAt = firstComment.updatedAt,
                         replyCount = firstComment.replyCount,
-                        replies = firstComment.replies,
-                        images = firstComment.images ,
-                        audios = firstComment.audios ,
-                        docs = firstComment.docs ,
+                        replies = mutableListOf(),
+                        images = firstComment.images,
+                        audios = firstComment.audios,
+                        docs = firstComment.docs,
                         thumbnail = firstComment.thumbnail,
                         videos = firstComment.videos,
                         contentType = firstComment.contentType,
-                        localUpdateId = firstComment.localUpdateId,
                         fileType = firstComment.fileType ?: "Unknown",
                         fileName = firstComment.fileName ?: "Unknown",
                         fileSize = firstComment.fileSize ?: "0B",
@@ -790,6 +789,7 @@ class ShotPostViewModel@Inject constructor(
                         duration = firstComment.duration ?: "00:00",
                         gifs = firstComment.gifs ?: ""
                     )
+
                 }
                 commentWithReplies
             } catch (e: Exception) {

@@ -2,6 +2,7 @@ package com.uyscuti.social.circuit
 
 import android.content.Intent
 import android.os.Bundle
+import android.os.Handler
 import android.util.Log
 import android.view.animation.AnimationUtils
 import android.widget.Toast
@@ -14,7 +15,10 @@ import com.uyscuti.sharedmodule.model.FollowListItemViewModel
 import com.uyscuti.sharedmodule.model.LoadMoreShorts
 import com.uyscuti.sharedmodule.model.ShortsCacheEvent
 import com.uyscuti.sharedmodule.model.ShortsViewModel
-import com.uyscuti.sharedmodule.viewmodels.feed.UserRelationshipsViewModel
+import com.uyscuti.sharedmodule.service.VideoPreLoadingService
+import com.uyscuti.sharedmodule.utils.Constants
+import com.uyscuti.sharedmodule.utils.removeDuplicateFollowers
+import com.uyscuti.sharedmodule.viewmodels.UserRelationshipsViewModel
 import com.uyscuti.social.circuit.log_in_and_register.RegisterActivity
 import com.uyscuti.social.core.common.data.room.database.ChatDatabase
 import com.uyscuti.social.core.common.data.room.entity.ShortsEntity
@@ -33,6 +37,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
+import retrofit2.HttpException
+import java.io.IOException
 import javax.inject.Inject
 import kotlin.properties.Delegates
 
@@ -68,6 +74,8 @@ class SplashScreen : AppCompatActivity() {
     private var chatIdList = ArrayList<String>()
     private var groupIdList = ArrayList<String>()
     private var shortsList = ArrayList<String>()
+
+//    private lateinit var shortsViewModel: ShortsViewModel
 
     private val shortsViewModel: ShortsViewModel by viewModels()
     private val followShortsViewModel: FollowListItemViewModel by viewModels()
