@@ -10,7 +10,7 @@ import com.bumptech.glide.Glide
 import com.bumptech.glide.request.target.SimpleTarget
 import com.uyscuti.social.chatsuit.commons.ImageLoader
 import com.uyscuti.social.chatsuit.dialogs.DialogsListAdapter
-import com.uyscuti.sharedmodule.data.model.Dialog
+import com.uyscuti.social.core.models.data.Dialog
 
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -20,7 +20,7 @@ abstract class MainDialogsFragment : Fragment(), DialogsListAdapter.OnDialogClic
     DialogsListAdapter.OnDialogLongClickListener<Dialog> {
     protected lateinit var imageLoader: ImageLoader
     protected lateinit var dialogsAdapter: DialogsListAdapter<Dialog>
-
+    //    private lateinit var dialogRepository: DialogRepository
     var isGroup = false
 
     private var selectedDialogs = 1
@@ -29,10 +29,11 @@ abstract class MainDialogsFragment : Fragment(), DialogsListAdapter.OnDialogClic
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+//        dialogRepository = DialogRepository(ChatDatabase.getInstance(requireContext()).dialogDao())
 
         imageLoader = ImageLoader { imageView, url, _ ->
             if (url!!.isNotEmpty()) {
-
+//                Picasso.get().load(url).into(imageView)
 
                 var radius = 0f
 
@@ -45,8 +46,8 @@ abstract class MainDialogsFragment : Fragment(), DialogsListAdapter.OnDialogClic
                 Glide.with(this)
                     .asBitmap()
                     .load(url)
-                    .placeholder(R.drawable.flash21)
-                    .error(R.drawable.flash21)
+                    .placeholder(R.drawable.user)
+                    .error(R.drawable.user)
                     .centerCrop()
                     .into(object : SimpleTarget<Bitmap>() {
 
@@ -56,7 +57,7 @@ abstract class MainDialogsFragment : Fragment(), DialogsListAdapter.OnDialogClic
                         ) {
                             val drawable = RoundedBitmapDrawableFactory.create(resources, resource)
 
-
+//                            drawable.cornerRadius = radius
                             drawable.isCircular = true
 
                             val marginDrawable = InsetDrawable(drawable, 0, 0, 10, 0)
@@ -64,13 +65,15 @@ abstract class MainDialogsFragment : Fragment(), DialogsListAdapter.OnDialogClic
                         }
                     })
             } else {
+//                Log.d("Dialogs", "No Images Found For Dialog")
 
+//                val holder = if (di)
 
                 Glide.with(this)
                     .asBitmap()
-                    .load(R.drawable.flash)
-                    .placeholder(R.drawable.flash)
-                    .error(R.drawable.flash)
+                    .load(R.drawable.user)
+                    .placeholder(R.drawable.user)
+                    .error(R.drawable.user)
                     .centerCrop()
                     .into(object : SimpleTarget<Bitmap>() {
 
@@ -80,6 +83,7 @@ abstract class MainDialogsFragment : Fragment(), DialogsListAdapter.OnDialogClic
                         ) {
                             val drawable = RoundedBitmapDrawableFactory.create(resources, resource)
 
+//                            drawable.cornerRadius = radius
                             drawable.isCircular = true
 
                             val marginDrawable = InsetDrawable(drawable, 0, 0, 10, 0)
