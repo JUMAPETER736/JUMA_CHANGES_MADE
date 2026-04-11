@@ -75,7 +75,6 @@ class ShotPostViewModel@Inject constructor(
         }
     }
 
-
     fun addCommentReply(
         postId: String,
         content: String? = null,
@@ -491,7 +490,6 @@ class ShotPostViewModel@Inject constructor(
 
     }
 
-
     private suspend fun audioComment(
         postId: String,
         content: String,
@@ -693,6 +691,7 @@ class ShotPostViewModel@Inject constructor(
 
     }
 
+
     private suspend fun gifComment(
         postId: String,
         contentType: String,
@@ -753,6 +752,7 @@ class ShotPostViewModel@Inject constructor(
             )
         }
     }
+
 
     suspend fun getShotPostComments(postId: String, page: Int): List<Comment> {
         return withContext(Dispatchers.IO) {

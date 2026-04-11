@@ -369,7 +369,7 @@
         <attr name="marker_text_size" format="dimension" />
         <attr name="marker_text_color" format="color" />
         <attr name="marker_text_padding" format="dimension" />
-        <string name="something_went_wrong">Something went wrong.</string>
+
 
     </declare-styleable>
 </resources>

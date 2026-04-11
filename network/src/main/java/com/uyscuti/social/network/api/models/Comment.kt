@@ -2,7 +2,6 @@ package com.uyscuti.social.network.api.models
 
 import com.uyscuti.social.network.api.response.comment.allcomments.Author
 import com.uyscuti.social.network.api.response.comment.allcomments.CommentFiles
-import com.uyscuti.social.network.api.response.commentreply.allreplies.Comment
 import java.io.Serializable
 
 data class Comment(
@@ -16,7 +15,7 @@ data class Comment(
     val postId: String,
     val updatedAt: String,
     var replyCount: Int,
-    var replies: MutableList<Comment> = mutableListOf(),
+    var replies: MutableList<com.uyscuti.social.network.api.response.commentreply.allreplies.Comment> = mutableListOf(),
     var isRepliesVisible: Boolean = false,
     var hasNextPage: Boolean = true,
     var pageNumber: Int = 1,
@@ -30,7 +29,7 @@ data class Comment(
     var progress: Float = 0f,
     var isPlaying: Boolean = false,
     var isReplyPlaying: Boolean = false,
-    val localUpdateId: String,
+    val localUpdateId: String = "",
     var replyCountVisible: Boolean = true,
     var duration: String = "00:00",
     var numberOfPages: String = "0",
@@ -38,5 +37,4 @@ data class Comment(
     var fileType: String = "unknown",
     var fileName: String = "unknown",
     var uploadId: String? = ""
-
-): Serializable
+) : Serializable
