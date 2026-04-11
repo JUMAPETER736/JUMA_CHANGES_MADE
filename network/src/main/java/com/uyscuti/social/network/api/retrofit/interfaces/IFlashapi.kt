@@ -737,6 +737,14 @@ interface IFlashapi {
     ): Response<BusinessCommentResponse>
 
 
+
+    @GET("social-media/comments/locate/comment/")
+    suspend fun locateShotComment(
+        @Query("postId") postId: String,
+        @Query("commentId") commentId: String
+    ): Response<CommentLocationResponse>
+
+
     @Multipart
     @POST("social-media/comments/post/{postId}")
     suspend fun addShotComment(

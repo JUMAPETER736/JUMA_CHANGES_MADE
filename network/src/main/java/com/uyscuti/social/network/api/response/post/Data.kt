@@ -4,7 +4,7 @@ data class Data(
     val __v: Int,
     val _id: String,
     val author: Author,
-    val comments: Int,
+    var comments: Int,
     val content: String,
     val createdAt: String,
     val images: List<Image>,
@@ -13,5 +13,7 @@ data class Data(
     var likes: Int,
     val tags: List<String>,
     val thumbnail: List<Thumbnail>,
-    val updatedAt: String
+    val updatedAt: String,
+    var isFollowing: Boolean = false,
+    var bookmarks: Int = 0
 )

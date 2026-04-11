@@ -30,4 +30,4 @@ data class Comment(
     var fileType: String? = "unknown",
     var fileName: String? = "unknown",
     var uploadId: String? = ""
-    ): Serializable
+): Serializable
