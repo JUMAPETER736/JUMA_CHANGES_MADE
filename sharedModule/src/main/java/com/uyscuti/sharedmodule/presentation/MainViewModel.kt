@@ -3,7 +3,7 @@ package com.uyscuti.sharedmodule.presentation
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import com.uyscuti.sharedmodule.data.model.Dialog
+import com.uyscuti.social.core.models.data.Dialog
 import com.uyscuti.social.core.common.data.room.entity.CallLogEntity
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
