@@ -14,9 +14,7 @@ import com.bumptech.glide.load.resource.bitmap.CircleCrop
 import com.bumptech.glide.request.RequestOptions
 import com.uyscuti.sharedmodule.MessagesActivity
 import com.uyscuti.sharedmodule.calls.viewmodel.CallViewModel
-import com.uyscuti.sharedmodule.data.model.Dialog
-import com.uyscuti.sharedmodule.data.model.Message
-import com.uyscuti.sharedmodule.data.model.User
+import com.uyscuti.social.core.models.data.User
 import com.uyscuti.sharedmodule.media.ViewImagesActivity
 import com.uyscuti.sharedmodule.presentation.DialogViewModel
 import com.uyscuti.social.call.models.DataModel
@@ -29,6 +27,8 @@ import com.uyscuti.social.core.common.data.room.entity.CallLogEntity
 import com.uyscuti.social.core.common.data.room.entity.DialogEntity
 import com.uyscuti.social.core.common.data.room.entity.MessageEntity
 import com.uyscuti.social.core.common.data.room.entity.UserEntity
+import com.uyscuti.social.core.models.data.Dialog
+import com.uyscuti.social.core.models.data.Message
 import com.uyscuti.social.network.utils.LocalStorage
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope

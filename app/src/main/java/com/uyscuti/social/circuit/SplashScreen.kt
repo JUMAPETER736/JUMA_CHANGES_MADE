@@ -18,7 +18,7 @@ import com.uyscuti.sharedmodule.model.ShortsViewModel
 import com.uyscuti.sharedmodule.service.VideoPreLoadingService
 import com.uyscuti.sharedmodule.utils.Constants
 import com.uyscuti.sharedmodule.utils.removeDuplicateFollowers
-import com.uyscuti.sharedmodule.viewmodels.UserRelationshipsViewModel
+import com.uyscuti.sharedmodule.viewmodels.feed.UserRelationshipsViewModel
 import com.uyscuti.social.circuit.log_in_and_register.RegisterActivity
 import com.uyscuti.social.core.common.data.room.database.ChatDatabase
 import com.uyscuti.social.core.common.data.room.entity.ShortsEntity
@@ -102,22 +102,33 @@ class SplashScreen : AppCompatActivity() {
         )
         messageRepository =
             MessageRepository(
+                this,
                 ChatDatabase.Companion.getInstance(this).messageDao(),
                 retrofitInstance
             )
         groupDialogRepository = GroupDialogRepository(
             ChatDatabase.Companion.getInstance(this).groupDialogDao(),
-            retrofitInstance
+            retrofitInstance,
+            localStorage
         )
 
 
         val database = ChatDatabase.Companion.getInstance(applicationContext)
         val personDao = database.shortsDao()
+//        val repository = ShortsRepository(personDao)
+//        shortsViewModel = ViewModelProvider(this)[ShortsViewModel::class.java]
 
+//        shortsViewModel.allShorts.observe(this, Observer { persons ->
+//            // Handle the updated list of persons
+//
+//        })
 
         Log.d(TAG, "onCreate token: ${LocalStorage.Companion.getInstance(this).getToken()}")
         lifecycleScope.launch {
-
+//            getAllShort()
+//            getAllShort2()
+//            getAllShort3()
+//            loadMoreShorts()
 
         }
     }

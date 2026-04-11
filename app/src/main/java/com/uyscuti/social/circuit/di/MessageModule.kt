@@ -22,6 +22,6 @@ object MessageModule {
 
     @Provides
     fun provideMessageRepository(context: Context,dialogDao: MessageDao, retrofitInstance: RetrofitInstance): MessageRepository {
-        return MessageRepository(dialogDao, retrofitInstance)
+        return MessageRepository(context,dialogDao, retrofitInstance)
     }
 }

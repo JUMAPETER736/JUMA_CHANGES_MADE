@@ -21,13 +21,14 @@ import com.uyscuti.social.chatsuit.dialogs.DialogsListAdapter
 import com.uyscuti.social.chatsuit.utils.DateFormatter
 import com.uyscuti.social.circuit.R
 import com.uyscuti.sharedmodule.data.fixtures.DialogsFixtures
-import com.uyscuti.sharedmodule.data.model.Dialog
-import com.uyscuti.sharedmodule.data.model.Message
-import com.uyscuti.sharedmodule.data.model.User
+import com.uyscuti.social.core.models.data.User
 import com.uyscuti.sharedmodule.MessagesActivity
 import com.uyscuti.social.core.common.data.room.entity.GroupDialogEntity
 import com.uyscuti.social.core.common.data.room.entity.MessageEntity
 import com.uyscuti.social.core.common.data.room.entity.UserEntity
+import com.uyscuti.social.core.models.data.Dialog
+import com.uyscuti.social.core.models.data.Message
+import com.uyscuti.social.network.utils.LocalStorage
 import com.vanniktech.emoji.EmojiManager
 import com.vanniktech.emoji.twitter.TwitterEmojiProvider
 import dagger.hilt.android.AndroidEntryPoint
@@ -50,7 +51,7 @@ private const val ARG_PARAM2 = "param2"
 @UnstableApi
 @AndroidEntryPoint
 class GroupChats : MainDialogsFragment() ,  DateFormatter.Formatter, OnBackPressedListener {
-    // TODO: Rename and change types of parameters
+
     private var param1: String? = null
     private var param2: String? = null
     private lateinit var dialogsList: DialogsList
@@ -171,29 +172,28 @@ class GroupChats : MainDialogsFragment() ,  DateFormatter.Formatter, OnBackPress
 
     private fun initDialogs() {
         dialogsAdapter = DialogsListAdapter<Dialog>(imageLoader)
-        var dialogs: List<Dialog> = emptyList() // Initialize as empty
 
-
-
+        // Get the current logged-in user's ID from LocalStorage
+        val currentUserId = LocalStorage.getInstance(requireContext()).getUserId()
 
         lifecycleScope.launch {
             groupDialogViewModel.allGroupDialogs.observe(viewLifecycleOwner) { dialogsData ->
 
-                dialogs = dialogsData.map { fromGroupDialogEntity(it) }.sortedByDescending { it.lastMessage.createdAt }
+                val dialogs = dialogsData
+                    .filter { entity ->
+                        // Only show groups where the logged-in user is a member
+                        entity.users.any { it.id == currentUserId }
+                    }
+                    .map { fromGroupDialogEntity(it) }
+                    .sortedByDescending { it.lastMessage.createdAt }
 
                 dialogsAdapter.setItems(dialogs)
             }
         }
 
-
-
-
-        // Fetch data only once when the fragment starts
-
         dialogsAdapter.setOnDialogClickListener(this)
         dialogsAdapter.setOnDialogLongClickListener(this)
         dialogsAdapter.setDatesFormatter(this)
-
         dialogsList.setAdapter(dialogsAdapter)
     }
 
@@ -302,7 +302,7 @@ class GroupChats : MainDialogsFragment() ,  DateFormatter.Formatter, OnBackPress
         // TODO: Rename and change types and number of parameters
         @JvmStatic
         fun newInstance(param1: String, param2: String) =
-           GroupChats().apply {
+            GroupChats().apply {
                 arguments = Bundle().apply {
                     putString(ARG_PARAM1, param1)
                     putString(ARG_PARAM2, param2)

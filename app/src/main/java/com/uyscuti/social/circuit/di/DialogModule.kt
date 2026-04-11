@@ -1,6 +1,7 @@
 package com.uyscuti.social.circuit.di
 
 import android.content.Context
+import androidx.room.Room
 import com.uyscuti.social.core.common.data.room.dao.DialogDao
 import com.uyscuti.social.core.common.data.room.dao.GroupDialogDao
 import com.uyscuti.social.core.common.data.room.database.ChatDatabase
@@ -42,6 +43,6 @@ object DialogModule {
 
     @Provides
     fun provideGroupDialogRepository(groupDialogDao: GroupDialogDao, retrofitInstance: RetrofitInstance, localStorage: LocalStorage): GroupDialogRepository {
-        return GroupDialogRepository(groupDialogDao, retrofitInstance)
+        return GroupDialogRepository(groupDialogDao, retrofitInstance, localStorage)
     }
 }
