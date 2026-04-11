@@ -692,3 +692,65 @@ class ShotPostViewModel@Inject constructor(
         }
 
     }
+
+    private suspend fun gifComment(
+        postId: String,
+        contentType: String,
+        localUpdateId: String,
+        gifUrl: String,
+        isReply: Boolean = false
+    ) {
+
+        val mongoDbTimeStamp = generateMongoDBTimestamp()
+
+        val profilePic2 = settings.getString("profile_pic", "").toString()
+        val avatar = Avatar("", "", url = profilePic2)
+        val account =
+            Account(_id = "", avatar = avatar, "", localStorage.getUsername())
+        val author =
+            Author(_id = "12", account = account, firstName = "", lastName = "", avatar = null)
+
+        val comment = Comment(
+            __v = 1,
+            _id = localUpdateId,
+            author = author,
+            content = "",
+            createdAt = mongoDbTimeStamp,
+            isLiked = false,
+            likes = 0,
+            postId = postId,
+            updatedAt = mongoDbTimeStamp,
+            replyCount = 0,
+            images = mutableListOf(),
+            audios = mutableListOf(),
+            docs = mutableListOf(),
+            gifs = gifUrl,
+            thumbnail = mutableListOf(),
+            videos = mutableListOf(),
+            contentType = "gif",
+            localUpdateId = localUpdateId
+        )
+
+        _commentsMutableLiveData.postValue(CommentState(isReply, comment))
+
+        val contentTypeBody = contentType.toRequestBody("text/plain".toMediaTypeOrNull())
+        val localUpdateIdBody = localUpdateId.toRequestBody("text/plain".toMediaTypeOrNull())
+        val gifBody = gifUrl.toRequestBody("text/plain".toMediaTypeOrNull())
+
+        if (isReply) {
+            retrofitInstance.apiService.addShotReplyComment(
+                postId,
+                contentType = contentTypeBody,
+                localUpdateId = localUpdateIdBody,
+                gif = gifBody
+            )
+        } else {
+            retrofitInstance.apiService.addShotComment(
+                postId,
+                contentType = contentTypeBody,
+                localUpdateId = localUpdateIdBody,
+                gif = gifBody
+            )
+        }
+    }
+
