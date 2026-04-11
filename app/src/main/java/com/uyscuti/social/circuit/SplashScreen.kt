@@ -181,15 +181,108 @@ class SplashScreen : AppCompatActivity() {
         }
     }
 
-    private fun serverResponseToFollowEntity(serverResponse: List<FollowListItem>) : List<ShortsEntityFollowList> {
-        return serverResponse.map{serverResponse ->
-            ShortsEntityFollowList(
-                followersId = serverResponse.followersId,
-                isFollowing = serverResponse.isFollowing
-            )
+    private fun serverResponseToFollowEntity(serverResponse: List<FollowListItem>?): List<ShortsEntityFollowList> {
+        // Handle null or empty list
+        if (serverResponse.isNullOrEmpty()) {
+            return emptyList()
+        }
+
+        return serverResponse.mapNotNull { followItem ->
+            // Skip null items
+            if (followItem.followersId == null || followItem.isFollowing == null) {
+                null
+            } else {
+                ShortsEntityFollowList(
+                    followersId = followItem.followersId,
+                    isFollowing = followItem.isFollowing
+                )
+            }
         }
     }
 
+    private suspend fun getAllShort3(){
+        Log.d("AllShorts3", "getAllShort2: In Get shorts 2")
+
+        try {
+            Log.d(TAG, "getAllShort3: In Get shorts 2")
+
+            val response = retrofitInstance.apiService.getAllPosts3()
+
+            Log.d("allShorts3", "getAllShort3: $response")
+            Log.d("allShorts3", "getAllShort3: ${response.body()}")
+            if (response.isSuccessful) {
+                val responseBody = response.body()
+                Log.d("AllShorts3", "Shorts List ${responseBody?.data?.posts?.shorts}")
+                Log.d("AllShorts3", "Shorts List ${responseBody?.data?.followList}")
+
+
+//                responseBody.data.posts.
+//                val hasMoreShorts = responseBody!!.data.data.hasNextPage
+//                Log.d("AllShorts2", "Has more shorts: $hasMoreShorts")
+
+//                if(hasMoreShorts) {
+////                    loadMoreShorts()
+//                    EventBus.getDefault().post(LoadMoreShorts(true))
+//                }
+                val shortsEntity = responseBody!!.data.posts.shorts.let { serverResponseToEntity(it) }
+                val followListItem = responseBody.data.followList.let { serverResponseToFollowEntity(it) }
+//                val followListItem = responseBody.data.followList
+
+// Now, insert yourEntity into the Room database
+                lifecycleScope.launch(Dispatchers.IO) {
+                    shortsViewModel.addAllShorts(shortsEntity)
+                    val uniqueFollowList = removeDuplicateFollowers(followListItem)
+                    Log.d(TAG, "getAllShort3: Inserted uniqueFollowList $uniqueFollowList")
+                    followShortsViewModel.insertFollowListItems(uniqueFollowList)
+
+//                    followShortsViewModel.insertFollowListItems(followListItem)
+//                    shortsViewModel.addAllFollowListShorts(followListItem)
+
+                    for (entity in shortsEntity) {
+                        // Access the list of images for each entity
+                        val images = entity.images
+
+                        // Iterate through the list of images
+                        for (image in images) {
+                            // Access individual image properties or perform any desired actions
+                            val imageUrl = image.url
+//                                Log.d(TAG, "imageUrl - $imageUrl")
+                            shortsList.add(imageUrl)
+//                                EventBus.getDefault().post(ShortsCacheEvent(shortsList))
+
+                            // Do something with the imageUrl...
+                        }
+                    }
+                    startPreLoadingService()
+                }
+//                Log.d(TAG, "Handle the updated list of persons")
+//                shortsViewModel.addAllShorts(personList)
+
+            } else {
+                Log.d("AllShorts3", "Error: ${response.message()}")
+                showToast(response.message())
+            }
+
+        } catch (e: HttpException) {
+            Log.d("AllShorts3", "Http Exception ${e.message}")
+            Toast.makeText(this, "Failed to connect try again...", Toast.LENGTH_SHORT).show()
+        } catch (e: IOException) {
+            Log.d("AllShorts3", "IOException ${e.message}")
+            Toast.makeText(
+                this@SplashScreen,
+                "Failed to connect try again...",
+                Toast.LENGTH_SHORT
+            ).show()
+        }
+    }
+
+
+    @OptIn(UnstableApi::class)
+    private fun startPreLoadingService() {
+        val preloadingServiceIntent = Intent(this, VideoPreLoadingService::class.java)
+        preloadingServiceIntent.putStringArrayListExtra(Constants.VIDEO_LIST, shortsList)
+        startService(preloadingServiceIntent)
+    }
 
     @OptIn(UnstableApi::class)
     private fun launchMain() {
@@ -212,14 +305,25 @@ class SplashScreen : AppCompatActivity() {
             fetchDialogs(
                 onSuccess = {
                     // Code to execute on success
+//                    Log.d("FetchedDialogs", "FetchedDialogs : ${chatIdList.size}")
+
                     firstLaunch = false
-                   startMainActivity()
+                    // Uncomment the line below if you want to delay starting the main activity
+//                    val handler = Handler()
+//                    handler.postDelayed({ startMainActivity() }, 2000)
+
+                    startMainActivity()
+
 
                     if (chatIdList.isNotEmpty()) {
                         chatIdList.forEach { dialogId ->
                             fetchMessages(dialogId)
                         }
                     }
+
+
+                    // Comment out the line below if you want to delay starting the main activity
+//                    startMainActivity()
 
                 },
                 onFailure = { errorMessage ->
@@ -229,16 +333,20 @@ class SplashScreen : AppCompatActivity() {
                     firstLaunch = false
 
                     startMainActivity()
+
+//                    val handler = Handler()
+//                    handler.postDelayed({ startMainActivity() }, 2000)
                 }
             )
 
             fetchGroups(
                 onSuccess = {
                     // Code to execute on success
-
+//                    Log.d("FetchedGroups", "FetchedGroups : ${groupIdList.size}")
 
                     firstLaunch = false
                     // Uncomment the line below if you want to delay starting the main activity
+
 
                     if (groupIdList.isNotEmpty()) {
                         groupIdList.forEach { dialogId ->
@@ -251,6 +359,7 @@ class SplashScreen : AppCompatActivity() {
                     // Handle failure as needed
                     firstLaunch = false
 
+//                    startMainActivity()
 
                 }
             )
@@ -264,19 +373,20 @@ class SplashScreen : AppCompatActivity() {
         super.onDestroy()
         EventBus.getDefault().unregister(this)
 
+
     }
 
     private fun fetchDialogs(onSuccess: () -> Unit, onFailure: (String) -> Unit) {
         if (isUserAuthenticated()) {
             CoroutineScope(Dispatchers.IO).launch {
                 try {
-
+//                    Log.d("FetchedDialogs", "Fetching dialogs from the internet")
                     dialogRepository.fetchAndInsertPersonalDialogs() // Initiate fetching and inserting dialogs
-
+//                    Log.d("FetchedDialogs", "Fetched dialogs from the internet successfully")
 
                     val list = dialogRepository.dialogIds()
                     chatIdList += list as ArrayList<String>
-
+//                    Log.d("FetchedDialogs", "The number of chats fetched : ${chatIdList.size}")
 
                     // Call the success callback
                     onSuccess.invoke()
@@ -297,13 +407,13 @@ class SplashScreen : AppCompatActivity() {
         if (isUserAuthenticated()) {
             CoroutineScope(Dispatchers.IO).launch {
                 try {
-
+//                    Log.d("FetchedGroups", "Fetching groups from the internet")
                     groupDialogRepository.fetchAndInsertGroupDialogs() // Initiate fetching and inserting groups
-
+//                    Log.d("FetchedGroups", "Fetched groups from the internet successfully")
 
                     val list = groupDialogRepository.dialogIds()
                     groupIdList = list as ArrayList<String>
-
+//                    Log.d("FetchedGroups", "The number of groups fetched : ${chatIdList.size}")
 
                     // Call the success callback
                     onSuccess.invoke()
@@ -322,9 +432,9 @@ class SplashScreen : AppCompatActivity() {
         if (isUserAuthenticated()) {
             CoroutineScope(Dispatchers.IO).launch {
                 try {
-
+//                    Log.d("FetchedMessages", "Fetching group messages from the internet")
                     messageRepository.getMessagesWithMediaType(groupId)
-
+//                    Log.d("FetchedMessages", "Fetched group messages from the internet successfully")
                 } catch (e: Exception) {
                     e.printStackTrace()
                 }
@@ -336,8 +446,9 @@ class SplashScreen : AppCompatActivity() {
         if (isUserAuthenticated()) {
             CoroutineScope(Dispatchers.IO).launch {
                 try {
-                     messageRepository.getMessagesWithMediaType(chatId)
-
+//                    Log.d("FetchedMessages", "Fetching messages from the internet")
+                    messageRepository.getMessagesWithMediaType(chatId)
+//                    Log.d("FetchedMessages", "Fetched messages from the internet successfully")
                 } catch (e: Exception) {
                     e.printStackTrace()
                 }
@@ -349,6 +460,28 @@ class SplashScreen : AppCompatActivity() {
         return localStorage.getToken()
     }
 
+    private fun launchMainActivityIfNeeded() {
+        if (dialogsInserted) {
+            if (firstLaunch) {
+                val handler = Handler()
+                handler.postDelayed({
+                    if (isUserAuthenticated()) {
+                        launchMain()
+                    } else {
+                        startMainActivity()
+                    }
+                    firstLaunch = false
+                }, 200)
+            } else {
+                if (isUserAuthenticated()) {
+                    launchMain()
+                } else {
+                    startMainActivity()
+                }
+            }
+        }
+    }
+
     private fun isUserAuthenticated(): Boolean {
         val settings = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
         return settings.getBoolean("logged", false) && getToken().isNotEmpty()
@@ -357,15 +490,16 @@ class SplashScreen : AppCompatActivity() {
 
     private fun startMainActivity() {
         val set = getSharedPreferences(PREFS_NAME, 0)
-        set.getBoolean(SPLASH_SCREEN_ALREADY_SHOWN, false)
-        set.getBoolean("logged", false)
+        val splashScreenAlreadyShown = set.getBoolean(SPLASH_SCREEN_ALREADY_SHOWN, false)
+        val logged = set.getBoolean("logged", false)
 
 
         if (!isUserAuthenticated()) {
             val intent = Intent(this@SplashScreen, RegisterActivity::class.java)
 
             // Apply custom transitions
-            AnimationUtils.loadAnimation(this@SplashScreen, R.anim.slide_in_right)
+            val slideInRight =
+                AnimationUtils.loadAnimation(this@SplashScreen, R.anim.slide_in_right)
             intent.addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION)
             startActivity(intent)
             overridePendingTransition(0, 0) // Disable the default transition
@@ -397,7 +531,7 @@ class SplashScreen : AppCompatActivity() {
         Log.d("EventBus", "Received event: ${event.loadMore}")
         if(event.loadMore) {
             lifecycleScope.launch(Dispatchers.IO) {
-
+//                loadMoreShorts()
             }
         }
     }
