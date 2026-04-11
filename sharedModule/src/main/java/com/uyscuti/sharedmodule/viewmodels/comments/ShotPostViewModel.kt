@@ -754,3 +754,67 @@ class ShotPostViewModel@Inject constructor(
         }
     }
 
+    suspend fun getShotPostComments(postId: String, page: Int): List<Comment> {
+        return withContext(Dispatchers.IO) {
+            try {
+
+                val response = retrofitInstance.apiService.getShortComments(postId, page.toString())
+                val responseBody = response.body()!!
+
+                val comments = responseBody.data.comments
+
+                val commentWithReplies = comments.map { firstComment ->
+                    Comment(
+                        __v = firstComment.__v,
+                        _id = firstComment._id,
+                        author = firstComment.author,
+                        content = firstComment.content,
+                        createdAt = firstComment.createdAt,
+                        isLiked = firstComment.isLiked,
+                        likes = firstComment.likes,
+                        postId = firstComment.postId,
+                        updatedAt = firstComment.updatedAt,
+                        replyCount = firstComment.replyCount,
+                        replies = firstComment.replies,
+                        images = firstComment.images ,
+                        audios = firstComment.audios ,
+                        docs = firstComment.docs ,
+                        thumbnail = firstComment.thumbnail,
+                        videos = firstComment.videos,
+                        contentType = firstComment.contentType,
+                        localUpdateId = firstComment.localUpdateId,
+                        fileType = firstComment.fileType ?: "Unknown",
+                        fileName = firstComment.fileName ?: "Unknown",
+                        fileSize = firstComment.fileSize ?: "0B",
+                        numberOfPages = firstComment.numberOfPages ?: "0",
+                        duration = firstComment.duration ?: "00:00",
+                        gifs = firstComment.gifs ?: ""
+                    )
+                }
+                commentWithReplies
+            } catch (e: Exception) {
+                e.printStackTrace()
+                emptyList()
+            }
+        }
+    }
+
+
+    suspend fun locateShotComment(
+        postId: String,
+        commentId: String
+    ): CommentLocationData? {
+        val response = retrofitInstance.apiService.locateShotComment(postId,commentId)
+        if (response.isSuccessful) {
+            return response.body()!!.data
+        }
+        return null
+    }
+
+
+}
+
+data class CommentState(
+    val isReply: Boolean,
+    val comment: Comment
+)
