@@ -737,6 +737,27 @@ interface IFlashapi {
     ): Response<BusinessCommentResponse>
 
 
+    @Multipart
+    @POST("social-media/comments/post/{postId}")
+    suspend fun addShotComment(
+        @Path("postId") postId: String,
+        @Part("content") content: RequestBody? = null,
+        @Part("contentType") contentType: RequestBody,
+        @Part("localUpdateId") localUpdateId: RequestBody,
+        @Part image: List<MultipartBody.Part>? = null,
+        @Part video: List<MultipartBody.Part>? = null,
+        @Part thumbnail: List<MultipartBody.Part>? = null,
+        @Part audio: List<MultipartBody.Part>? = null,
+        @Part docs: List<MultipartBody.Part>? = null,
+        @Part("duration") duration: RequestBody? = null,
+        @Part("fileName") fileName: RequestBody? = null,
+        @Part("fileType") fileType: RequestBody? = null,
+        @Part("fileSize") fileSize: RequestBody? = null,
+        @Part("numberOfPages") numberOfPages: RequestBody? = null,
+        @Part("gif") gif: RequestBody? = null
+    ): Response<BusinessCommentResponse>
+
+
     // ==================== FEED POSTS - COMMENTS ====================
 
     @GET("feed/comments/{postId}")
