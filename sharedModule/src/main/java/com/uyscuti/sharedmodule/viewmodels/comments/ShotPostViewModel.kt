@@ -491,3 +491,106 @@ class ShotPostViewModel@Inject constructor(
 
     }
 
+
+    private suspend fun audioComment(
+        postId: String,
+        content: String,
+        file: File,
+        contentType: String,
+        localUpdateId: String,
+        isReply: Boolean = false,
+        fileType: String
+    ) {
+
+        val mongoDbTimeStamp = generateMongoDBTimestamp()
+        val uploadId = generateRandomId()
+
+        val profilePic2 = settings.getString("profile_pic", "").toString()
+        val avatar = Avatar("", "", url = profilePic2)
+        val account =
+            Account(_id = "", avatar = avatar, "", localStorage.getUsername())
+        val author =
+            Author(_id = "12", account = account, firstName = "", lastName = "", avatar = null)
+        val vnFile = CommentFiles(_id = localUpdateId, url = file.absolutePath, localPath = file.absolutePath)
+
+        val durationString = getFormattedDuration(file.absolutePath)
+        val fileName = getFileNameFromLocalPath(file.absolutePath)
+        val fileType = fileType
+
+        val fileSizeInBytes = file.length()
+        val fileSizeInKB = fileSizeInBytes / 1024
+        val fileSizeInMB = fileSizeInKB / 1024
+
+        val fileSizeString = fileSizeInMB.toString() + "MB"
+
+        val comment = Comment(
+            __v = 1,
+            _id = "",
+            author = author,
+            content = content,
+            createdAt = mongoDbTimeStamp,
+            isLiked = false,
+            likes = 0,
+            postId = postId,
+            updatedAt = mongoDbTimeStamp,
+            replyCount = 0,
+            images = mutableListOf(),
+            audios = mutableListOf(vnFile),
+            docs = mutableListOf(),
+            gifs = "",
+            thumbnail = mutableListOf(),
+            videos = mutableListOf(),
+            contentType = contentType,
+            localUpdateId = localUpdateId,
+            fileName = fileName,
+            duration = durationString,
+            fileType = fileType,
+            uploadId = uploadId,
+            fileSize = fileSizeString
+        )
+
+        _commentsMutableLiveData.postValue(CommentState(isReply, comment))
+
+        val audioParts = file.let {
+            val requestFile = it.asRequestBody("multipart/form-data".toMediaTypeOrNull())
+            MultipartBody.Part.createFormData("audio", it.name, requestFile)
+        }
+
+        // Create RequestBody for required fields
+        val contentTypeBody = contentType.toRequestBody("audio/*".toMediaTypeOrNull())
+        val localUpdateIdBody = localUpdateId.toRequestBody("text/plain".toMediaTypeOrNull())
+        val durationRequestDody = durationString.toRequestBody("text/plain".toMediaTypeOrNull())
+        val fileNameBody = fileName.toRequestBody("text/plain".toMediaTypeOrNull())
+        val fileTypeBody = fileType.toRequestBody("text/plain".toMediaTypeOrNull())
+        val fileSizeBody = fileSizeString.toRequestBody("text/plain".toMediaTypeOrNull())
+        val contentBody = content.toRequestBody("text/plain".toMediaTypeOrNull())
+
+
+        if (isReply) {
+            retrofitInstance.apiService.addShotReplyComment(
+                postId,
+                content = contentBody,
+                contentType = contentTypeBody,
+                localUpdateId = localUpdateIdBody,
+                audio = listOf(audioParts),
+                duration = durationRequestDody,
+                fileName = fileNameBody,
+                fileType =fileTypeBody,
+                fileSize = fileSizeBody
+            )
+        } else {
+            retrofitInstance.apiService.addShotComment(
+                postId,
+                content = contentBody,
+                contentType = contentTypeBody,
+                localUpdateId = localUpdateIdBody,
+                audio = listOf(audioParts),
+                duration = durationRequestDody,
+                fileName = fileNameBody,
+                fileType =fileTypeBody,
+                fileSize = fileSizeBody
+            )
+        }
+
+
+    }
