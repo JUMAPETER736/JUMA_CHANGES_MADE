@@ -594,3 +594,101 @@ class ShotPostViewModel@Inject constructor(
 
 
     }
+
+
+    private suspend fun documentComment(
+        postId: String,
+        content: String,
+        file: File,
+        contentType: String,
+        localUpdateId: String,
+        numberOfPages: Int,
+        fileSize: String,
+        fileType: String,
+        fileName: String,
+        isReply: Boolean = false
+    ) {
+        val mongoDbTimeStamp = generateMongoDBTimestamp()
+
+        val profilePic2 = settings.getString("profile_pic", "").toString()
+        val avatar = Avatar("", "", url = profilePic2)
+        val account =
+            Account(_id = "", avatar = avatar, "", localStorage.getUsername())
+        val author =
+            Author(_id = "12", account = account, firstName = "", lastName = "", avatar = null)
+
+        val documentFile = CommentFiles(
+            _id = localUpdateId,
+            url = file.absolutePath,
+            localPath = file.absolutePath
+        )
+
+        val comment = Comment(
+            __v = 1,
+            _id = "",
+            author = author,
+            content = content,
+            createdAt = mongoDbTimeStamp,
+            isLiked = false,
+            likes = 0,
+            postId = postId,
+            updatedAt = mongoDbTimeStamp,
+            replyCount = 0,
+            images = mutableListOf(),
+            audios = mutableListOf(),
+            docs = mutableListOf(documentFile),
+            gifs = "",
+            thumbnail = mutableListOf(),
+            videos = mutableListOf(),
+            contentType = contentType,
+            localUpdateId = localUpdateId,
+            numberOfPages = numberOfPages.toString(),
+            fileSize = fileSize,
+            fileType = fileType,
+            fileName = fileName
+        )
+
+        _commentsMutableLiveData.postValue(CommentState(isReply, comment))
+
+        val docsParts = file.let {
+            val requestFile = it.asRequestBody("multipart/form-data".toMediaTypeOrNull())
+            MultipartBody.Part.createFormData("docs", it.name, requestFile)
+        }
+
+        // Create RequestBody for required fields
+        val contentTypeBody = contentType.toRequestBody("text/plain".toMediaTypeOrNull())
+        val localUpdateIdBody = localUpdateId.toRequestBody("text/plain".toMediaTypeOrNull())
+        val numberOfPagesBody = numberOfPages.toString().toRequestBody("text/plain".toMediaTypeOrNull())
+        val fileNameBody = fileName.toRequestBody("text/plain".toMediaTypeOrNull())
+        val fileSizeBody = fileSize.toRequestBody("text/plain".toMediaTypeOrNull())
+        val fileTypeBody = fileType.toRequestBody("text/plain".toMediaTypeOrNull())
+        val contentBody = content.toRequestBody("text/plain".toMediaTypeOrNull())
+
+
+        if (isReply) {
+            retrofitInstance.apiService.addShotReplyComment(
+                postId,
+                content = contentBody,
+                contentType = contentTypeBody,
+                localUpdateId = localUpdateIdBody,
+                docs = listOf(docsParts),
+                fileName = fileNameBody,
+                fileSize = fileSizeBody,
+                fileType = fileTypeBody,
+                numberOfPages = numberOfPagesBody
+            )
+        } else {
+            retrofitInstance.apiService.addShotComment(
+                postId,
+                content = contentBody,
+                contentType = contentTypeBody,
+                localUpdateId = localUpdateIdBody,
+                docs = listOf(docsParts),
+                fileName = fileNameBody,
+                fileSize = fileSizeBody,
+                fileType = fileTypeBody,
+                numberOfPages = numberOfPagesBody
+            )
+        }
+
+    }
