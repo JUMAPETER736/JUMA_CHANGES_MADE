@@ -716,6 +716,25 @@ interface IFlashapi {
     @POST("feed/share/{postId}")
     suspend fun toggleFeedShare(@Path("postId") postId: String, @Body request: ShareRequest): Response<ShareUnShareFeedPostResponse>
 
+    @Multipart
+    @POST("social-media/comment/reply/comment/{commentId}")
+    suspend fun addShotReplyComment(
+        @Path("commentId") commentId: String,
+        @Part("content") content: RequestBody? = null,
+        @Part("contentType") contentType: RequestBody,
+        @Part("localUpdateId") localUpdateId: RequestBody,
+        @Part image: List<MultipartBody.Part>? = null,
+        @Part video: List<MultipartBody.Part>? = null,
+        @Part thumbnail: List<MultipartBody.Part>? = null,
+        @Part audio: List<MultipartBody.Part>? = null,
+        @Part docs: List<MultipartBody.Part>? = null,
+        @Part("duration") duration: RequestBody? = null,
+        @Part("fileName") fileName: RequestBody? = null,
+        @Part("fileType") fileType: RequestBody? = null,
+        @Part("fileSize") fileSize: RequestBody? = null,
+        @Part("numberOfPages") numberOfPages: RequestBody? = null,
+        @Part("gif") gif: RequestBody? = null
+    ): Response<BusinessCommentResponse>
 
 
     // ==================== FEED POSTS - COMMENTS ====================
