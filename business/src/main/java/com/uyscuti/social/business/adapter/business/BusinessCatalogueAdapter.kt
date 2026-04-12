@@ -174,103 +174,51 @@ class BusinessCatalogueAdapter(
         return if (position < currentList.size) VIEW_TYPE_POST else VIEW_TYPE_LOADING
     }
 
-
-    fun updateCommentCount(position: Int) {
-        var count = catalogue[position].comments
-        ++count
-        catalogue[position].comments = count
-        notifyItemChanged(position)
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+        return when (viewType) {
+            VIEW_TYPE_POST -> {
+                val view = LayoutInflater.from(parent.context)
+                    .inflate(R.layout.business_post_layout, parent, false)
+                BusinessPostViewHolder(
+                    view, context, businessClickedListener, retrofitInterface,
+                    localStorage, onItemClick, onBookmarkClick, onFollowClick,
+                    onMessageClick, onSendOfferClicked, fragmentManager
+                )
+            }
+            VIEW_TYPE_LOADING -> {
+                val view = LayoutInflater.from(parent.context)
+                    .inflate(R.layout.item_loading, parent, false)
+                LoadingViewHolder(view)
+            }
+            else -> throw IllegalArgumentException("Unknown view type: $viewType")
+        }
     }
 
-    override fun onCreateViewHolder(
-        parent: ViewGroup,
-        viewType: Int
-    ): BusinessPostViewHolder {
-        val view =
-            LayoutInflater.from(context).inflate(R.layout.business_post_layout, parent, false)
-        return BusinessPostViewHolder(
-            view,
-            context,
-            businessClickedListener,
-            retrofitInterface,
-            localStorage,
-            onItemClick,
-            onBookmarkClick,
-            onFollowClick,
-            onMessageClick,
-            fragmentManager
-        )
-    }
+    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+        when (holder) {
+            is BusinessPostViewHolder -> {
+                if (position < currentList.size) {
+                    holder.bind(getItem(position), position)
 
-    override fun onBindViewHolder(
-        holder: BusinessPostViewHolder,
-        position: Int
-    ) {
-        if(position < catalogue.size) {
-            holder.bind(catalogue[position], position)
+                    // Trigger load more when near end of list
+                    if (position == currentList.size - 3 && !isLoadingMore && hasMoreData) {
+                        onLoadMore?.invoke()
+                    }
+                }
+            }
         }
     }
 
     override fun getItemCount(): Int {
-        return catalogue.size + if (isLoadingMore) 1 else 0
+        return currentList.size + if (isLoadingMore) 1 else 0
     }
 
-
-
-    inner class CatalogueDiffCallBack(
-        private val oldList: List<Post>,
-        private val newList: List<Post>
-    ): DiffUtil.Callback() {
-
-        override fun getOldListSize(): Int {
-            return oldList.size
-        }
-
-        override fun getNewListSize(): Int {
-            return newList.size
-        }
-
-        override fun areItemsTheSame(
-            oldItemPosition: Int,
-            newItemPosition: Int
-        ): Boolean {
-            return oldList[oldItemPosition] == newList[newItemPosition]
-        }
-
-        override fun areContentsTheSame(
-            oldItemPosition: Int,
-            newItemPosition: Int
-        ): Boolean {
-            return oldList[oldItemPosition] == newList[newItemPosition]
-        }
-
-        override fun getChangePayload(oldItemPosition: Int, newItemPosition: Int): Any? {
-            val oldItem = oldList[oldItemPosition]
-            val newItem = newList[newItemPosition]
-
-            // Return a payload indicating what changed for partial updates
-            val changes = mutableMapOf<String, Any>()
-
-            if (oldItem.itemName != newItem.itemName) {
-                changes["name"] = newItem.itemName
-            }
-            if (oldItem.description != newItem.description) {
-                changes["description"] = newItem.description
-            }
-
-            return if (changes.isNotEmpty()) changes else null
-        }
-
-    }
-
+    inner class LoadingViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView)
 }
 
 interface OnBusinessClickedListener {
-
     fun businessCommentClickedListener(
         position: Int,
         post: Post
     )
 }
-
-
