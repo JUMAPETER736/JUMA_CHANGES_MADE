@@ -310,4 +310,73 @@ class BusinessCatalogueViewModel(
         }
     }
 
-    
+
+    fun isInSearchMode(): Boolean = isSearchActive
+
+    fun clearError() {
+        _errorMessage.value = null
+    }
+
+    // ===== HANDLE CATALOGUE SUCCESS =====
+    private fun handleCatalogueSuccess(businessPost: BusinessPost, refresh: Boolean) {
+        val products = businessPost.data.posts
+
+        currentPage = businessPost.currentPage
+        totalPages = businessPost.totalPages
+        hasNextPage = businessPost.hasNextPage
+
+        if (refresh || currentPage == 1) {
+            allLoadedItems.clear()
+            allLoadedItems.addAll(products)
+
+            _catalogueItems.value = allLoadedItems.toList()
+            _uiState.value = if (allLoadedItems.isEmpty()) {
+                CatalogueUiState.Empty
+            } else {
+                CatalogueUiState.Success(allLoadedItems.toList())
+            }
+        } else {
+            val newItems = products.filter { newItem ->
+                allLoadedItems.none { it._id == newItem._id }
+            }
+
+            if (newItems.isNotEmpty()) {
+                allLoadedItems.addAll(newItems)
+                _newPageItems.value = newItems
+            }
+        }
+
+        _hasMoreData.value = hasNextPage
+    }
+
+    // ===== HANDLE SEARCH SUCCESS =====
+    private fun handleSearchSuccess(businessPost: BusinessPost, refresh: Boolean) {
+        val searchResults = businessPost.data.posts
+
+        searchCurrentPage = businessPost.currentPage
+        searchTotalPages = businessPost.totalPages
+        searchHasNextPage = businessPost.hasNextPage
+
+        if (refresh || searchCurrentPage == 1) {
+            searchLoadedItems.clear()
+            searchLoadedItems.addAll(searchResults)
+
+            _catalogueItems.value = searchLoadedItems.toList()
+            _uiState.value = if (searchLoadedItems.isEmpty()) {
+                CatalogueUiState.EmptySearch(currentSearchQuery)
+            } else {
+                CatalogueUiState.Success(searchLoadedItems.toList())
+            }
+        } else {
+            val newItems = searchResults.filter { newItem ->
+                searchLoadedItems.none { it._id == newItem._id }
+            }
+
+            if (newItems.isNotEmpty()) {
+                searchLoadedItems.addAll(newItems)
+                _newPageItems.value = newItems
+            }
+        }
+
+        _hasMoreData.value = searchHasNextPage
+    }
