@@ -52,17 +52,17 @@ class BusinessCatalogueViewModel(
         loadCatalogueItems()
     }
 
+    /**
+     * Load catalogue items (BROWSE MODE)
+     */
     fun loadCatalogueItems(refresh: Boolean = false) {
         if (isCurrentlyLoading && !refresh) return
 
-        // Reset pagination state when refreshing
         if (refresh) {
             currentPage = 1
+            totalPages = 1
             hasNextPage = true
-            allLoadedItems = emptyList()
-            originalItems = emptyList()
-            _catalogueItems.value = emptyList()
-            currentSearchQuery = ""
+            allLoadedItems.clear()
         }
 
         if (!hasNextPage && !refresh) return
@@ -70,67 +70,71 @@ class BusinessCatalogueViewModel(
         isCurrentlyLoading = true
 
         viewModelScope.launch {
+            try {
+                if (currentPage == 1) {
+                    _isLoading.value = true
+                    _uiState.value = CatalogueUiState.Loading
+                } else {
+                    _isLoadingMore.value = true
+                }
 
-            // Show appropriate loading state
-            if (currentPage == 1) {
-                _isLoading.value = true
-                _uiState.value = CatalogueUiState.Loading
-            } else {
-                _isLoadingMore.value = true
+                _errorMessage.value = null
+
+                repository.getAllCatalogues(currentPage.toString())
+                    .onSuccess { businessPost ->
+                        handleCatalogueSuccess(businessPost, refresh)
+                    }
+                    .onFailure { exception ->
+                        handleCatalogueError(exception)
+                    }
+            } finally {
+                isCurrentlyLoading = false
+                _isLoading.value = false
+                _isLoadingMore.value = false
             }
+        }
+    }
 
-            _errorMessage.value = null
+    /**
+     * Search items with debouncing (SEARCH MODE)
+     */
+    fun searchItems(query: String, debounceMs: Long = 500) {
+        searchJob?.cancel()
 
-            // getting catalogues from the server
-            repository.getAllCatalogues(currentPage.toString())
-                .onSuccess { products ->
-                    val sortedProducts = products
+        val trimmedQuery = query.trim()
+        currentSearchQuery = trimmedQuery
+        isSearchActive = trimmedQuery.isNotEmpty()
 
-                    // Combine with existing items for pagination
-                    allLoadedItems = if (refresh || currentPage == 1) {
-                        sortedProducts
-                    } else {
-                        (allLoadedItems + sortedProducts).distinctBy { it._id }
-                    }
-
-                    originalItems = allLoadedItems
-
-                    // Apply current search if active
-                    val itemsToShow = if (currentSearchQuery.isNotEmpty()) {
-                        applySearch(currentSearchQuery, allLoadedItems)
-                    } else {
-                        allLoadedItems
-                    }
-
-
-                    _catalogueItems.value = itemsToShow
-                    _uiState.value = CatalogueUiState.Success(itemsToShow)
-
-                    // Update pagination state
-                    hasNextPage = products.isNotEmpty() // Adjust based on your API response
-                    currentPage++
-
-                    _isLoading.value = false
-                }
-                .onFailure { exception ->
-                    val errorMsg = exception.message ?: "Unknown error occurred"
-                    _errorMessage.value = errorMsg
-//                    _uiState.value = CatalogueUiState.Error(errorMsg)
-//                    _isLoading.value = false
-
-                    // Don't override success state when loading more fails
-                    if (currentPage == 1) {
-                        _uiState.value = CatalogueUiState.Error(errorMsg)
-                    }
-                }
-
-            // Reset loading states
-            isCurrentlyLoading = false
-            _isLoading.value = false
-            _isLoadingMore.value = false
+        if (!isSearchActive) {
+            clearSearch()
+            return
         }
 
+        // Debounce search
+        searchJob = viewModelScope.launch {
+            delay(debounceMs)
+            performServerSearch(trimmedQuery, refresh = true)
+        }
     }
+
+    /**
+     * Search immediately without debouncing (SEARCH MODE)
+     */
+    fun searchItemsImmediate(query: String, refresh: Boolean = true) {
+        searchJob?.cancel()
+
+        val trimmedQuery = query.trim()
+        currentSearchQuery = trimmedQuery
+        isSearchActive = trimmedQuery.isNotEmpty()
+
+        if (!isSearchActive) {
+            clearSearch()
+            return
+        }
+
+        performServerSearch(trimmedQuery, refresh)
+    }
+
 
     fun loadMore() {
         if (currentSearchQuery.isEmpty()) {
