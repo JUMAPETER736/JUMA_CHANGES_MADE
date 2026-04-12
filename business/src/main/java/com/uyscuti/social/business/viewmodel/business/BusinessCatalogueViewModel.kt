@@ -251,3 +251,63 @@ class BusinessCatalogueViewModel(
             _uiState.value = CatalogueUiState.Success(allLoadedItems.toList())
         }
     }
+
+    /**
+     * Update post
+     */
+    fun updatePost(postId: String, updater: (Post) -> Post) {
+        val catalogueIndex = allLoadedItems.indexOfFirst { it._id == postId }
+        if (catalogueIndex != -1) {
+            allLoadedItems[catalogueIndex] = updater(allLoadedItems[catalogueIndex])
+        }
+
+        if (isSearchActive) {
+            val searchIndex = searchLoadedItems.indexOfFirst { it._id == postId }
+            if (searchIndex != -1) {
+                searchLoadedItems[searchIndex] = updater(searchLoadedItems[searchIndex])
+                _catalogueItems.value = searchLoadedItems.toList()
+            }
+        } else {
+            _catalogueItems.value = allLoadedItems.toList()
+        }
+    }
+
+    fun incrementCommentCount(postId: String) {
+        updatePost(postId) { post ->
+            post.copy(comments = post.comments + 1)
+        }
+    }
+
+    /**
+     * Remove post
+     */
+    fun removePost(postId: String) {
+        allLoadedItems.removeAll { it._id == postId }
+
+        if (isSearchActive) {
+            searchLoadedItems.removeAll { it._id == postId }
+            _catalogueItems.value = searchLoadedItems.toList()
+            _uiState.value = if (searchLoadedItems.isEmpty()) {
+                CatalogueUiState.EmptySearch(currentSearchQuery)
+            } else {
+                CatalogueUiState.Success(searchLoadedItems.toList())
+            }
+        } else {
+            _catalogueItems.value = allLoadedItems.toList()
+            _uiState.value = if (allLoadedItems.isEmpty()) {
+                CatalogueUiState.Empty
+            } else {
+                CatalogueUiState.Success(allLoadedItems.toList())
+            }
+        }
+    }
+
+    fun canLoadMore(): Boolean {
+        return if (isSearchActive) {
+            searchHasNextPage && !isSearchLoading
+        } else {
+            hasNextPage && !isCurrentlyLoading
+        }
+    }
+
+    
