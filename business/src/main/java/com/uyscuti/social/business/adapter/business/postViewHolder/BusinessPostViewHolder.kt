@@ -30,7 +30,7 @@ import com.daimajia.androidanimations.library.YoYo
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.gson.JsonSyntaxException
 import com.uyscuti.sharedmodule.User_Interfaces.OtherUserProfile.OtherUserProfileAccount
-import com.uyscuti.sharedmodule.data.model.User
+import com.uyscuti.social.core.models.data.User
 import com.uyscuti.sharedmodule.data.model.shortsmodels.OtherUsersProfile
 import com.uyscuti.sharedmodule.model.GoToUserProfileFragment
 import com.uyscuti.sharedmodule.utils.formatCount
@@ -61,6 +61,7 @@ class BusinessPostViewHolder(
     private val onBookmarkClick: (Post) -> Unit = { _ -> },
     private val onFollowClick: (Post) -> Unit = { _ -> },
     private val onMessageClick: (User, Post) -> Unit = { _ , _-> },
+    private val onSendOfferClicked: (Double, String, Post) -> Unit = { _, _, _->},
     private val fragmentManager: FragmentManager
 ) : RecyclerView.ViewHolder(itemView) {
     // User header elements
@@ -301,7 +302,7 @@ class BusinessPostViewHolder(
         bottomSheet.onOfferSubmitted = { amount, message ->
             // Handle the submitted offer
             Log.d("Offer", "Amount: MWK$amount, Message: $message")
-
+            onSendOfferClicked(amount, message, data)
         }
 
         bottomSheet.show(fragmentManager, "SendOfferBottomSheet")
@@ -376,37 +377,37 @@ class BusinessPostViewHolder(
         // Setup share buttons
         binding.btnWhatsApp.setOnClickListener {
             shareToWhatsApp(context, fullShareText)
-           // incrementShareCount(data)
+            // incrementShareCount(data)
             bottomSheetDialog.dismiss()
         }
 
         binding.btnSMS.setOnClickListener {
             shareViaSMS(context, fullShareText)
-           // incrementShareCount(data)
+            // incrementShareCount(data)
             bottomSheetDialog.dismiss()
         }
 
         binding.btnInstagram.setOnClickListener {
             shareToInstagram(context, fullShareText)
-          //  incrementShareCount(data)
+            //  incrementShareCount(data)
             bottomSheetDialog.dismiss()
         }
 
         binding.btnMessenger.setOnClickListener {
             shareToMessenger(context, fullShareText)
-         //   incrementShareCount(data)
+            //   incrementShareCount(data)
             bottomSheetDialog.dismiss()
         }
 
         binding.btnFacebook.setOnClickListener {
             shareToFacebook(context, fullShareText)
-          //  incrementShareCount(data)
+            //  incrementShareCount(data)
             bottomSheetDialog.dismiss()
         }
 
         binding.btnTelegram.setOnClickListener {
             shareToTelegram(context, fullShareText)
-          //  incrementShareCount(data)
+            //  incrementShareCount(data)
             bottomSheetDialog.dismiss()
         }
 
