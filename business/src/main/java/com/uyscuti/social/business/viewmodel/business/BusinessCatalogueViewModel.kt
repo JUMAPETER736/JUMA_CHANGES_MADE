@@ -380,3 +380,35 @@ class BusinessCatalogueViewModel(
 
         _hasMoreData.value = searchHasNextPage
     }
+
+    private fun handleCatalogueError(exception: Throwable) {
+        val errorMsg = exception.message ?: "Unknown error occurred"
+        _errorMessage.value = errorMsg
+
+        if (currentPage == 1) {
+            _uiState.value = CatalogueUiState.Error(errorMsg)
+        }
+
+        _hasMoreData.value = hasNextPage
+    }
+
+    private fun handleSearchError(exception: Throwable) {
+        val errorMsg = exception.message ?: "Search failed"
+        _errorMessage.value = errorMsg
+
+        if (searchCurrentPage == 1) {
+            _uiState.value = CatalogueUiState.SearchError(errorMsg, currentSearchQuery)
+        }
+
+        _hasMoreData.value = searchHasNextPage
+    }
+
+    sealed class CatalogueUiState {
+        object Loading : CatalogueUiState()
+        data class Success(val items: List<Post>) : CatalogueUiState()
+        data class Error(val message: String) : CatalogueUiState()
+        object Empty : CatalogueUiState()
+        data class EmptySearch(val query: String) : CatalogueUiState()
+        data class SearchError(val message: String, val query: String) : CatalogueUiState()
+    }
+}
