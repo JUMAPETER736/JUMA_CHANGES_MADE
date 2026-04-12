@@ -76,33 +76,60 @@ class BusinessCatalogueAdapter(
     }
 
     private var isLoadingMore = false
+    private var hasMoreData = true
 
-    @SuppressLint("NotifyDataSetChanged")
+    /**
+     * ✅ NEW: Clear list immediately without animations
+     * Use this when switching between browse/search modes
+     */
+    fun clearCatalogue() {
+        submitList(null)
+    }
+
+    /**
+     * Regular update with DiffUtil animations (for same mode updates)
+     */
     fun updateCatalogue(newCatalogue: List<Post>) {
-        val diffCallBack = CatalogueDiffCallBack(catalogue, newCatalogue)
-        val diffResults = DiffUtil.calculateDiff(diffCallBack)
-
-        catalogue.clear()
-        catalogue.addAll(newCatalogue)
-        diffResults.dispatchUpdatesTo(this)
-        notifyDataSetChanged()
+        submitList(newCatalogue.toList())
     }
 
+    /**
+     * Append new items for pagination (within same mode)
+     */
+    fun appendCatalogue(newPosts: List<Post>) {
+        if (newPosts.isEmpty()) {
+            hasMoreData = false
+            setLoadingMore(false)
+            return
+        }
+
+        val currentList = currentList.toMutableList()
+        currentList.addAll(newPosts)
+        submitList(currentList)
+        setLoadingMore(false)
+    }
+
+    /**
+     * Add single item to top (e.g., new post created)
+     */
     fun addCatalogue(post: Post) {
-        catalogue.add(0,post)
-        notifyItemInserted(0)
+        val currentList = currentList.toMutableList()
+        currentList.add(0, post)
+        submitList(currentList)
     }
 
-    fun setLoadingMore(loading: Boolean) {
-        val wasLoading = isLoadingMore
-        isLoadingMore = loading
-
-        if (wasLoading && !loading) {
-            notifyItemRemoved(catalogue.size)
-        } else if (!wasLoading && loading) {
-            notifyItemInserted(catalogue.size)
+    /**
+     * Update single post (e.g., after like/bookmark)
+     */
+    fun updatePost(postId: String, updater: (Post) -> Post) {
+        val currentList = currentList.toMutableList()
+        val index = currentList.indexOfFirst { it._id == postId }
+        if (index != -1) {
+            currentList[index] = updater(currentList[index])
+            submitList(currentList)
         }
     }
+
 
     fun updateCommentCount(position: Int) {
         var count = catalogue[position].comments
