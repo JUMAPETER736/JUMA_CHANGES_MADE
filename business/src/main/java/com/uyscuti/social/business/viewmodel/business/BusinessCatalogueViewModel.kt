@@ -136,33 +136,60 @@ class BusinessCatalogueViewModel(
     }
 
 
-    fun loadMore() {
-        if (currentSearchQuery.isEmpty()) {
-            // Only load more from server when not searching
-            loadCatalogueItems()
+    /**
+     * Perform server-side search
+     */
+    private fun performServerSearch(query: String, refresh: Boolean) {
+        if (isSearchLoading && !refresh) return
+
+        // Reset search pagination on new search
+        if (refresh) {
+            searchCurrentPage = 1
+            searchTotalPages = 1
+            searchHasNextPage = true
+            searchLoadedItems.clear()
         }
-        // When searching, all results are already loaded locally
+
+        if (!searchHasNextPage && !refresh) return
+
+        isSearchLoading = true
+
+        viewModelScope.launch {
+            try {
+                if (searchCurrentPage == 1) {
+                    _isLoading.value = true
+                    _uiState.value = CatalogueUiState.Loading
+                } else {
+                    _isLoadingMore.value = true
+                }
+
+                _errorMessage.value = null
+
+                // SERVER-SIDE SEARCH
+                repository.searchCatalogues(query, searchCurrentPage.toString())
+                    .onSuccess { businessPost ->
+                        handleSearchSuccess(businessPost, refresh)
+                    }
+                    .onFailure { exception ->
+                        handleSearchError(exception)
+                    }
+            } finally {
+                isSearchLoading = false
+                _isLoading.value = false
+                _isLoadingMore.value = false
+            }
+        }
     }
 
-    // Helper method to check if we can load more
-    fun canLoadMore(): Boolean {
-        return hasNextPage && !isCurrentlyLoading && currentSearchQuery.isEmpty()
-    }
-
-
-    fun refreshCatalogue() {
-        loadCatalogueItems(refresh = true)
-    }
-
-    fun clearError() {
-        _errorMessage.value = null
-    }
-
-    fun searchItems(query: String) {
-        currentSearchQuery = query
-        val searchResults = applySearch(query, originalItems)
-        _catalogueItems.value = searchResults
-        _uiState.value = CatalogueUiState.Success(searchResults)
+    /**
+     * Load more items (works for both modes)
+     */
+    fun loadMore() {
+        if (isSearchActive) {
+            loadMoreSearchResults()
+        } else {
+            loadMoreCatalogueItems()
+        }
     }
 
     private fun applySearch(query: String, items: List<Post>): List<Post> {
