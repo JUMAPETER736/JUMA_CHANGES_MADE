@@ -192,22 +192,62 @@ class BusinessCatalogueViewModel(
         }
     }
 
-    private fun applySearch(query: String, items: List<Post>): List<Post> {
-        return if (query.isEmpty()) {
-            items
+    private fun loadMoreCatalogueItems() {
+        if (isCurrentlyLoading || !hasNextPage) return
+        currentPage++
+        loadCatalogueItems(refresh = false)
+    }
+
+    private fun loadMoreSearchResults() {
+        if (isSearchLoading || !searchHasNextPage) return
+        searchCurrentPage++
+        performServerSearch(currentSearchQuery, refresh = false)
+    }
+
+    /**
+     * Refresh (works for both modes)
+     */
+    fun refreshCatalogue() {
+        if (isSearchActive) {
+            searchItemsImmediate(currentSearchQuery, refresh = true)
         } else {
-            items.filter { item ->
-                item.itemName.contains(query, ignoreCase = true) ||
-                        item.description.contains(query, ignoreCase = true)
-            }
+            loadCatalogueItems(refresh = true)
         }
     }
 
+    /**
+     * Clear search and return to browse mode
+     */
+    fun clearSearch() {
+        searchJob?.cancel()
+        currentSearchQuery = ""
+        isSearchActive = false
 
-    // UI State sealed class for better state management
-    sealed class CatalogueUiState {
-        object Loading : CatalogueUiState()
-        data class Success(val items: List<Post>) : CatalogueUiState()
-        data class Error(val message: String) : CatalogueUiState()
+        searchCurrentPage = 1
+        searchTotalPages = 1
+        searchHasNextPage = true
+        searchLoadedItems.clear()
+
+        // Show catalogue items
+        _catalogueItems.value = allLoadedItems.toList()
+        _uiState.value = if (allLoadedItems.isEmpty()) {
+            CatalogueUiState.Empty
+        } else {
+            CatalogueUiState.Success(allLoadedItems.toList())
+        }
+        _hasMoreData.value = hasNextPage
     }
-}
+
+    /**
+     * Add new post
+     */
+    fun addNewPost(post: Post) {
+        allLoadedItems.add(0, post)
+
+        if (isSearchActive) {
+            searchItemsImmediate(currentSearchQuery, refresh = true)
+        } else {
+            _catalogueItems.value = allLoadedItems.toList()
+            _uiState.value = CatalogueUiState.Success(allLoadedItems.toList())
+        }
+    }
