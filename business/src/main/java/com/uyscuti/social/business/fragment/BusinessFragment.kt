@@ -929,7 +929,7 @@ class BusinessFragment : Fragment(),
                     post.owner,
                     productReference
                 )
-                dialogManager.openChat(user)
+                dialogManager.openChat(                                                                                                                                                                                                                                                                                                                                                                                                                          user)
             },
             onSendOfferClicked = { amount, message, data ->
                 val user = User(

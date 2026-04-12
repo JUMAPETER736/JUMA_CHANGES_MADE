@@ -5,38 +5,48 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.uyscuti.social.network.api.response.business.response.post.Post
+import com.uyscuti.social.network.api.response.business.response.post.BusinessPost
 import com.uyscuti.social.business.repository.IFlashApiRepository
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class BusinessCatalogueViewModel(
     private val repository: IFlashApiRepository
 ): ViewModel() {
 
-    // Private MutableLiveData for internal updates
     private val _catalogueItems = MutableLiveData<List<Post>>()
+    private val _newPageItems = MutableLiveData<List<Post>>()
     private val _uiState = MutableLiveData<CatalogueUiState>()
     private val _isLoading = MutableLiveData<Boolean>()
     private val _isLoadingMore = MutableLiveData<Boolean>()
     private val _errorMessage = MutableLiveData<String?>()
+    private val _hasMoreData = MutableLiveData<Boolean>()
 
-    // Public LiveData for UI observation
     val catalogueItems: LiveData<List<Post>> = _catalogueItems
+    val newPageItems: LiveData<List<Post>> = _newPageItems
     val uiState: LiveData<CatalogueUiState> = _uiState
     val isLoading: LiveData<Boolean> = _isLoading
     val isLoadingMore: LiveData<Boolean> = _isLoadingMore
     val errorMessage: LiveData<String?> = _errorMessage
+    val hasMoreData: LiveData<Boolean> = _hasMoreData
 
-    // Store original items for filtering/searching
-    private var originalItems: List<Post> = emptyList()
-    private var allLoadedItems: List<Post> = emptyList()
-
-    // Pagination state
+    // Catalogue browsing state
+    private var allLoadedItems: MutableList<Post> = mutableListOf()
     private var currentPage = 1
+    private var totalPages = 1
     private var hasNextPage = true
     private var isCurrentlyLoading = false
 
     // Search state
     private var currentSearchQuery: String = ""
+    private var isSearchActive = false
+    private var searchJob: Job? = null
+    private var searchCurrentPage = 1
+    private var searchTotalPages = 1
+    private var searchHasNextPage = true
+    private var searchLoadedItems: MutableList<Post> = mutableListOf()
+    private var isSearchLoading = false
 
     init {
         loadCatalogueItems()
