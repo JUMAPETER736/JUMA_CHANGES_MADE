@@ -130,6 +130,50 @@ class BusinessCatalogueAdapter(
         }
     }
 
+    /**
+     * Remove post
+     */
+    fun removePost(postId: String) {
+        val currentList = currentList.toMutableList()
+        currentList.removeAll { it._id == postId }
+        submitList(currentList)
+    }
+
+    fun setLoadingMore(loading: Boolean) {
+        val wasLoading = isLoadingMore
+        isLoadingMore = loading
+
+        if (wasLoading && !loading) {
+            notifyItemRemoved(currentList.size)
+        } else if (!wasLoading && loading) {
+            notifyItemInserted(currentList.size)
+        }
+    }
+
+    fun setHasMoreData(hasMore: Boolean) {
+        hasMoreData = hasMore
+    }
+
+    fun resetPagination() {
+        hasMoreData = true
+        isLoadingMore = false
+    }
+
+
+
+    fun updateCommentCount(position: Int) {
+        if (position >= 0 && position < currentList.size) {
+            val currentList = currentList.toMutableList()
+            val post = currentList[position]
+            currentList[position] = post.copy(comments = post.comments + 1)
+            submitList(currentList)
+        }
+    }
+
+    override fun getItemViewType(position: Int): Int {
+        return if (position < currentList.size) VIEW_TYPE_POST else VIEW_TYPE_LOADING
+    }
+
 
     fun updateCommentCount(position: Int) {
         var count = catalogue[position].comments
