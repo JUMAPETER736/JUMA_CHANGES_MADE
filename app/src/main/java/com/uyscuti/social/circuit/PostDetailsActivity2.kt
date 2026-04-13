@@ -84,6 +84,7 @@ import com.uyscuti.sharedmodule.utils.AudioDurationHelper.getFormattedDuration
 import com.uyscuti.sharedmodule.utils.PathUtil
 import com.uyscuti.sharedmodule.utils.Timer
 import com.uyscuti.sharedmodule.utils.TrimVideoUtils
+import com.uyscuti.sharedmodule.utils.VideoPlayerManager
 import com.uyscuti.sharedmodule.utils.WaveFormExtractor
 import com.uyscuti.sharedmodule.utils.audiomixer.AudioMixer
 import com.uyscuti.sharedmodule.utils.audiomixer.input.GeneralAudioInput

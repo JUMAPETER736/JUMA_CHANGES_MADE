@@ -215,7 +215,8 @@
     <string name="facebook_app_id">YOUR_FACEBOOK_APP_ID</string>
     <string name="facebook_client_token">YOUR_FACEBOOK_CLIENT_TOKEN</string>
     <string name="fb_login_protocol_scheme">fbYOUR_FACEBOOK_APP_ID</string>
-    <string name="media" />
+    <string name="mark_as_read">Mark as Read</string>
+    <string name="something_went_wrong">Something went wrong.</string>
 
 
 </resources>
