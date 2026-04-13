@@ -886,6 +886,13 @@ interface IFlashapi {
     @PATCH("business/profile/background")
     suspend fun updateBackground(@Part avatar: MultipartBody.Part): Response<BackgroundImageResponse>
 
+    @GET("business/product-posts/search/{category}")
+    suspend fun searchByCategory(
+        @Path("category") category: String,
+        @Query("page") page: String,
+        @Query("limit") limit: String = "10"
+    ): Response<BusinessPost>
+
     @Multipart
     @PATCH("business/profile/v")
     suspend fun updateBackgroundVideo(
