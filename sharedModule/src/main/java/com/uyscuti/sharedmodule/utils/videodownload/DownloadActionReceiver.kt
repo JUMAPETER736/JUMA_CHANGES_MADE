@@ -62,3 +62,53 @@ class DownloadActionReceiver : BroadcastReceiver() {
             }
         }
     }
+
+
+    private fun handleCancel(context: Context, postId: String) {
+        // Cancel the work
+        val tag = "download_$postId"
+        WorkManager.getInstance(context).cancelAllWorkByTag(tag)
+
+        // Delete pause check file
+        val pauseFile = File(context.filesDir, "download_${postId}_pause")
+        if (pauseFile.exists()) {
+            pauseFile.delete()
+        }
+
+        // Delete resume info file
+        val resumeFile = File(context.filesDir, "download_${postId}_resume")
+        if (resumeFile.exists()) {
+            try {
+                val lines = resumeFile.readLines()
+                if (lines.isNotEmpty()) {
+                    val uri = Uri.parse(lines[0])
+                    context.contentResolver.delete(uri, null, null)
+                }
+            } catch (e: Exception) {
+                // Ignore
+            }
+            resumeFile.delete()
+        }
+
+        // Dismiss both the foreground and paused notifications
+        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val notificationId = postId.hashCode()
+        notificationManager.cancel(notificationId) // Foreground notification
+        notificationManager.cancel(notificationId + 1000) // Paused notification
+    }
+
+    private fun handlePause(context: Context, postId: String) {
+        // Create pause check file with a small delay to ensure worker sees it
+        val pauseFile = File(context.filesDir, "download_${postId}${VideoDownloadWorker.PAUSE_CHECK_FILE_SUFFIX}")
+        try {
+            if (!pauseFile.exists()) {
+                pauseFile.createNewFile()
+            }
+            // Write a timestamp to verify it's a fresh pause request
+            pauseFile.writeText(System.currentTimeMillis().toString())
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+}
