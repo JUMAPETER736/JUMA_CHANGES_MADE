@@ -99,6 +99,7 @@ import com.uyscuti.sharedmodule.utils.videodownload.DownloadStateManager
 import com.uyscuti.sharedmodule.utils.videodownload.VideoDownloadManager
 import com.uyscuti.sharedmodule.utils.waveformseekbar.SeekBarOnProgressChanged
 import com.uyscuti.sharedmodule.utils.waveformseekbar.WaveformSeekBar
+import com.uyscuti.sharedmodule.viewmodels.comments.ShotPostViewModel
 import com.uyscuti.social.business.CatalogueDetailsActivity
 import com.uyscuti.social.chatsuit.messages.CommentsInput
 import com.uyscuti.social.circuit.databinding.ActivityPostDetails2Binding
