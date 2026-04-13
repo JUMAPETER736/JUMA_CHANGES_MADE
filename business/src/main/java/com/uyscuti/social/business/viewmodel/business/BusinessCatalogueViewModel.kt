@@ -135,7 +135,6 @@ class BusinessCatalogueViewModel(
         performServerSearch(trimmedQuery, refresh)
     }
 
-
     /**
      * Perform server-side search
      */
@@ -309,7 +308,6 @@ class BusinessCatalogueViewModel(
             hasNextPage && !isCurrentlyLoading
         }
     }
-
 
     fun isInSearchMode(): Boolean = isSearchActive
 

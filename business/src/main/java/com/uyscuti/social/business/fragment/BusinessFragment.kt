@@ -669,9 +669,25 @@ class BusinessFragment : Fragment(),
         return numberOfPages
     }
 
+    private fun getNumberOfSheetsFromUri(uri: Uri): Int {
+        var numberOfSheets = 0
+        try {
+            requireActivity().contentResolver.openInputStream(uri)?.use { inputStream ->
+                // WorkbookFactory automatically handles both .xls and .xlsx
+                WorkbookFactory.create(inputStream).use { workbook ->
+                    numberOfSheets = workbook.numberOfSheets
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        return numberOfSheets
+    }
+
     private fun getNumberOfPagesFromUriForDocx(uri: Uri): Int {
         var numberOfPages = 0
-        val inputStream: InputStream = requireActivity().contentResolver.openInputStream(uri) ?: return 0
+        val inputStream: InputStream =
+            requireActivity().contentResolver.openInputStream(uri) ?: return 0
         val xwpfDocument = XWPFDocument(inputStream)
 
         // Count the paragraphs or sections in the document
@@ -929,7 +945,7 @@ class BusinessFragment : Fragment(),
                     post.owner,
                     productReference
                 )
-                dialogManager.openChat(                                                                                                                                                                                                                                                                                                                                                                                                                          user)
+                dialogManager.openChat(user)
             },
             onSendOfferClicked = { amount, message, data ->
                 val user = User(
@@ -996,73 +1012,6 @@ class BusinessFragment : Fragment(),
         return view
     }
 
-    private fun addDialogInTheBackGround(user: User, lastMessage: String) {
-        val singleUserList = arrayListOf(user)
-
-        val message = Message(
-            user.id,
-            user,
-            lastMessage,
-            Date()
-        )
-
-        val tempDialog = Dialog(
-            user.id,
-            user.name,
-            user.avatar,
-            singleUserList,
-            message,
-            0
-        )
-
-        val messageId = "Text_${Random.Default.nextInt()}"
-
-        val textMessage = MessageEntity(
-            id = messageId,
-            chatId = user.id,
-            userName = "You",
-            user = user.toUserEntity(),
-            userId = localStorage.getUserId(),
-            text = lastMessage,
-            createdAt = System.currentTimeMillis(),
-            imageUrl = null,
-            voiceUrl = null,
-            voiceDuration = 0,
-            status = "Sending",
-            videoUrl = null,
-            audioUrl = null,
-            docUrl = null,
-            fileSize = 0
-        )
-
-        messageEntity = textMessage
-
-        val dialogEntity = DialogEntity(
-            id = tempDialog.dialogName,
-            dialogPhoto = tempDialog.dialogPhoto,
-            dialogName = tempDialog.dialogName,
-            users = listOf(user.toUserEntity()),
-            lastMessage = textMessage,
-            unreadCount = 0
-        )
-
-        insertDialog(dialogEntity)
-    }
-
-    private fun getNumberOfSheetsFromUri(uri: Uri): Int {
-        var numberOfSheets = 0
-        try {
-            requireActivity().contentResolver.openInputStream(uri)?.use { inputStream ->
-                // WorkbookFactory automatically handles both .xls and .xlsx
-                WorkbookFactory.create(inputStream).use { workbook ->
-                    numberOfSheets = workbook.numberOfSheets
-                }
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-        return numberOfSheets
-    }
 
     private fun initViews(view: View) {
         businessRecycleView = view.findViewById(R.id.business_recycle_view)
@@ -1266,22 +1215,6 @@ class BusinessFragment : Fragment(),
             }
         }
 
-    }
-
-    private fun User.toUserEntity(): UserEntity {
-        return UserEntity(
-            id,
-            name,
-            avatar,
-            lastSeen = Date(),
-            true
-        )
-    }
-
-    private fun insertDialog(dialog: DialogEntity) {
-        CoroutineScope(Dispatchers.IO).launch {
-            dialogViewModel.insertDialog(dialog)
-        }
     }
 
     private fun processReplyComments(comment: Comment) {
@@ -1549,48 +1482,52 @@ class BusinessFragment : Fragment(),
     }
 
     private fun registerAudioPickerLauncher() {
-        audioPickerLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        audioPickerLauncher =
+            registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
 
-            val data = result.data
-            val audioPath = data?.getStringExtra("audio_url")
-            val uriString = data?.getStringExtra("aUri")
+                val data = result.data
+                val audioPath = data?.getStringExtra("audio_url")
+                val uriString = data?.getStringExtra("aUri")
+                val caption = data?.getStringExtra("caption") ?: ""
 
-            if (audioPath != null) {
-                Log.d("AudioPicker", "File path: $audioPath")
-                val durationString = getFormattedDuration(audioPath)
-                val fileName = getFileNameFromLocalPath(audioPath)
+                if (audioPath != null) {
+                    Log.d("AudioPicker", "File path: $audioPath")
+                    val durationString = getFormattedDuration(audioPath)
+                    val fileName = getFileNameFromLocalPath(audioPath)
 
-                Log.d("AudioPicker", "File name: $fileName")
-                Log.d("AudioPicker", "durationString: $durationString")
+                    Log.d("AudioPicker", "File name: $fileName")
+                    Log.d("AudioPicker", "durationString: $durationString")
 //                        Log.d("AudioPicker", "reverseDurationString: $reverseDurationString")
-                val file = File(audioPath)
+                    val file = File(audioPath)
 
-                var fileSizeInBytes by Delegates.notNull<Long>()
-                var fileSizeInKB by Delegates.notNull<Long>()
-                var fileSizeInMB by Delegates.notNull<Long>()
+                    var fileSizeInBytes by Delegates.notNull<Long>()
+                    var fileSizeInKB by Delegates.notNull<Long>()
+                    var fileSizeInMB by Delegates.notNull<Long>()
 
 
-                fileSizeInBytes = file.length()
-                fileSizeInKB = fileSizeInBytes / 1024
-                fileSizeInMB = fileSizeInKB / 1024
+                    fileSizeInBytes = file.length()
+                    fileSizeInKB = fileSizeInBytes / 1024
+                    fileSizeInMB = fileSizeInKB / 1024
 
-                if (isReply) {
-                    uploadAudioComment(
-                        file.absolutePath,
-                        isReply1 = isReply,
-                        fileType = file.extension
-                    )
-                } else {
-                    Log.d("AudioPicker", "Calling upload audio comment")
-                    uploadAudioComment(
-                        file.absolutePath,
-                        isReply1 = isReply,
-                        fileType = file.extension
+                    if (isReply) {
+                        uploadAudioComment(
+                            file.absolutePath,
+                            caption,
+                            isReply1 = isReply,
+                            fileType = file.extension
                         )
-                }
+                    } else {
+                        Log.d("AudioPicker", "Calling upload audio comment")
+                        uploadAudioComment(
+                            file.absolutePath,
+                            caption,
+                            isReply1 = isReply,
+                            fileType = file.extension
+                        )
+                    }
 
+                }
             }
-        }
 
     }
 
@@ -1659,7 +1596,9 @@ class BusinessFragment : Fragment(),
 
     override fun onResume() {
         super.onResume()
-        if(motionLayout.isVisible) {
+        chatManager.listener = this@BusinessFragment
+
+        if (motionLayout.isVisible) {
             EventBus.getDefault().post(HideBottomNav(true))
         } else {
             EventBus.getDefault().post(ShowBottomNav(false))
@@ -2158,7 +2097,7 @@ class BusinessFragment : Fragment(),
             if (!isReply) {
 
                 if (recordedAudioFiles.size != 1) {
-                    uploadAudioComment(outputVnFile, isReply1 = isReply,  fileType = "vnAudio")
+                    uploadAudioComment(outputVnFile, isReply1 = isReply, fileType = "vnAudio")
                 } else {
                     uploadAudioComment(outputVnFile, isReply1 = isReply, fileType = "vnAudio")
                 }
@@ -2202,10 +2141,11 @@ class BusinessFragment : Fragment(),
                 isPaused -> resumeRecordingVn()
                 isRecording -> pauseRecordingVn()
                 else -> {
-                    if( ContextCompat.checkSelfPermission(
+                    if (ContextCompat.checkSelfPermission(
                             requireActivity(),
                             Manifest.permission.RECORD_AUDIO
-                        ) == PackageManager.PERMISSION_GRANTED) {
+                        ) == PackageManager.PERMISSION_GRANTED
+                    ) {
                         startRecordingVn()
                     } else {
                         requestPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
@@ -2243,8 +2183,8 @@ class BusinessFragment : Fragment(),
         }
 
         category.setOnClickListener {
-           val intent = Intent(requireActivity(), CategoryActivity::class.java)
-            requireActivity().startActivity(intent)
+            val intent = Intent(requireActivity(), CategoryActivity::class.java)
+            categoryLauncher.launch(intent)
         }
 
 
@@ -2255,16 +2195,16 @@ class BusinessFragment : Fragment(),
 
                     if (deffered.isCompleted) {
                         val hasProfile = deffered.await()
-                        hasBusinessProfile  = hasProfile
+                        hasBusinessProfile = hasProfile
 
-                        if(hasBusinessProfile) {
+                        if (hasBusinessProfile) {
                             val intent = Intent(
                                 requireContext(),
                                 CreateCatalogueActivity::class.java
                             )
 
                             requireActivity().startActivityForResult(intent, 111)
-                            
+
                         } else {
 
                             val dialog = BusinessProfileDialogFragment.newInstance()
@@ -2299,10 +2239,13 @@ class BusinessFragment : Fragment(),
         viewLifecycleOwner.lifecycleScope.launch {
             if (NetworkUtil.isConnected(requireActivity())) {
                 viewModel.refreshCatalogue()
-                val success =   businessPostsViewModel.followUnfollowBusinessPostOwner(post.owner)
+                val success = businessPostsViewModel.followUnfollowBusinessPostOwner(post.owner)
                 if (success) {
                     withContext(Dispatchers.Main) {
-                        showToast(requireActivity(), "You have started following ${post.userDetails.username}")
+                        showToast(
+                            requireActivity(),
+                            "You have started following ${post.userDetails.username}"
+                        )
                     }
                 }
             }
@@ -2335,7 +2278,7 @@ class BusinessFragment : Fragment(),
             override fun onNextPage(page: Int) {
                 lifecycleScope.launch(Dispatchers.Main) {
                     Log.d(TAG, "onNextPage: page number $page")
-                   getBusinessComments(page)
+                    getBusinessComments(page)
                 }
             }
 
@@ -2363,7 +2306,7 @@ class BusinessFragment : Fragment(),
         lifecycleScope.launch(Dispatchers.IO) {
 
             withContext(Dispatchers.Main) {
-                if(page == 1) {
+                if (page == 1) {
                     showShimmer()
                 } else {
                     showProgressBar()
@@ -2372,17 +2315,18 @@ class BusinessFragment : Fragment(),
 
             try {
 
-                val commentsWithReplies = businessPostsViewModel.getBusinessPostComments(businessPostId, page)
+                val commentsWithReplies =
+                    businessPostsViewModel.getBusinessPostComments(businessPostId, page)
                 withContext(Dispatchers.Main) {
 
-                    if(page == 1) {
+                    if (page == 1) {
                         hideShimmer()
                     } else {
                         hideProgressBar()
                     }
 
                     commentAdapter!!.submitItems(commentsWithReplies)
-                    if(commentsWithReplies.isEmpty()) {
+                    if (commentsWithReplies.isEmpty()) {
                         updateUI(true)
                     } else {
                         updateUI(false)
@@ -2428,13 +2372,13 @@ class BusinessFragment : Fragment(),
             )
 
         } else {
-           businessPostsViewModel.addCommentReply(
-               commentId,
-               input.toString(),
-               "text",
-               localUpdateId,
-               isReply = isReply
-           )
+            businessPostsViewModel.addCommentReply(
+                commentId,
+                input.toString(),
+                "text",
+                localUpdateId,
+                isReply = isReply
+            )
 
             isReply = false
         }
@@ -2580,7 +2524,7 @@ class BusinessFragment : Fragment(),
     private fun toggleBusinessCommentBottomSheet() {
         val currentVisibility = motionLayout.visibility
 
-        if(currentVisibility == View.VISIBLE) {
+        if (currentVisibility == View.VISIBLE) {
             motionLayout.visibility = View.GONE
             vnLayout.visibility = View.GONE
 
@@ -2777,40 +2721,6 @@ class BusinessFragment : Fragment(),
         }
     }
 
-    // Helper method to check if error is cache-related
-    private fun isCacheError(error: PlaybackException): Boolean {
-        val cause = error.cause
-        return cause is IllegalStateException ||
-                cause?.cause is IllegalStateException ||
-                error.message?.contains("cache", ignoreCase = true) == true ||
-                cause?.message?.contains("SimpleCache", ignoreCase = true) == true
-    }
-
-    // Helper method to clear ExoPlayer cache
-    private fun clearExoPlayerCache() {
-        try {
-            simpleCache?.release()
-
-            val exoPlayerCacheDir = File(requireActivity().cacheDir, "exoplayer")
-            if (exoPlayerCacheDir.exists()) {
-                exoPlayerCacheDir.deleteRecursively()
-                Log.d("clearExoPlayerCache", "Cache cleared successfully")
-            }
-
-            // Reinitialize cache
-            val leastRecentlyUsedCacheEvictor =
-                LeastRecentlyUsedCacheEvictor(1024 * 1024 * 1024) // 1GB
-            val exoDatabaseProvider = ExoDatabaseProvider(requireActivity())
-            exoPlayerCacheDir.mkdirs()
-            simpleCache =
-                SimpleCache(exoPlayerCacheDir, leastRecentlyUsedCacheEvictor, exoDatabaseProvider)
-
-            Log.d("clearExoPlayerCache", "Cache reinitialized")
-        } catch (e: Exception) {
-            Log.e("clearExoPlayerCache", "Error clearing cache", e)
-        }
-    }
-
     // Helper method to build ExoPlayer with cache
     private fun buildExoPlayerWithCache(mediaItem: MediaItem): ExoPlayer {
         httpDataSourceFactory = DefaultHttpDataSource.Factory()
@@ -2854,6 +2764,40 @@ class BusinessFragment : Fragment(),
 
         player.setMediaSource(mediaSource)
         return player
+    }
+
+    // Helper method to check if error is cache-related
+    private fun isCacheError(error: PlaybackException): Boolean {
+        val cause = error.cause
+        return cause is IllegalStateException ||
+                cause?.cause is IllegalStateException ||
+                error.message?.contains("cache", ignoreCase = true) == true ||
+                cause?.message?.contains("SimpleCache", ignoreCase = true) == true
+    }
+
+    // Helper method to clear ExoPlayer cache
+    private fun clearExoPlayerCache() {
+        try {
+            simpleCache?.release()
+
+            val exoPlayerCacheDir = File(requireActivity().cacheDir, "exoplayer")
+            if (exoPlayerCacheDir.exists()) {
+                exoPlayerCacheDir.deleteRecursively()
+                Log.d("clearExoPlayerCache", "Cache cleared successfully")
+            }
+
+            // Reinitialize cache
+            val leastRecentlyUsedCacheEvictor =
+                LeastRecentlyUsedCacheEvictor(1024 * 1024 * 1024) // 1GB
+            val exoDatabaseProvider = ExoDatabaseProvider(requireActivity())
+            exoPlayerCacheDir.mkdirs()
+            simpleCache =
+                SimpleCache(exoPlayerCacheDir, leastRecentlyUsedCacheEvictor, exoDatabaseProvider)
+
+            Log.d("clearExoPlayerCache", "Cache reinitialized")
+        } catch (e: Exception) {
+            Log.e("clearExoPlayerCache", "Error clearing cache", e)
+        }
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
@@ -2926,9 +2870,16 @@ class BusinessFragment : Fragment(),
                             } else {
 
                                 CoroutineScope(Dispatchers.Main).launch {
+                                    Log.d(
+                                        TAG,
+                                        "Position: ${it.currentPosition}, progress: ${audioSeekBar.progress}"
+                                    )
                                     audioSeekBar.progress = it.currentPosition.toInt()
                                     seekBarProgress = it.currentPosition.toFloat()
-                                    commentAdapter!!.setSecondSeekBarProgress(seekBarProgress, currentCommentAudioPosition)
+                                    commentAdapter!!.setSecondSeekBarProgress(
+                                        seekBarProgress,
+                                        currentCommentAudioPosition
+                                    )
                                     audioDurationTVCount.text = String.format(
                                         "%s",
                                         TrimVideoUtils.stringForTime(it.currentPosition.toFloat())
@@ -2993,7 +2944,11 @@ class BusinessFragment : Fragment(),
         )
 
         audioPlayPauseBtn.setImageResource(R.drawable.play_svgrepo_com)
-        commentAdapter!!.updatePlaybackButton(currentCommentAudioPosition, isReply, audioPlayPauseBtn)
+        commentAdapter!!.updatePlaybackButton(
+            currentCommentAudioPosition,
+            isReply,
+            audioPlayPauseBtn
+        )
         exoPlayer?.pause()
     }
 
@@ -3123,6 +3078,7 @@ class BusinessFragment : Fragment(),
         isVnAudioToPlay = isVnAudio
 
         wavePosition = position
+        currentCommentAudioPosition = position
 
         if (currentCommentAudioPath == audioToPlayPath) {
 
@@ -3154,7 +3110,7 @@ class BusinessFragment : Fragment(),
                 exoPlayer?.pause()
                 isDurationOnPause = true
 
-            }  else {
+            } else {
                 Log.d(
                     "toggleAudioPlayer",
                     "toggleAudioPlayer: current player is not playing then play"
@@ -3173,12 +3129,9 @@ class BusinessFragment : Fragment(),
 
             commentAudioStartPlaying(audioToPlayPath, audioPlayPauseBtn, progress, position)
 
-
-            currentCommentAudioPosition = position
             currentCommentAudioPath = audioToPlayPath
         }
     }
-
 
     @SuppressLint("SetTextI18n")
     override fun onReplyButtonClick(
@@ -3250,11 +3203,11 @@ class BusinessFragment : Fragment(),
         mainComment: Comment
     ) {
 
-        if(replyData.isLiked) {
+        if (replyData.isLiked) {
             replyData.copy(
                 likes = replyData.likes + 1
             )
-        }  else {
+        } else {
             replyData.copy(
                 likes = replyData.likes - 1
             )
@@ -3277,5 +3230,94 @@ class BusinessFragment : Fragment(),
         amplitude = if (amplitude > 0) amplitude else 130f
 
         waveForm.addAmplitude(amplitude)
+    }
+
+    private fun insertDialog(dialog: DialogEntity) {
+        CoroutineScope(Dispatchers.IO).launch {
+            dialogViewModel.insertDialog(dialog)
+        }
+    }
+
+    private fun addDialogInTheBackGround(user: User, lastMessage: String) {
+        val singleUserList = arrayListOf(user)
+
+        val message = Message(
+            user.id,
+            user,
+            lastMessage,
+            Date()
+        )
+
+        val tempDialog = Dialog(
+            user.id,
+            user.name,
+            user.avatar,
+            singleUserList,
+            message,
+            0
+        )
+
+        val messageId = "Text_${Random.Default.nextInt()}"
+
+        val textMessage = MessageEntity(
+            id = messageId,
+            chatId = user.id,
+            userName = "You",
+            user = user.toUserEntity(),
+            userId = localStorage.getUserId(),
+            text = lastMessage,
+            createdAt = System.currentTimeMillis(),
+            imageUrl = null,
+            voiceUrl = null,
+            voiceDuration = 0,
+            status = "Sending",
+            videoUrl = null,
+            audioUrl = null,
+            docUrl = null,
+            fileSize = 0
+        )
+
+        messageEntity = textMessage
+
+        val dialogEntity = DialogEntity(
+            id = tempDialog.dialogName,
+            dialogPhoto = tempDialog.dialogPhoto,
+            dialogName = tempDialog.dialogName,
+            users = listOf(user.toUserEntity()),
+            lastMessage = textMessage,
+            unreadCount = 0
+        )
+
+        insertDialog(dialogEntity)
+    }
+
+    private fun User.toUserEntity(): UserEntity {
+        return UserEntity(
+            id,
+            name,
+            avatar,
+            lastSeen = Date(),
+            true
+        )
+    }
+
+    private suspend fun insertMessage(message: MessageEntity) {
+        CoroutineScope(Dispatchers.IO).launch {
+            messageViewModel.insertMessage(message)
+        }
+    }
+
+    override fun onDialogUpdated(newDialogId: String) {
+        CoroutineScope(Dispatchers.IO).launch {
+            val result = remoteMessageRepository.sendMessage(
+                newDialogId,
+                SendMessageRequest(content = offerMessage)
+            )
+
+            messageEntity?.chatId = newDialogId
+            messageEntity?.status = "Sent"
+            CoroutineScope(Dispatchers.IO).launch { insertMessage(messageEntity!!) }
+            Log.d("Catalogue", "Chat: $newDialogId Message Result: $result")
+        }
     }
 }
