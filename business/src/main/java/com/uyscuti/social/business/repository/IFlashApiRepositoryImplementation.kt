@@ -2,6 +2,7 @@ package com.uyscuti.social.business.repository
 
 import android.util.Log
 import com.uyscuti.social.business.model.business.BusinessProfile
+import com.uyscuti.social.network.api.response.business.response.post.BusinessPost
 import com.uyscuti.social.network.api.response.business.response.post.Post
 import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
 import kotlinx.coroutines.channels.awaitClose
@@ -11,49 +12,34 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import retrofit2.Response
 
 
 @Suppress("UNCHECKED_CAST")
 class IFlashApiRepositoryImplementation(
-   private val retrofitInstance: RetrofitInstance
+    private val retrofitInstance: RetrofitInstance
 ): IFlashApiRepository {
 
 
-    override suspend fun getAllCatalogues(page: String): Result<List<Post>> {
+    override suspend fun getAllCatalogues(page: String): Result<BusinessPost> {
         return try {
-
             // Add logging to verify the page parameter
             Log.d("Pagination", "Requesting page: $page")
-
-           val response = retrofitInstance.apiService.getBusinessPost(page)
-
-            val catalogueList = ArrayList<Post>()
+            val response = retrofitInstance.apiService.getBusinessPost(page)
 
             if(response.isSuccessful){
 
                 val responseBody = response.body()
 
-
-                responseBody?.let { body ->
-
-                    val allData = body.data.posts
-
-                    if(allData.isNotEmpty()) {
-
-                      for(data in allData) {
-                          catalogueList.add(data)
-                      }
-                    }
-                }
-                Result.success(catalogueList)
+                Result.success(responseBody)
             } else {
                 Log.e("Pagination", "API Error: ${response.code()} - ${response.message()}")
                 Result.failure(Exception("Failed to fetch catalogue items"))
             }
 
         } catch (e: Exception) {
-            Result.failure<List<Post>>(e)
-        }
+            Result.failure<BusinessPost>(e)
+        } as Result<BusinessPost>
 
     }
 
