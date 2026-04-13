@@ -58,3 +58,73 @@ class DownloadButton @JvmOverloads constructor(
         invalidate()
     }
 
+    fun setProgress(progress: Int) {
+        this.progress = progress.coerceIn(0, 100)
+        stopIndeterminateAnimation()
+        invalidate()
+    }
+
+    fun setCompleted() {
+        isDownloading = false
+        progress = 0
+        setImageResource(R.drawable.baseline_check_circle_24) // Add this drawable
+        stopIndeterminateAnimation()
+        invalidate()
+    }
+
+    fun reset() {
+        isDownloading = false
+        progress = 0
+        setImageResource(R.drawable.download_02_svgrepo_com)
+        stopIndeterminateAnimation()
+        invalidate()
+    }
+
+    private fun startIndeterminateAnimation() {
+        animator?.cancel()
+        animator = ValueAnimator.ofInt(0, 100).apply {
+            duration = 2000
+            repeatCount = ValueAnimator.INFINITE
+            repeatMode = ValueAnimator.RESTART
+            addUpdateListener { animation ->
+                progress = animation.animatedValue as Int
+                invalidate()
+            }
+            start()
+        }
+    }
+
+    private fun stopIndeterminateAnimation() {
+        animator?.cancel()
+        animator = null
+    }
+
+    override fun onDraw(canvas: Canvas) {
+        super.onDraw(canvas)
+
+        if (isDownloading || progress > 0) {
+            val centerX = width / 2f
+            val centerY = height / 2f
+            val radius = (Math.min(width, height) / 2f) - 12f
+
+            rect.set(
+                centerX - radius,
+                centerY - radius,
+                centerX + radius,
+                centerY + radius
+            )
+
+            // Draw background circle
+            canvas.drawCircle(centerX, centerY, radius, backgroundPaint)
+
+            // Draw progress arc
+            val sweepAngle = (progress / 100f) * 360f
+            canvas.drawArc(rect, -90f, sweepAngle, false, progressPaint)
+        }
+    }
+
+    override fun onDetachedFromWindow() {
+        super.onDetachedFromWindow()
+        stopIndeterminateAnimation()
+    }
+}
