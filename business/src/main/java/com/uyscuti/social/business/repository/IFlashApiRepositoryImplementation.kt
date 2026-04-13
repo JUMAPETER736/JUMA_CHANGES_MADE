@@ -73,4 +73,21 @@ class IFlashApiRepositoryImplementation(
         } as Result<BusinessProfile>
     }
 
+    override suspend fun searchCatalogues(
+        query: String,
+        page: String
+    ): Result<BusinessPost> {
+        return try {
+            val response = retrofitInstance.apiService.searchByCategory(query, page)
+            if (response.isSuccessful && response.body() != null) {
+                Result.success(response.body()!!)
+            } else {
+                Result.failure(Exception("Search failed: ${response.message()}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+
 }
