@@ -16,9 +16,9 @@ import com.bumptech.glide.request.RequestOptions
 import com.uyscuti.sharedmodule.MessagesActivity
 import com.uyscuti.sharedmodule.R
 import com.uyscuti.sharedmodule.calls.viewmodel.CallViewModel
-import com.uyscuti.sharedmodule.data.model.Dialog
-import com.uyscuti.sharedmodule.data.model.Message
-import com.uyscuti.sharedmodule.data.model.User
+import com.uyscuti.social.core.models.data.Dialog
+import com.uyscuti.social.core.models.data.Message
+import com.uyscuti.social.core.models.data.User
 import com.uyscuti.sharedmodule.databinding.ActivityCallInfoBinding
 import com.uyscuti.sharedmodule.media.ViewImagesActivity
 import com.uyscuti.sharedmodule.model.ActivityCreateEvent
@@ -89,7 +89,7 @@ class CallInfoActivity: AppCompatActivity(){
         val title = "Call Info"
 
         supportActionBar?.title = title
-
+//        supportActionBar?.subtitle = "me"
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
         binding.toolbar.setNavigationIcon(R.drawable.baseline_arrow_back_24)
