@@ -73,43 +73,4 @@ class IFlashApiRepositoryImplementation(
         } as Result<BusinessProfile>
     }
 
-    override suspend fun getUnreadNotifications(): Int {
-
-        return try {
-            var unreadNotificationCount = 0
-
-            val allNotifications = retrofitInstance.apiService.getMyUnifiedNotifications("40")
-
-            if(allNotifications.isSuccessful) {
-
-                val notifications = allNotifications.body()?.data ?: emptyList()
-
-                for(notification in notifications) {
-                    if (!notification.read) {
-                        unreadNotificationCount++
-                    }
-                }
-
-                unreadNotificationCount
-            } else {
-                0
-            }
-
-        } catch (e: Exception) {
-                0
-        }
-
-    }
-
-     fun observeNewNotification(): Flow<Int> = callbackFlow {
-        val job = launch {
-            while(currentCoroutineContext().isActive) {
-                trySend(getUnreadNotifications())
-                delay(2000)
-            }
-        }
-
-        awaitClose { job.cancel() }
-    }
-
 }
