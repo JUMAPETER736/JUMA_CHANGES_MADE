@@ -2,76 +2,53 @@ package com.uyscuti.social.circuit
 
 import android.Manifest
 import android.annotation.SuppressLint
-import android.app.NotificationChannel
-import android.app.NotificationManager
-import android.app.PendingIntent
-import android.content.ContentValues.TAG
+import android.content.ContentUris
 import android.content.Context
 import android.content.Intent
-import android.content.SharedPreferences
 import android.content.pm.PackageManager
-import android.graphics.Bitmap
-import android.graphics.drawable.AnimationDrawable
+import android.graphics.Color
 import android.media.MediaPlayer
 import android.media.MediaRecorder
-import android.net.ConnectivityManager
-import android.net.NetworkCapabilities
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.os.Environment
 import android.os.Handler
 import android.os.Looper
+import android.provider.MediaStore
 import android.provider.OpenableColumns
 import android.util.Log
-import android.util.TypedValue
-import android.view.MenuItem
+import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
-import android.view.animation.AnimationUtils
 import android.view.inputmethod.InputMethodManager
 import android.webkit.MimeTypeMap
-import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.LinearLayout
-import android.widget.ProgressBar
 import android.widget.SeekBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.ActivityResultLauncher
-import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.annotation.OptIn
 import androidx.annotation.RequiresApi
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.constraintlayout.motion.widget.MotionLayout
-import androidx.core.app.ActivityCompat
-import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
-import androidx.lifecycle.ViewModelProvider
+import androidx.core.view.isVisible
 import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.viewModelScope
 import androidx.media3.common.C
-import androidx.media3.common.util.UnstableApi
-import androidx.media3.ui.PlayerView
-
-import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import javax.inject.Inject
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
+import androidx.media3.common.util.UnstableApi
+import androidx.media3.database.ExoDatabaseProvider
 import androidx.media3.datasource.DefaultDataSourceFactory
 import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.datasource.HttpDataSource
 import androidx.media3.datasource.cache.CacheDataSource
+import androidx.media3.datasource.cache.LeastRecentlyUsedCacheEvictor
 import androidx.media3.datasource.cache.SimpleCache
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
@@ -79,705 +56,675 @@ import androidx.media3.exoplayer.source.MediaSource
 import androidx.media3.exoplayer.source.ProgressiveMediaSource
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-
+import androidx.work.WorkInfo
 import com.bumptech.glide.Glide
-import com.bumptech.glide.load.resource.bitmap.CircleCrop
-import com.bumptech.glide.request.RequestOptions
-import com.daimajia.androidanimations.library.Techniques
-import com.daimajia.androidanimations.library.YoYo
 import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.google.android.material.snackbar.Snackbar
 import com.tom_roush.pdfbox.pdmodel.PDDocument
 import com.uyscuti.sharedmodule.FlashApplication
-
-import com.uyscuti.sharedmodule.adapter.OnClickListeners
-import com.uyscuti.sharedmodule.adapter.OnCommentsClickListener
-
-import com.uyscuti.sharedmodule.calls.viewmodel.CallViewModel
-
-import com.uyscuti.sharedmodule.data.model.shortsmodels.CommentReplyResults
-import com.uyscuti.sharedmodule.presentation.DialogViewModel
-import com.uyscuti.sharedmodule.presentation.GroupDialogViewModel
-import com.uyscuti.sharedmodule.presentation.MessageViewModel
-import com.uyscuti.sharedmodule.service.VideoPreLoadingService
-import com.uyscuti.social.circuit.log_in_and_register.LoginActivity
-import com.uyscuti.social.circuit.settings.SettingsActivity
-import com.uyscuti.sharedmodule.shorts.UniqueIdGenerator
-import com.uyscuti.sharedmodule.shorts.getFileSize
+import com.uyscuti.sharedmodule.User_Interfaces.OtherUserProfile.OtherUserProfileAccount
+import com.uyscuti.sharedmodule.adapter.CommentsRecyclerViewAdapter
+import com.uyscuti.sharedmodule.adapter.OnViewRepliesClickListener
+import com.uyscuti.sharedmodule.adapter.notifications.AdPaginatedAdapter
+import com.uyscuti.sharedmodule.data.model.shortsmodels.OtherUsersProfile
+import com.uyscuti.sharedmodule.media.CameraActivity
+import com.uyscuti.sharedmodule.model.AudioPlayerHandler
+import com.uyscuti.sharedmodule.model.CommentAudioPlayerHandler
+import com.uyscuti.sharedmodule.model.PauseShort
+import com.uyscuti.sharedmodule.model.ShortsFavoriteUnFavorite
+import com.uyscuti.sharedmodule.model.ShortsLikeUnLike
+import com.uyscuti.sharedmodule.ui.GifActivity
+import com.uyscuti.sharedmodule.uploads.AudioActivity
+import com.uyscuti.sharedmodule.uploads.DocumentsActivity
+import com.uyscuti.sharedmodule.uploads.ImagesActivity
+import com.uyscuti.sharedmodule.uploads.VideosActivity
+import com.uyscuti.sharedmodule.utils.AndroidUtil.showToast
 import com.uyscuti.sharedmodule.utils.AudioDurationHelper
 import com.uyscuti.sharedmodule.utils.AudioDurationHelper.getFormattedDuration
-import com.uyscuti.sharedmodule.utils.AudioDurationHelper.reverseFormattedDuration
-import com.uyscuti.sharedmodule.utils.COMMENT_VIDEO_CODE
-import com.uyscuti.sharedmodule.utils.Constants
-import com.uyscuti.sharedmodule.utils.GIF_CODE
 import com.uyscuti.sharedmodule.utils.PathUtil
-import com.uyscuti.sharedmodule.utils.R_CODE
 import com.uyscuti.sharedmodule.utils.Timer
 import com.uyscuti.sharedmodule.utils.TrimVideoUtils
 import com.uyscuti.sharedmodule.utils.WaveFormExtractor
-import com.uyscuti.sharedmodule.utils.audio_compressor.FFMPEG_AudioCompressor
-import com.uyscuti.sharedmodule.utils.createMultipartBody
-import com.uyscuti.sharedmodule.utils.deleteFiled
+import com.uyscuti.sharedmodule.utils.audiomixer.AudioMixer
+import com.uyscuti.sharedmodule.utils.audiomixer.input.GeneralAudioInput
 import com.uyscuti.sharedmodule.utils.deleteFiles
-import com.uyscuti.sharedmodule.utils.extractThumbnailFromVideo
 import com.uyscuti.sharedmodule.utils.fileType
 import com.uyscuti.sharedmodule.utils.formatFileSize
 import com.uyscuti.sharedmodule.utils.generateRandomId
 import com.uyscuti.sharedmodule.utils.getFileNameFromLocalPath
 import com.uyscuti.sharedmodule.utils.getOutputFilePath
-import com.uyscuti.sharedmodule.utils.isFileExists
 import com.uyscuti.sharedmodule.utils.isFileSizeGreaterThan2MB
+import com.uyscuti.sharedmodule.utils.videodownload.DownloadStateManager
+import com.uyscuti.sharedmodule.utils.videodownload.VideoDownloadManager
 import com.uyscuti.sharedmodule.utils.waveformseekbar.SeekBarOnProgressChanged
 import com.uyscuti.sharedmodule.utils.waveformseekbar.WaveformSeekBar
+import com.uyscuti.social.business.CatalogueDetailsActivity
 import com.uyscuti.social.chatsuit.messages.CommentsInput
-import com.uyscuti.sharedmodule.adapter.CommentsRecyclerViewAdapter
-import com.uyscuti.sharedmodule.adapter.OnViewRepliesClickListener
-import com.uyscuti.sharedmodule.adapter.notifications.AdPaginatedAdapter
-import com.uyscuti.sharedmodule.data.model.Comment
-import com.uyscuti.sharedmodule.data.model.Message
-import com.uyscuti.sharedmodule.data.model.User
-import com.uyscuti.sharedmodule.model.AudioPlayerHandler
-import com.uyscuti.sharedmodule.model.CleanCache
-import com.uyscuti.sharedmodule.model.CommentAudioPlayerHandler
-import com.uyscuti.sharedmodule.model.LikeCommentReply
-import com.uyscuti.sharedmodule.model.PausePlayEvent
-import com.uyscuti.sharedmodule.model.PauseShort
-import com.uyscuti.sharedmodule.model.ShortAdapterNotifyDatasetChanged
-import com.uyscuti.sharedmodule.model.ShortsFavoriteUnFavorite
-import com.uyscuti.sharedmodule.model.ShortsLikeUnLike
-import com.uyscuti.sharedmodule.model.ShortsLikeUnLike2
-import com.uyscuti.sharedmodule.model.ShortsViewModel
-import com.uyscuti.sharedmodule.model.ToggleReplyToTextView
-import com.uyscuti.sharedmodule.model.UserProfileShortsViewModel
-import com.uyscuti.sharedmodule.ui.GifActivity
-import com.uyscuti.sharedmodule.uploads.AudioActivity
-import com.uyscuti.sharedmodule.uploads.CameraActivity
-import com.uyscuti.sharedmodule.uploads.DocumentsActivity
-import com.uyscuti.sharedmodule.uploads.VideosActivity
 import com.uyscuti.social.circuit.databinding.ActivityPostDetails2Binding
-import com.uyscuti.sharedmodule.utils.AndroidUtil.showToast
-import com.uyscuti.sharedmodule.utils.audiomixer.AudioMixer
-import com.uyscuti.sharedmodule.utils.audiomixer.input.GeneralAudioInput
-import com.uyscuti.sharedmodule.viewmodels.NotificationCountViewModel
-import com.uyscuti.sharedmodule.viewmodels.comments.CommentsViewModel
-import com.uyscuti.sharedmodule.viewmodels.comments.RoomCommentFilesViewModel
-import com.uyscuti.sharedmodule.viewmodels.comments.RoomCommentReplyViewModel
-import com.uyscuti.sharedmodule.viewmodels.comments.RoomCommentsViewModel
-import com.uyscuti.sharedmodule.viewmodels.comments.ShortCommentReplyViewModel
-import com.uyscuti.sharedmodule.viewmodels.comments.ShortCommentsViewModel
-import com.uyscuti.social.circuit.user_interface.UniversalSearchActivity
-import com.uyscuti.social.compressor.VideoCompressor
-import com.uyscuti.social.compressor.VideoQuality
-import com.uyscuti.social.compressor.config.Configuration
-import com.uyscuti.social.compressor.config.SharedStorageConfiguration
-import com.uyscuti.social.core.common.data.room.entity.CommentsFilesEntity
-import com.uyscuti.social.core.common.data.room.entity.ShortsEntity
-import com.uyscuti.social.core.common.data.room.entity.UserShortsEntity
-import com.uyscuti.social.core.common.data.room.repository.ProfileRepository
-import com.uyscuti.social.compressor.CompressionListener
-import com.uyscuti.social.compressor.config.*
-import com.uyscuti.social.network.api.response.comment.allcomments.Account
-import com.uyscuti.social.network.api.response.comment.allcomments.Author
-import com.uyscuti.social.network.api.response.comment.allcomments.Avatar
-import com.uyscuti.social.network.api.response.comment.allcomments.CommentFiles
-import com.uyscuti.social.network.api.response.post.GetPostById
+import com.uyscuti.social.circuit.databinding.BottomDialogForShareBinding
+import com.uyscuti.social.core.util.NetworkUtil
+import com.uyscuti.social.network.api.models.Comment
+import com.uyscuti.social.network.api.response.business.response.post.Post
+import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
+import javax.inject.Inject
+import com.uyscuti.social.network.api.response.post.Data
 import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
 import com.uyscuti.social.network.utils.LocalStorage
-import com.vanniktech.emoji.EmojiManager
 import com.vanniktech.emoji.EmojiPopup
-import com.vanniktech.emoji.twitter.TwitterEmojiProvider
-import com.vanniktech.ui.Color
-
 import id.zelory.compressor.Compressor
-import kotlinx.coroutines.DelicateCoroutinesApi
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.Job
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Runnable
 import kotlinx.coroutines.delay
-import okhttp3.MediaType.Companion.toMediaTypeOrNull
-import okhttp3.MultipartBody
-import okhttp3.RequestBody.Companion.asRequestBody
-import okhttp3.RequestBody.Companion.toRequestBody
+import kotlinx.coroutines.withContext
+import org.apache.poi.hssf.usermodel.HSSFWorkbook
 import org.apache.poi.hwpf.HWPFDocument
 import org.apache.poi.hwpf.usermodel.Range
+import org.apache.poi.xssf.usermodel.XSSFWorkbook
 import org.apache.poi.xwpf.usermodel.XWPFDocument
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
 import org.greenrobot.eventbus.ThreadMode
 import retrofit2.HttpException
-
-import java.io.ByteArrayOutputStream
 import java.io.File
-import java.io.FileOutputStream
 import java.io.IOException
 import java.io.InputStream
-import java.net.HttpURLConnection
-import java.net.URL
-import java.text.SimpleDateFormat
-import java.time.OffsetDateTime
-import java.time.format.DateTimeFormatter
-import java.util.Collections
-import java.util.Date
-import java.util.Locale
 import java.util.UUID
-import kotlin.math.abs
 import kotlin.properties.Delegates
-import kotlin.random.Random
 
-import com.uyscuti.social.medialoader.MediaLoader
-import com.uyscuti.social.medialoader.DefaultConfigFactory
-import com.uyscuti.social.medialoader.DownloadManager
-import com.uyscuti.social.medialoader.MediaLoaderConfig
-import com.uyscuti.social.medialoader.data.file.naming.Md5FileNameCreator
 
-import com.uyscuti.social.core.common.data.room.entity.ShortCommentEntity
-import com.uyscuti.social.core.common.data.room.entity.ShortCommentReply
+private const val TAG = "ShotsDetailsActivity"
 
 @UnstableApi
 @AndroidEntryPoint
 class PostDetailsActivity2 : AppCompatActivity(),
-    CommentsInput.EmojiListener, OnCommentsClickListener,
-    CommentsInput.VoiceListener, CommentsInput.GifListener, CommentsInput.InputListener,
-    CommentsInput.AttachmentsListener, Timer.OnTimeTickListener, OnViewRepliesClickListener,
-    OnClickListeners {
+    OnViewRepliesClickListener,
+    CommentsInput.InputListener,
+    CommentsInput.EmojiListener,
+    CommentsInput.VoiceListener,
+    CommentsInput.GifListener,
+    CommentsInput.AttachmentsListener,
+    Timer.OnTimeTickListener {
 
-    companion object {
-        const val EXTRA_POST_ID = "post_id"
-        const val EXTRA_COMMENT_ID = "comment_id"
-        const val EXTRA_COMMENT = "show_comments"
-        const val EXTRA_COMMENT_REPLY_ID = "comment_reply_id"
-        private const val COMMENT_SECTION = 1
-    }
+    private lateinit var binding: ActivityPostDetails2Binding
 
     @Inject
-    lateinit var retrofitInterface: RetrofitInstance
+    lateinit var videoPlayerManager: VideoPlayerManager
+
+    @Inject
+    lateinit var retrofitInstance: RetrofitInstance
+
+    @Inject
     lateinit var localStorage: LocalStorage
-    private val coroutineScope = CoroutineScope(Dispatchers.Main)
-    private lateinit var commentViewModel: CommentsViewModel
-    private lateinit var playerView: PlayerView
-    private lateinit var context: Context
-    private lateinit var binding: ActivityPostDetails2Binding
-    private lateinit var clickListeners: OnClickListeners
 
+    private val shotPostViewModel: ShotPostViewModel by viewModels()
 
-    private var adapter: CommentsRecyclerViewAdapter? = null
-    private var commentCount by Delegates.notNull<Int>()
-    private var currentCommentAudioPath = ""
-    private var currentCommentAudioPosition = RecyclerView.NO_POSITION
-    private var isReplyVnPlaying = false
-    private var isVnAudioToPlay = false
+    @Inject
+    lateinit var downloadStateManager: DownloadStateManager
 
-    var isDurationOnPause = false
-    var isOnRecordDurationOnPause = false
-    var waveProgress = 0f
-    var seekBarProgress = 0f
+    private lateinit var downloadManager: VideoDownloadManager
 
-    private val waveHandler = Handler()
-    var vnRecordAudioPlaying = false
-    private var isAudioVNPlaying = false
-    var vnRecordProgress = 0
-    private var position: Int = 0
-    private lateinit var shortsViewModel: ShortsViewModel
-    private lateinit var postId: String
-    private lateinit var commentId: String
-    private var isReply = false
-    private lateinit var roomCommentReplyViewModel: RoomCommentReplyViewModel
-    private var data: Comment? = null
-    private lateinit var commentsReplyViewModel: ShortCommentReplyViewModel
-    private lateinit var shortsCommentViewModel: RoomCommentsViewModel
-    private var listOfReplies = mutableListOf<Comment>()
-    private var shortToComment: ShortsEntity? = null
-    private lateinit var commentsViewModel: ShortCommentsViewModel
-    private lateinit var commentsRecyclerViewAdapter: CommentsRecyclerViewAdapter
-    private var commentIdToNavigate: String? = null
-    private lateinit var commentFilesViewModel: RoomCommentFilesViewModel
-    private lateinit var notificationCountViewModel: NotificationCountViewModel
-    private var emojiShowing = false
-    private lateinit var emojiPopup: EmojiPopup
-    private lateinit var inputMethodManager: InputMethodManager
+    private var currentDownloadWorkId: UUID? = null
+    private var isActivityVisible = false
 
-    //    private lateinit var onClickListeners: OnClickListeners
-    private val playbackStateListener: Player.Listener = playbackStateListener()
-    private val shortPlaybackStateListener: Player.Listener = shortPlaybackStateListener()
+    // Permission request code
+    private val NOTIFICATION_PERMISSION_CODE = 1001
+    private val STORAGE_PERMISSION_CODE = 1002
 
+    // Intent extras
+    private var postId: String = ""
+    private var commentId: String = ""
+    private var showComments: Boolean = false
+    private var isLoadingForTarget = false
+    private var targetCommentId: String = ""
 
-    //    private lateinit var audioDurationTVCount: TextView
-    private lateinit var audioFormWave: WaveformSeekBar
-    private lateinit var audioSeekBar: SeekBar
-    private var seekPosition = -1
-    private var wavePosition = -1
-    private val recordedAudioFiles = mutableListOf<String>()
-    private var mediaRecorder: MediaRecorder? = null
-    private lateinit var amplitudes: ArrayList<Float>
-    private var amps = 0
-    private var outputVnFile: String = ""
-    private lateinit var outputFile: String
-    private var permissionGranted = false
-    private var permissionGranted2 = false
-    private var permissionGranted3 = false
-    private var isVnResuming = false
-    private val IMAGES_REQUEST_CODE = 2023
-    private val REQUEST_CODE = 2024
-    private lateinit var imagePickerLauncher: ActivityResultLauncher<Intent>
-    private lateinit var cameraLauncher: ActivityResultLauncher<Intent>
+    // State variables
+    private var isLiked = false
+    private var isFavorited = false
+    private var isFollowing = false
+    private var isPlaying = true
+    private var currentPost: Data? = null
+
+    private var commentAdapter: CommentsRecyclerViewAdapter? = null
+    private lateinit var commentRecyclerView: RecyclerView
+
+    private lateinit var gifsPickerLauncher: ActivityResultLauncher<Intent>
     private lateinit var audioPickerLauncher: ActivityResultLauncher<Intent>
     private lateinit var videoPickerLauncher: ActivityResultLauncher<Intent>
+    private lateinit var cameraLauncher: ActivityResultLauncher<Intent>
+    private lateinit var imagePickerLauncher: ActivityResultLauncher<Intent>
     private lateinit var docsPickerLauncher: ActivityResultLauncher<Intent>
-    private lateinit var exoPlayer: ExoPlayer
-    private lateinit var shortPlayer: ExoPlayer
-    private var videoUrl: String? = null
-    private var gifUrlType = ""
-    private val PREFS_NAME = "LocalSettings"
-    private lateinit var httpDataSourceFactory: HttpDataSource.Factory
-    private lateinit var defaultDataSourceFactory: DefaultDataSourceFactory
-    private lateinit var cacheDataSourceFactory: CacheDataSource.Factory
-    private val simpleCache: SimpleCache = FlashApplication.cache
+
+
+    private lateinit var inputMethodManager: InputMethodManager
+    private lateinit var emojiPopup: EmojiPopup
+
+    private var emojiShowing = false
+
+    private var isReply = false
+
+    private var commentToAddReplies: Comment? = null
+    private var commentPosition = 0
+
+    private var exoPlayer: ExoPlayer? = null
+
+    private val recordedAudioFiles = mutableListOf<String>()
+
+    private var mediaRecorder: MediaRecorder? = null
+
+
     private var player: MediaPlayer? = null
-    private val requestCode = 2024
-    private val WRITE_EXTERNAL_STORAGE_REQUEST_CODE = 12
-    private lateinit var downloadProgressBarLayout: LinearLayout
-    private var wifiAnimation: AnimationDrawable? = null
-    private lateinit var shortsDownloadImageView: ImageView
-    private lateinit var shortsDownloadProgressBar: ProgressBar
+    private val waveHandler = Handler()
 
-    private var commentColor: Color = Color.WHITE
-    private var totalLikes = 0
-    private var totalFavorites = 0
-    private lateinit var onClickListeners: OnClickListeners
-    private var isUserSeeking = false
-    private var isUserShortSeeking = false
-    private lateinit var shortSeekBar: SeekBar
-    private lateinit var myProfileRepository: ProfileRepository
-    private val callViewModel: CallViewModel by viewModels()
-    private val messageViewModel: MessageViewModel by viewModels()
-    private val dialogViewModel: DialogViewModel by viewModels()
-    private val groupDialogViewModel: GroupDialogViewModel by viewModels()
-    private val userProfileShortsViewModel: UserProfileShortsViewModel by viewModels()
-    private var currentlyHighlightedIndex: Int = -1
+    private lateinit var outputFile: String
 
-    private val getDocumentContent =
-        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-            if (result.resultCode == RESULT_OK) {
-                Log.d("getDocument", "document is being fetched")
-                result.data?.data?.let { uri ->
-                    // Handle the selected document URI
-                    handleDocumentUri(uri)
-                }
-            }
-        }
+    private var outputVnFile: String = ""
 
-    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-    private val permissions = arrayOf(
-        Manifest.permission.RECORD_AUDIO,
-        Manifest.permission.READ_EXTERNAL_STORAGE,
-        Manifest.permission.READ_MEDIA_IMAGES
-    )
+    private lateinit var amplitudes: ArrayList<Float>
+
+    private var amps = 0
+
+    var wasPaused = false
+    var sending = false
+    var firstTimeSendVn = false
 
     private var isRecording = false
     private var isPaused = false
+    private var isAudioVNPlaying = false
     private var isAudioVNPaused = false
+
+    private var mixingCompleted = false
+
+    private var isVnResuming = false
+
+
+    var vnRecordAudioPlaying = false
+    var vnRecordProgress = 0
+    var isOnRecordDurationOnPause = false
+
+    private var currentHandler: Handler? = null
+    var seekBarProgress = 0f
+    var waveProgress = 0f
+    private var wavePosition = -1
+    private var seekPosition = -1
+    private var position: Int = 0
+    var maxDuration = 0L
+
+    private var simpleCache: SimpleCache? = FlashApplication.cache
+
+
+    private lateinit var audioDurationTVCount: TextView
+    private lateinit var audioFormWave: WaveformSeekBar
+
+    private lateinit var audioSeekBar: SeekBar
+
+    private lateinit var httpDataSourceFactory: HttpDataSource.Factory
+    private lateinit var defaultDataSourceFactory: DefaultDataSourceFactory
+    private lateinit var cacheDataSourceFactory: CacheDataSource.Factory
+
+
+    private var isReplyVnPlaying = false
+    private var isVnAudioToPlay = false
+    var isDurationOnPause = false
+    private var currentCommentAudioPosition = RecyclerView.NO_POSITION
+    private var currentCommentAudioPath = ""
+
+
     private lateinit var timer: Timer
 
-    private val comments = mutableListOf<Comment>()
+    private val requestPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted: Boolean ->
 
-    private fun updateRecordWaveProgress(progress: Float) {
-        CoroutineScope(Dispatchers.Main).launch {
-            binding.wave.progress = progress
+    }
 
-            Log.d("updateWaveProgress", "updateWaveProgress: $progress")
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        binding = ActivityPostDetails2Binding.inflate(layoutInflater)
+        setContentView(binding.root)
+        EventBus.getDefault().register(this)
+
+        setupStatusBar()
+        downloadManager = VideoDownloadManager(this)
+
+        extractIntentExtras()
+        setupViews()
+        setupInputManager()
+        setupClickListeners()
+        observeDownloadState()
+        loadPostData()
+        handleActionEvents()
+        registerGifPickerLauncher()
+        registerImagePicker()
+        registerVideoPickerLauncher()
+        registerDocPicker()
+        registerAudioPickerLauncher()
+
+
+        if (showComments) {
+            initCommentAdapter()
+            toggleCommentBottomSheet()
+            setCommentAdapterPagination()
+            loadToTargetComment(targetCommentId)
+        }
+    }
+
+    private fun observeDownloadState() {
+        // Observe global download states
+        downloadStateManager.downloadStates.observe(this) { states ->
+            val downloadState = states[postId]
+            downloadState?.let { state ->
+                updateDownloadButton(state)
+            } ?: run {
+                // No download for this post
+                binding.downloadBtn.reset()
+            }
+        }
+
+        // Check if download is already in progress when activity starts
+        val existingState = downloadStateManager.getDownloadState(postId)
+        existingState?.let { state ->
+            updateDownloadButton(state)
+        }
+    }
+
+    private fun updateDownloadButton(state: DownloadStateManager.DownloadState) {
+        when (state.status) {
+            DownloadStateManager.Status.DOWNLOADING -> {
+                if (state.progress == 0) {
+                    binding.downloadBtn.setDownloading(true)
+                } else {
+                    binding.downloadBtn.setProgress(state.progress)
+                }
+            }
+            DownloadStateManager.Status.PAUSED -> {
+                binding.downloadBtn.setPaused(state.progress)
+            }
+            DownloadStateManager.Status.COMPLETED -> {
+                binding.downloadBtn.setCompleted()
+                binding.downloadBtn.postDelayed({
+                    downloadStateManager.removeDownload(postId)
+                }, 2000)
+            }
+            DownloadStateManager.Status.FAILED, DownloadStateManager.Status.CANCELLED -> {
+                binding.downloadBtn.reset()
+                downloadStateManager.removeDownload(postId)
+            }
+            DownloadStateManager.Status.IDLE -> {
+                binding.downloadBtn.reset()
+            }
+        }
+    }
+
+    private fun downloadVideo() {
+        val post = currentPost
+        if (post == null) {
+            showError("No video to download")
+            return
+        }
+
+        // Check if already downloading
+        if (downloadStateManager.isDownloading(postId)) {
+            showError("Download already in progress")
+            return
+        }
+
+        // Check and request permissions first
+        if (!hasRequiredPermissions()) {
+            requestDownloadPermissions()
+            return
+        }
+
+        startDownload(post)
+    }
+
+    private fun startDownload(post: Data) {
+        lifecycleScope.launch {
+            try {
+                // Start download
+                val workId = downloadManager.downloadVideo(
+                    videoUrl = post.images[0].url,
+                    postId = postId,
+                    videoTitle = "Video_${System.currentTimeMillis()}"
+                )
+
+                currentDownloadWorkId = workId
+
+                // Observe download progress from WorkManager
+                downloadManager.getDownloadProgress(workId).observe(this@PostDetailsActivity2) { workInfo ->
+                    when (workInfo?.state) {
+                        WorkInfo.State.SUCCEEDED -> {
+                            handleDownloadSuccess()
+                        }
+                        WorkInfo.State.FAILED, WorkInfo.State.CANCELLED -> {
+                            handleDownloadFailure(workInfo.state)
+                        }
+                        else -> {
+                            // State is being managed by DownloadStateManager
+                        }
+                    }
+                }
+
+                showSuccess("Download started")
+
+            } catch (e: Exception) {
+                showError("Failed to start download: ${e.message}")
+            }
+        }
+    }
+
+    private fun handleDownloadSuccess() {
+        lifecycleScope.launch {
+            if (isActivityVisible) {
+                // Activity is visible - increment UI count and send to server
+                val currentCount = binding.downloadCounts.text.toString().toIntOrNull() ?: 0
+                binding.downloadCounts.text = formatCount(currentCount + 1)
+
+                // Send to server
+                try {
+                    //  postRepository.incrementDownloadCount(postId)
+                } catch (e: Exception) {
+                    // Silently fail - count already updated locally
+                }
+            } else {
+                // Activity is not visible - just send to server
+                try {
+                    //  postRepository.incrementDownloadCount(postId)
+                } catch (e: Exception) {
+                    // Silently fail or retry later
+                }
+            }
+        }
+    }
+
+    private fun handleDownloadFailure(state: WorkInfo.State) {
+        if (isActivityVisible) {
+            val message = when (state) {
+                WorkInfo.State.CANCELLED -> "Download cancelled"
+                else -> "Download failed"
+            }
+            showError(message)
+        }
+    }
+
+
+    private fun hasRequiredPermissions(): Boolean {
+        // Check notification permission for Android 13+
+        val hasNotificationPermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) ==
+                    PackageManager.PERMISSION_GRANTED
+        } else {
+            true
+        }
+
+        // Check storage permission based on Android version
+        val hasStoragePermission = when {
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q -> {
+                // Android 10+ uses scoped storage, no permission needed
+                true
+            }
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.M -> {
+                // Android 6-9 needs WRITE_EXTERNAL_STORAGE
+                checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) ==
+                        PackageManager.PERMISSION_GRANTED
+            }
+            else -> true
+        }
+
+        return hasNotificationPermission && hasStoragePermission
+    }
+
+    private fun requestDownloadPermissions() {
+        val permissionsToRequest = mutableListOf<String>()
+
+        // Request notification permission for Android 13+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) !=
+                android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                permissionsToRequest.add(android.Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }
+
+        // Request storage permission for Android 6-9
+        if (Build.VERSION.SDK_INT in Build.VERSION_CODES.M until Build.VERSION_CODES.Q) {
+            if (checkSelfPermission(android.Manifest.permission.WRITE_EXTERNAL_STORAGE) !=
+                android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                permissionsToRequest.add(android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
+            }
+        }
+
+        if (permissionsToRequest.isNotEmpty()) {
+            requestPermissions(permissionsToRequest.toTypedArray(), NOTIFICATION_PERMISSION_CODE)
+        }
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+
+        when (requestCode) {
+            NOTIFICATION_PERMISSION_CODE -> {
+                if (grantResults.isNotEmpty() &&
+                    grantResults.all { it == PackageManager.PERMISSION_GRANTED }) {
+                    // Permissions granted, start download
+                    currentPost?.let { startDownload(it) }
+                } else {
+                    showError("Permissions are required to download videos")
+                }
+            }
         }
     }
 
 
 
+    private fun loadToTargetComment(commentId: String) {
+        isLoadingForTarget = true
+        showShimmer()
 
-    private lateinit var commentsRecyclerView: RecyclerView
-
-    @OptIn(UnstableApi::class)
-    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        context = this
-        binding = ActivityPostDetails2Binding.inflate(layoutInflater)
-        setContentView(binding.root)
-
-        permissionGranted = ActivityCompat.checkSelfPermission(
-            this, permissions[0]
-        ) == PackageManager.PERMISSION_GRANTED
-
-        permissionGranted2 = ActivityCompat.checkSelfPermission(
-            this, permissions[1]
-        ) == PackageManager.PERMISSION_GRANTED
-
-        permissionGranted3 = ActivityCompat.checkSelfPermission(
-            this, permissions[2]
-        ) == PackageManager.PERMISSION_GRANTED
-
-        if (!permissionGranted2) {
-            ActivityCompat.requestPermissions(this, permissions, READ_EXTERNAL_STORAGE_REQUEST_CODE)
-        }
-        if (!permissionGranted) {
-            ActivityCompat.requestPermissions(this, permissions, REQUEST_CODE)
-        }
-
-        if (!permissionGranted3) {
-            ActivityCompat.requestPermissions(this, permissions, IMAGES_REQUEST_CODE)
-        }
+        lifecycleScope.launch {
+            val commentLocation =
+                shotPostViewModel.locateShotComment(postId, commentId)
+            if (commentLocation != null) {
+                // check if it is a reply
+                if (commentLocation.location.parentCommentId != null) {
+                    loadPagesToTarget(
+                        commentLocation.location.parentPageNumber ?: 1,
+                        commentLocation.location.parentCommentId!!,
+                        commentLocation.comments
+                    )
 
 
-        notificationCountViewModel = ViewModelProvider(this)[NotificationCountViewModel::class.java]
-
-        commentViewModel = ViewModelProvider(this)[CommentsViewModel::class.java]
-        roomCommentReplyViewModel = ViewModelProvider(this)[RoomCommentReplyViewModel::class.java]
-        commentsReplyViewModel = ViewModelProvider(this)[ShortCommentReplyViewModel::class.java]
-        commentsViewModel = ViewModelProvider(this)[ShortCommentsViewModel::class.java]
-        shortsCommentViewModel = ViewModelProvider(this)[RoomCommentsViewModel::class.java]
-        commentFilesViewModel = ViewModelProvider(this)[RoomCommentFilesViewModel::class.java]
-        shortsViewModel = ViewModelProvider(this)[ShortsViewModel::class.java]
-        settings = getSharedPreferences(PREFS_NAME, 0)
-        val accessToken = settings.getString("token", "").toString()
-        timer = Timer(this)
-        docsPickerLauncher =
-            registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-                if (result.resultCode == RESULT_OK) {
-                    result.data?.data?.also { uri ->
-                        handleDocumentUri(uri)
-                    }
+                } else {
+                    // top level comment
+                    loadPagesToTarget(
+                        commentLocation.location.pageNumber,
+                        commentId,
+                        commentLocation.comments
+                    )
                 }
             }
-        val commentId = intent.getStringExtra(EXTRA_COMMENT_ID)
-        val postId = intent.getStringExtra(EXTRA_POST_ID)
-        val commentIdToNavigate = intent.getStringExtra(EXTRA_COMMENT_ID)
-        val showComments = intent.getBooleanExtra(EXTRA_COMMENT, false)
+        }
+    }
 
+    private suspend fun loadPagesToTarget(
+        targetPage: Int,
+        commentId: String,
+        comments: List<Comment>
+    ) {
+        commentAdapter!!.setmCurrentPage(targetPage)
 
-        commentsRecyclerView = binding.recyclerView
-        commentsRecyclerView.layoutManager =
-            LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false)
-        commentsRecyclerViewAdapter = CommentsRecyclerViewAdapter(this, this@PostDetailsActivity2)
-        commentsRecyclerView.adapter = commentsRecyclerViewAdapter
-        Log.d(
-            "PostDetails",
-            "Received postId: $postId and commentIdToNavigate: $commentIdToNavigate from intent"
-        )
+        commentAdapter?.submitItems(comments)
 
-        if (showComments) {
-            if (postId != null) {
-                // Fetch and display comments if show_comments is true
-                fetchPostDetails(postId)
+        commentRecyclerView.post {
+            // hideShimmer()
+            scrollToComment(commentId, targetPage)
+            if (comments.isEmpty()) {
+                updateUI(true)
             } else {
-                Log.d("showCComment", "ShowComments :$postId")
+                updateUI(false)
             }
+            isLoadingForTarget = false
+        }
+    }
+
+    private fun scrollToComment(commentId: String, currentPage: Int) {
+        val position = commentAdapter?.findCommentPosition(commentId)
+
+        if (position != -1) {
+            val layoutManager = commentRecyclerView.layoutManager as LinearLayoutManager
+
+            // Scroll to position with offset
+            layoutManager.scrollToPositionWithOffset(position!!, commentRecyclerView.height / 3)
+
+            commentRecyclerView.postDelayed({
+                highlightComment(position, currentPage)
+            }, 300)
         } else {
-            // Handle the case where comments should not be displayed
-            Log.d("PostDetailsActivity2", "Comments are not displayed.")
+            // showError("Comment not available")
         }
-        if (postId != null) {
+    }
 
-            Log.d("ApiService", "Received commentId $commentId")
-            if (commentId != null) {
-                getPageComment(commentId)
-            } else {
-                Log.d("ApiService", "commentId is null")
+    private fun highlightComment(position: Int, currentPage: Int) {
+        commentAdapter?.setHighlightedPosition(position)
+        commentRecyclerView.postDelayed({
+            commentAdapter?.clearHighlight()
+
+            if (!isLoadingForTarget) {
+                commentAdapter?.setmCurrentPage(currentPage)
             }
-            if (commentIdToNavigate != null) {
-                Log.d("CommentNavigation", "Navigating to commentId: $commentIdToNavigate")
-                if (commentId != null) {
-                    scrollToComment(commentId)
-                }
-            } else {
-                Log.d(
-                    "CommentNavigation",
-                    "No commentIdToNavigate provided; skipping comment navigation"
-                )
-            }
-            toggleMotionLayoutVisibility()
-        } else {
-            Log.d("PostDetailActivity", "Post ID is missing")
-            Log.d("PostDetailActivity", "CommentId is missing")
-        }
-        val menuSearch: MenuItem? = binding.toolbar.menu.findItem(R.id.menu_search)
-        val settingsMenuItem: MenuItem? = binding.toolbar.menu.findItem(R.id.menu_setting)
-        val logoutMenuItem: MenuItem? = binding.toolbar.menu.findItem(R.id.logout)
+        }, 4000)
+        hideShimmer()
+    }
 
-        menuSearch?.setOnMenuItemClickListener {
-            val intent = Intent(this, UniversalSearchActivity::class.java)
-            startActivity(intent)
-            true
-        }
-        settingsMenuItem?.setOnMenuItemClickListener {
-            val intent = Intent(this, SettingsActivity::class.java)
-            startActivity(intent)
-            true
-        }
-        logoutMenuItem?.setOnMenuItemClickListener {
-            showLogoutConfirmationDialog()
-            true
-        }
 
-        shortSeekBar = binding.shortsSeekBar
-        playerView = binding.videoView
-        shortPlayer = ExoPlayer.Builder(this).build()
-        playerView.useController = false
-        playerView.player = exoPlayer
-        downloadProgressBarLayout = binding.downloadProgressBarLayout
-        onClickListeners = this
-        commentsRecyclerViewAdapter = CommentsRecyclerViewAdapter(this, this@PostDetailsActivity2)
-
-        shortsDownloadImageView = binding.shortsDownloadImageView
-
-        val shortsViewPager = binding.shortsViewPager
-
-        shortsDownloadImageView = binding.shortsDownloadImageView
-        shortsDownloadProgressBar = binding.shortsDownloadProgressBar
-        val playerView = binding.videoView
-        playerView.setOnClickListener {
-            Log.d("player view", "player view button is working")
-            togglesPausePlay()
-        }
-        binding.backButton.setOnClickListener {
-            finish()
-        }
-
-        binding.commentsParentLayout.setOnClickListener {
-            toggleMotionLayoutVisibility()
-            postId?.let {
-                onCommentsClick(postId)
-            } ?: run {
-                Log.d("commentsUploading", "commentsUploading: null")
-            }
-            binding.motionLayout.visibility = View.VISIBLE
-        }
+    private fun registerAudioPickerLauncher() {
         audioPickerLauncher =
             registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-                if (result.resultCode == RESULT_OK) {
-                    // Handle image selection result here
-                    val data = result.data
-                    // Process the selected image data
-                    val audioPath = data?.getStringExtra("audio_url")
 
-                    val uriString = data?.getStringExtra("aUri")
-                    val aUri = Uri.parse(uriString)
+                val data = result.data
+                val audioPath = data?.getStringExtra("audio_url")
+                val uriString = data?.getStringExtra("aUri")
+                val caption = data?.getStringExtra("caption") ?: ""
 
-                    if (audioPath != null) {
-                        Log.d("AudioPicker", "File path: $audioPath")
-                        Log.d("AudioPicker", "File path: $isReply")
-                        val durationString = getFormattedDuration(audioPath)
-                        val fileName = getFileNameFromLocalPath(audioPath)
-                        val reverseDurationString = reverseFormattedDuration(durationString)
-                        Log.d("AudioPicker", "File path: $audioPath")
-                        Log.d("AudioPicker", "File name: $fileName")
-                        Log.d("AudioPicker", "durationString: $durationString")
-                        Log.d("AudioPicker", "reverseDurationString: $reverseDurationString")
-                        val file = File(audioPath)
-                        if (isReply) {
+                if (audioPath != null) {
+                    Log.d("AudioPicker", "File path: $audioPath")
+                    val durationString = getFormattedDuration(audioPath)
+                    val fileName = getFileNameFromLocalPath(audioPath)
 
-                            uploadReplyVnComment(
-                                audioPath,
-                                fileName,
-                                durationString,
-                                "mAudio",
-                                true
-                            )
-                        } else {
+                    Log.d("AudioPicker", "File name: $fileName")
+                    Log.d("AudioPicker", "durationString: $durationString")
+//                        Log.d("AudioPicker", "reverseDurationString: $reverseDurationString")
+                    val file = File(audioPath)
 
-                            uploadVnComment(
-                                audioPath,
-                                fileName,
-                                durationString,
-                                "mAudio",
-                                true
-                            )
-                        }
+                    var fileSizeInBytes by Delegates.notNull<Long>()
+                    var fileSizeInKB by Delegates.notNull<Long>()
+                    var fileSizeInMB by Delegates.notNull<Long>()
 
-                        val outputFileName =
-                            "compressed_audio_${System.currentTimeMillis()}.mp3" // Example output file name
-                        val outputFilePath = File(cacheDir, outputFileName)
 
-                        lifecycleScope.launch(Dispatchers.IO) {
-                            val compressor = FFMPEG_AudioCompressor()
-                            val isCompressionSuccessful =
-                                compressor.compress(audioPath, outputFilePath.absolutePath)
+                    fileSizeInBytes = file.length()
+                    fileSizeInKB = fileSizeInBytes / 1024
+                    fileSizeInMB = fileSizeInKB / 1024
 
-                            if (isCompressionSuccessful) {
-                                Log.d("AudioPicker", "AudioPicker: Compression successful ")
-
-                                val fileSizeInBytes = outputFilePath.length()
-                                val fileSizeInKB = fileSizeInBytes / 1024
-                                val fileSizeInMB = fileSizeInKB / 1024
-                                Log.d(
-                                    "AudioPicker",
-                                    "File size: $fileSizeInKB KB,  $fileSizeInMB MB"
-                                )
-
-                                val fileSizeInGB = fileSizeInMB / 1024 // Conversion from MB to GB
-
-                                withContext(Dispatchers.Main) {
-                                    if (!isReply) {
-                                        uploadVnComment(
-                                            vnToUpload = outputFilePath.absolutePath,
-                                            fileName = fileName,
-                                            durationString = durationString,
-                                            fileType = "mAudio",
-                                            update = true
-                                        )
-                                    } else {
-                                        uploadReplyVnComment(
-                                            outputFilePath.absolutePath,
-                                            fileName,
-                                            durationString,
-                                            fileType = "mAudio",
-                                            update = true
-                                        )
-                                    }
-                                }
-
-                            } else {
-                                Log.d("AudioPicker", "AudioPicker: Compression not successful")
-                            }
-                        }
+                    if (isReply) {
+                        uploadAudioComment(
+                            file.absolutePath,
+                            caption,
+                            isReply1 = isReply,
+                            fileType = file.extension
+                        )
                     } else {
-                        Log.d("AudioPicker", "File path: $audioPath")
+                        Log.d("AudioPicker", "Calling upload audio comment")
+                        uploadAudioComment(
+                            file.absolutePath,
+                            caption,
+                            isReply1 = isReply,
+                            fileType = file.extension
+                        )
                     }
-                }
-            }
-        cameraLauncher =
-            registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-                if (result.resultCode == RESULT_OK) {
-                    // Handle image selection result here
-                    val data = result.data
-                    // Process the selected image data
-                    val imagePath = data?.getStringExtra("image_url")
-                    Log.d(
-                        "cameraLauncher", "Selected image path from camera: $imagePath"
-                    )
-                    val imageUri = Uri.parse(imagePath)
-                    Log.d(
-                        "cameraLauncher", "Selected image path from camera: $imageUri"
-                    )
-                    if (imagePath != null) {
-                        val file = File(imagePath)
-                        if (file.exists()) {
-                            lifecycleScope.launch {
-                                val compressedImageFile =
-                                    Compressor.compress(this@PostDetailsActivity2, file)
-                                Log.d(
-                                    "cameraLauncher",
-                                    "cameraLauncher: compressedImageFile absolutePath: ${compressedImageFile.absolutePath}"
-                                )
-                                val fileSizeInBytes = compressedImageFile.length()
-                                val fileSizeInKB = fileSizeInBytes / 1024
-                                val fileSizeInMB = fileSizeInKB / 1024
 
-                                Log.d(
-                                    "cameraLauncher",
-                                    "cameraLauncher: compressedImageFile size $fileSizeInKB KB, $fileSizeInMB MB"
-                                )
-                                if (!isReply) {
-                                    uploadImageComment(compressedImageFile.absolutePath)
-                                } else {
-                                    uploadReplyImageComment(compressedImageFile.absolutePath)
-                                }
-                            }
-                        }
-                    }
                 }
             }
+
+    }
+
+    private fun registerDocPicker() {
         docsPickerLauncher =
             registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
                 if (result.resultCode == RESULT_OK) {
-                    // Handle image selection result here
                     val data = result.data
                     // Process the selected image data
                     val docPath = data?.getStringExtra("doc_url")
+                    val caption = data?.getStringExtra("caption") ?: ""
 
+                    Log.d(TAG, "Path: $docPath caption: $caption")
 
-                    if (docPath != null) {
-
-                        Log.d("ChatActivityDocPath", "Selected Document path: $docPath")
-
-                        val docFileName =
-                            "files/${System.currentTimeMillis()}.jpg" // Change the file name as needed
-                        val user = User("0", "You", "test", true, Date())
-                        val messageId = "Doc_${Random.nextInt()}"
-
-                        val date = Date(System.currentTimeMillis())
-
-                        val message = Message(
-                            messageId, user, // Set user ID as needed
-                            null, date
-                        )
-
-                        val audioUrl = Uri.parse(docPath)
-                        val file = File(docPath)
-                        if (file.exists()) {
-
-                            Log.d("Document File", "Document File Exists : $file")
-                            val absolutePath = file.absolutePath
-
-                            val fileUri = Uri.fromFile(file)
-                            val fileUrl = fileUri.toString()
-                        }
-                    }
+                    handleDocumentUri(getContentUriFromFilePath(this, docPath!!)!!, caption)
                 }
             }
+    }
+
+    private fun registerVideoPickerLauncher() {
+        // Register the launcher in onCreate
         videoPickerLauncher =
             registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-                Log.d("VideoDebug", "onActivityResult callback triggered")
+
                 if (result.resultCode == RESULT_OK) {
                     val data = result.data
+
                     val videoPath = data?.getStringExtra("video_url")
                     val uriString = data?.getStringExtra("vUri")
                     val vUri = Uri.parse(uriString)
+                    val caption = data?.getStringExtra("caption") ?: ""
+
                     val uri = Uri.parse(videoPath)
 
                     if (videoPath != null) {
                         Log.d("VideoPicker", "File path: $videoPath")
-                        Log.d("VideoPicker", "File path: $isReply")
                         val durationString = getFormattedDuration(videoPath)
+                        val file = File(videoPath)
                         Log.d("VideoPicker", "File path durationString: $durationString")
 
-                        val file = File(videoPath)
                         if (file.exists()) {
                             val fileSizeInBytes = file.length()
                             val fileSizeInKB = fileSizeInBytes / 1024
                             val fileSizeInMB = fileSizeInKB / 1024
-                            Log.d("VideoPicker", "File size: $fileSizeInMB MB")
 
                             val fileSizeInGB = fileSizeInMB / 1024 // Conversion from MB to GB
 
+                            Log.d("VideoPicker", "File size: $fileSizeInMB MB")
 
                             if (fileSizeInGB.toInt() == 1) {
                                 showToast(this, "File size too large")
                             } else if (fileSizeInMB > 10) {
                                 Log.d("VideoPicker", "File size: greater than $fileSizeInMB MB")
-                                Log.d("VideoPicker", "Uri $uri")
-                                Log.d("VideoPicker", "v Uri $vUri")
                                 if (isReply) {
-                                    uploadReplyVideoComment(videoPath, durationString, true)
+                                    uploadVideoComment(videoPath, caption, isReply)
                                 } else {
-                                    uploadVideoComment(videoPath, durationString, true)
+                                    uploadVideoComment(videoPath, caption)
                                 }
-                                if (vUri != null) {
-                                    toCompressUris.add(vUri)
-                                }
-                                compressShorts(durationString, fileType = "video")
                             } else {
                                 Log.d("VideoPicker", "File size: less than $fileSizeInMB MB")
-                                if (!isReply) {
-                                    uploadVideoComment(videoPath, durationString)
+                                if (isReply) {
+                                    uploadVideoComment(videoPath, caption, isReply)
                                 } else {
-                                    uploadReplyVideoComment(videoPath, durationString)
+                                    uploadVideoComment(videoPath, caption)
                                 }
                             }
-                        } else {
-                            Log.d("VideoPicker", "File does not exists ")
                         }
-
-                    } else {
-                        Log.d("PhotoPicker", "No media selected")
                     }
+
+
                 }
             }
+
+    }
+
+    private fun registerImagePicker() {
         imagePickerLauncher =
             registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
                 if (result.resultCode == RESULT_OK) {
@@ -785,334 +732,14 @@ class PostDetailsActivity2 : AppCompatActivity(),
                     val data = result.data
                     // Process the selected image data
                     val imagePath = data?.getStringExtra("image_url")
-                    Log.d("ImagePath", "Img path $imagePath")
-                }
-            }
-        installTwitter()
-        addComment()
-        addCommentVN()
-        addCommentReply()
-        addCommentFileReply()
-        addImageComment()
-        addVideoComment()
-        addDocumentComment()
-        addGifComment()
-        observeCommentRepliesToRefresh()
-        observeMainCommentToRefresh()
-        // Back press handling
-        val onBackPressedCallback = object : OnBackPressedCallback(true) {
-            override fun handleOnBackPressed() {
-                val currentVisibility = binding.motionLayout.visibility
+                    val caption = data?.getStringExtra("caption") ?: ""
 
-                if (currentVisibility == View.VISIBLE) {
-                    toggleMotionLayoutVisibility()
-
-
-                } else {
-                    finish()
-                }
-            }
-        }
-        onBackPressedDispatcher.addCallback(
-            this, onBackPressedCallback
-        )
-        initializeCommentsBottomSheet()
-
-        shortSeekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
-                // Update playback position when user drags the SeekBar
-                if (fromUser) {
-                    shortPlayer.seekTo(progress.toLong())
-                }
-            }
-
-            override fun onStartTrackingTouch(seekBar: SeekBar?) {
-                // User starts seeking
-                isUserSeeking = true
-            }
-
-            override fun onStopTrackingTouch(seekBar: SeekBar?) {
-                // User stops seeking
-                isUserSeeking = false
-            }
-        })
-
-
-        binding.VNLinearLayout.setOnClickListener {
-            Log.d(TAG, "onCreate: vn linear layout touched")
-        }
-
-        if (binding.motionLayout.visibility == View.GONE) {
-            binding.VNLayout.visibility = View.GONE
-        } else {
-            Log.d(TAG, "onCreate: vn linear layout touched")
-
-        }
-        binding.recordVN.setOnClickListener {
-            when {
-                isPaused -> resumeRecording()
-                isRecording -> pauseRecording()
-                else -> Log.d("recordVN", "onCreate: else in vn record btn on click")
-
-            }
-        }
-        binding.deleteVN.setOnClickListener {
-            if (mediaRecorder != null) {
-
-                Log.d(TAG, "onCreate: media recorder not null")
-            } else {
-                Log.d(TAG, "onCreate: media recorder null")
-            }
-            lifecycleScope.launch(Dispatchers.Main) {
-                delay(500)
-                deleteRecording()
-            }
-            if (player?.isPlaying == true) {
-                stopPlaying()
-            }
-            binding.VNLayout.visibility = View.GONE
-        }
-        binding.sendVN.setOnClickListener {
-            sending = true
-            CoroutineScope(Dispatchers.Main).launch {
-                if (!wasPaused) {
-                    timer.stop()
-                    mediaRecorder?.apply {
-                        stop()
-                        release()
-                    }
-                    mediaRecorder = null
-                    Log.d("SendVN", "When sending vn was paused was false")
-                    mixVN() // Execute mixVN asynchronously
-                }
-                lifecycleScope.launch(Dispatchers.Main) {
-                    timer.stop()
-                    delay(500)
-                    stopRecording()
-                }
-
-            }
-        }
-    }
-
-    @Deprecated("Deprecated in Java")
-
-    override fun onBackPressed() {
-        super.onBackPressed()
-        if (isRecording) {
-            Log.d("stopRecording", "vn deleted")
-            stopRecording()
-
-
-        }
-    }
-
-    var wasPaused = false
-    var sending = false
-    private var mixingCompleted = false // Define a flag to track if mixing is completed
-
-    private fun updateSeekBar() {
-        Log.d("UpdateSeekBar", "audio is working")
-        exoPlayer.let { player ->
-            audioSeekBar.max = maxDuration.toInt()
-            audioSeekBar.progress = position
-
-            if (!isUserSeeking) {
-                val currentPosition = player.currentPosition.toInt()
-                audioSeekBar.progress = currentPosition
-            } else {
-                Log.d("UpdateSeekBar", "not working")
-            }
-        }
-    }
-
-    private fun updateShortSeekBar() {
-        Log.d("UpdateSeekBar", "video is working")
-        shortPlayer.let { player ->
-            shortSeekBar.max = maxDuration.toInt()
-            shortSeekBar.progress = position
-
-            if (!isUserSeeking) {
-                val currentPosition = player.currentPosition.toInt()
-                shortSeekBar.progress = currentPosition
-            } else {
-                Log.d("UpdateSeekBar", "not working")
-            }
-        }
-    }
-
-    private fun showLogoutConfirmationDialog() {
-        val builder = AlertDialog.Builder(this)
-        builder.setTitle("Confirm Logout")
-        builder.setMessage("Are you sure you want to logout?")
-        builder.setPositiveButton("Yes") { dialog, which ->
-            // Handle logout here
-            performLogout()
-        }
-        builder.setNegativeButton("No") { dialog, which ->
-            // Dismiss the dialog
-            dialog.dismiss()
-        }
-        val dialog = builder.create()
-        dialog.show()
-    }
-
-    private fun performLogout() {
-        CoroutineScope(Dispatchers.IO).launch {
-            //delete data from local db
-            deleteUserProfile()
-            //clear shared prefs
-            LocalStorage.getInstance(this@PostDetailsActivity2).clear()
-            LocalStorage.getInstance(this@PostDetailsActivity2).clearToken()
-            settings.edit().clear().apply()
-            callViewModel.clearAll()
-            messageViewModel.clearAll()
-            dialogViewModel.clearAll()
-            groupDialogViewModel.clearAll()
-        }
-        val intent = Intent(this, LoginActivity::class.java)
-        startActivity(intent)
-        startActivity(intent)
-    }
-
-    suspend fun deleteUserProfile() {
-        myProfileRepository.deleteMyProfile()
-    }
-
-    @RequiresApi(Build.VERSION_CODES.R)
-    private fun pauseRecording() {
-        val TAG = "pauseRecording"
-
-        if (isRecording && !isPaused) {
-
-            try {
-                mediaRecorder?.apply {
-                    stop()
-                    release()
-                }
-                mediaRecorder = null
-            } catch (e: Exception) {
-                Log.d(TAG, " failed to stop media recorder: $e")
-                e.printStackTrace()
-            }
-            isPaused = true
-            timer.pause() // Pause the recording timer
-            binding.timerTv.visibility = View.INVISIBLE
-            binding.waveForm.visibility = View.GONE
-            binding.playAudioLayout.visibility = View.VISIBLE
-            binding.playVnAudioBtn.setImageResource(R.drawable.play_svgrepo_com)
-            binding.recordVN.setImageResource(com.uyscuti.social.call.R.drawable.ic_mic_on)
-            Log.d(TAG, "pauseRecording: list of recordings  size: ${recordedAudioFiles.size}")
-            Log.d(TAG, "pauseRecording: list of recordings $recordedAudioFiles")
-            mixVN()
-        }
-
-    }
-
-    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-    override fun onAddAttachments() {
-        showAttachmentDialog()
-    }
-
-    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-    private fun showAttachmentDialog() {
-        val dialog = BottomSheetDialog(this)
-        dialog.setContentView(R.layout.file_upload_dialog)
-        val video = dialog.findViewById<LinearLayout>(R.id.upload_video)
-        val audio = dialog.findViewById<LinearLayout>(R.id.upload_audio)
-        val image = dialog.findViewById<LinearLayout>(R.id.upload_image)
-        val camera = dialog.findViewById<LinearLayout>(R.id.open_camera)
-        val doc = dialog.findViewById<LinearLayout>(R.id.upload_doc)
-        val location = dialog.findViewById<LinearLayout>(R.id.share_location)
-        // Apply animation to the dialog's view
-        val dialogView =
-            dialog.findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)
-        dialogView?.startAnimation(AnimationUtils.loadAnimation(this, R.anim.slide_up))
-
-        val selectableItemBackground = TypedValue()
-        image?.context?.theme?.resolveAttribute(
-            android.R.attr.selectableItemBackground, selectableItemBackground, true
-        )
-        image?.setBackgroundResource(selectableItemBackground.resourceId)
-
-
-        video?.context?.theme?.resolveAttribute(
-            android.R.attr.selectableItemBackground, selectableItemBackground, true
-        )
-        video?.setBackgroundResource(selectableItemBackground.resourceId)
-
-        audio?.context?.theme?.resolveAttribute(
-            android.R.attr.selectableItemBackground, selectableItemBackground, true
-        )
-        audio?.setBackgroundResource(selectableItemBackground.resourceId)
-
-        camera?.context?.theme?.resolveAttribute(
-            android.R.attr.selectableItemBackground, selectableItemBackground, true
-        )
-        camera?.setBackgroundResource(selectableItemBackground.resourceId)
-
-        doc?.context?.theme?.resolveAttribute(
-            android.R.attr.selectableItemBackground, selectableItemBackground, true
-        )
-        doc?.setBackgroundResource(selectableItemBackground.resourceId)
-
-        location?.context?.theme?.resolveAttribute(
-            android.R.attr.selectableItemBackground, selectableItemBackground, true
-        )
-        location?.setBackgroundResource(selectableItemBackground.resourceId)
-
-        image?.setOnClickListener {
-            Log.d("SelectImage", "Image selector button clicked")
-            pickMultipleMedia.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
-            dialog.dismiss()
-        }
-
-        video?.setOnClickListener {
-
-            val intent = Intent(this@PostDetailsActivity2, VideosActivity::class.java)
-            dialog.dismiss()
-            videoPickerLauncher.launch(intent)
-        }
-
-        audio?.setOnClickListener {
-            val intent = Intent(this@PostDetailsActivity2, AudioActivity::class.java)
-            audioPickerLauncher.launch(intent)
-
-            dialog.dismiss()
-        }
-        doc?.setOnClickListener {
-            val intent = Intent(this@PostDetailsActivity2, DocumentsActivity::class.java)
-            getDocumentContent.launch(intent)
-            openFilePicker()
-            dialog.dismiss()
-        }
-        camera?.setOnClickListener {
-            val intent = Intent(this@PostDetailsActivity2, CameraActivity::class.java)
-
-            cameraLauncher.launch(intent)
-            dialog.dismiss()
-        }
-        location?.visibility = View.INVISIBLE
-        location?.setOnClickListener {
-        }
-        dialog.show()
-    }
-
-    private val pickMultipleMedia =
-        registerForActivityResult(ActivityResultContracts.PickMultipleVisualMedia(2)) { uris ->
-            // Callback is invoked after the user selects media items or closes the
-            // photo picker.
-            if (uris.isNotEmpty()) {
-                for (uri in uris) {
                     val filePath = PathUtil.getPath(
                         this,
-                        uri
+                        imagePath!!.toUri()
                     ) // Use the utility class to get the real file path
                     Log.d("PhotoPicker", "File path: $filePath")
                     Log.d("PhotoPicker", "File path: $isReply")
-                    Log.d(
-                        "PhotoPicker", "Selected image path from camera: $uri"
-                    )
 
                     val file = filePath?.let { File(it) }
                     if (file?.exists() == true) {
@@ -1134,589 +761,1934 @@ class PostDetailsActivity2 : AppCompatActivity(),
                             )
 
                             if (!isReply) {
-                                uploadImageComment(compressedImageFile.absolutePath)
+                                uploadImageComment(
+                                    compressedImageFile.absolutePath,
+                                    caption,
+                                    isReply
+                                )
                             } else {
-                                uploadReplyImageComment(compressedImageFile.absolutePath)
+                                uploadImageComment(
+                                    compressedImageFile.absolutePath,
+                                    caption,
+                                    isReply
+                                )
                             }
                         }
                     }
+
+                }
+            }
+    }
+
+    private fun registerGifPickerLauncher() {
+        gifsPickerLauncher =
+            registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+                val data = result.data
+                val gifUri = data?.getStringExtra("gifUri")
+                Log.d(TAG, "Gif Uri $gifUri")
+
+                if (gifUri!!.isNotEmpty()) {
+
+                    val localUpdateId = generateRandomId()
+
+                    if (isReply) {
+                        shotPostViewModel.addCommentReply(
+                            commentId,
+                            contentType = "gif",
+                            localUpdateId = localUpdateId,
+                            gif = gifUri,
+                            isReply = isReply
+                        )
+                        isReply = false
+                    } else {
+                        shotPostViewModel.addComment(
+                            postId,
+                            contentType = "gif",
+                            localUpdateId = localUpdateId,
+                            gif = gifUri
+                        )
+                    }
+
                 }
 
-            } else {
-                Log.d("PhotoPicker", "No media selected")
+            }
+    }
+
+    private fun setupInputManager() {
+        emojiPopup = EmojiPopup(binding.motionLayout, binding.input.inputEditText)
+
+        binding.input.setInputListener(this)
+        binding.input.setAttachmentsListener(this)
+        binding.input.setVoiceListener(this)
+        binding.input.setEmojiListener(this)
+        binding.input.setGifListener(this)
+    }
+
+    private fun initEmojiView() {
+        if (emojiShowing) {
+            emojiPopup.dismiss()
+            // Show keyboard after a slight delay to ensure smooth transition
+            binding.input.inputEditText?.postDelayed({
+                inputMethodManager.showSoftInput(
+                    binding.input.inputEditText, InputMethodManager.SHOW_IMPLICIT
+                )
+            }, 50)
+            emojiShowing = false
+        } else {
+            // Hide keyboard first
+            inputMethodManager.hideSoftInputFromWindow(
+                binding.input.inputEditText?.windowToken, 0
+            )
+            // Show emoji popup after a slight delay
+            binding.input.inputEditText?.postDelayed({
+                emojiPopup.toggle()
+            }, 50)
+            emojiShowing = true
+        }
+    }
+
+    private fun onGoBack() {
+        val callback = object : OnBackPressedCallback(true) {
+
+            override fun handleOnBackPressed() {
+                if (binding.motionLayout.isVisible) {
+                    toggleCommentBottomSheet()
+                } else {
+                    isEnabled = false
+                    onBackPressedDispatcher.onBackPressed()
+                }
             }
         }
 
-    @RequiresApi(Build.VERSION_CODES.O)
-    @SuppressLint("SetTextI18n")
-    private fun uploadReplyImageComment(
-        vnToUpload: String,
-        placeholder: Boolean = false,
-        update: Boolean = false
-    ) {
-        Log.d("uploadReplyImageComment", "uploadReplyImageComment: $vnToUpload")
-        Log.d("uploadReplyImageComment", "uploadReplyImageComment: isReply is $isReply")
-
-
-        val localUpdateId = generateRandomId()
-        val profilePic2 = settings.getString("profile_pic", "").toString()
-        val avatar = com.uyscuti.social.network.api.response.commentreply.allreplies.Avatar(
-            "", "", url = profilePic2
-        )
-        val account = com.uyscuti.social.network.api.response.commentreply.allreplies.Account(
-            _id = "", avatar = avatar, "", LocalStorage.getInstance(this).getUsername()
-        )
-
-
-        val commentReplyAuthor = com.uyscuti.social.network.api.response.commentreply.allreplies.Author(
-            _id = "21", account = account, firstName = "", lastName = ""
-        )
-
-        Log.d("uploadReplyImageComment", "uploadReplyImageComment: handle reply to a comment")
-
-      //if it clash on upload un comment the line below//
-        if (!placeholder) {
-            val newCommentReplyEntity =
-                CommentsFilesEntity(
-                    postId,
-                    "image",
-                    vnToUpload,
-                    isReply = 1,
-                    localUpdateId,
-                    content = binding.input.inputEditText.text.toString()
-                )
-            commentFilesViewModel.insertCommentFile(newCommentReplyEntity)
-            Log.d(
-                "uploadReplyImageComment",
-                "uploadReplyImageComment: inserted comment $newCommentReplyEntity"
-            )
-        }
-
-        val mongoDbTimeStamp = generateMongoDBTimestamp()
-        val imageFile = CommentFiles(_id = "", url = vnToUpload, localPath = "image")
-
-        val newReply = com.uyscuti.social.network.api.response.commentreply.allreplies.Comment(
-            __v = data!!.__v,
-            _id = "commentId",
-            author = commentReplyAuthor,
-            content = binding.input.inputEditText.text.toString(),
-            createdAt = mongoDbTimeStamp,
-            isLiked = false,
-            likes = 0,
-            commentId = commentId,
-            updatedAt = mongoDbTimeStamp,
-            images = mutableListOf(imageFile),
-
-            contentType = "image"
-        )
-
-        val replyCount = data!!.replyCount + 1
-        val commentWithReplies = Comment(
-            __v = data!!.__v,
-            _id = data!!._id,
-            author = data!!.author,
-            content = data!!.content,
-            createdAt = data!!.createdAt,
-            isLiked = data!!.isLiked,
-            likes = data!!.likes,
-            postId = data!!.postId,
-            updatedAt = data!!.updatedAt,
-            replyCount = replyCount,
-
-            replies = data?.replies?.toMutableList()?.apply {
-                // Assuming newReply is the new reply you want to add
-                add(0, newReply)
-            } ?: mutableListOf(),
-            isRepliesVisible = true,
-            images = data?.images ?: mutableListOf(),
-            audios = mutableListOf(),
-            docs = mutableListOf(),
-            gifs = "",
-            thumbnail = mutableListOf(),
-            videos = mutableListOf(),
-            contentType = data?.contentType ?: "image",
-            isPlaying = data?.isPlaying ?: false,
-            localUpdateId = localUpdateId,
-            replyCountVisible = false,
-            numberOfPages = data?.numberOfPages ?: "",
-            fileSize = data?.fileSize ?: "",
-            isReplyPlaying = data?.isReplyPlaying ?: false,
-            progress = data?.progress ?: 0f,
-            fileType = data?.fileType ?: ""
-        )
-
-        updateReplyPosition = position
-        if (update) {
-            isReply = false
-            Log.d("uploadVideoComment", "updatePosition: $updatePosition")
-            updateAdapter(commentWithReplies, updateReplyPosition)
-            updateReplyPosition = -1
-        }
-        if (!update) {
-            listOfReplies.add(commentWithReplies)
-            Log.d(
-                "uploadReplyImageComment",
-                "uploadReplyImageComment: comment id = data is? $commentId = ${data!!._id} on position $position"
-            )
-            Log.d(
-                "uploadReplyImageComment",
-                "uploadReplyImageComment: comment id = data is? $commentId = ${data!!._id} on position $position"
-            )
-            updateAdapter(commentWithReplies, position)
-        }
-
-        binding.input.inputEditText.setText("")
-        binding.replyToLayout.visibility = View.GONE
+        onBackPressedDispatcher.addCallback(this, callback)
     }
 
+    private fun getContentUriFromFilePath(context: Context, filePath: String): Uri? {
+        val file = File(filePath)
+        val projection = arrayOf(MediaStore.Files.FileColumns._ID)
+        val selection = "${MediaStore.Files.FileColumns.DATA}=?"
+        val selectionArgs = arrayOf(file.absolutePath)
 
-    @RequiresApi(Build.VERSION_CODES.O)
+        context.contentResolver.query(
+            MediaStore.Files.getContentUri("external"),
+            projection,
+            selection,
+            selectionArgs,
+            null
+        )?.use { cursor ->
+            if (cursor.moveToFirst()) {
+                val id =
+                    cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns._ID))
+                return ContentUris.withAppendedId(MediaStore.Files.getContentUri("external"), id)
+            }
+        }
+        return null
+    }
+
+    private fun getFileNameWithExtension(uri: Uri): String {
+        var fileName = "document_${System.currentTimeMillis()}"
+
+        // Try to get the original filename
+        contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+            val nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+            if (cursor.moveToFirst()) {
+                fileName = cursor.getString(nameIndex) ?: fileName
+            }
+        }
+
+        // If filename doesn't have an extension, get it from MIME type
+        if (!fileName.contains(".")) {
+            val mimeType = contentResolver.getType(uri)
+            val extension = MimeTypeMap.getSingleton().getExtensionFromMimeType(mimeType)
+            if (extension != null) {
+                fileName = "${fileName}.${extension}"
+            }
+        }
+
+        return fileName
+    }
+
+    private fun getFileFromUri(uri: Uri): File? {
+        return try {
+            val inputStream = contentResolver.openInputStream(uri)
+            val fileName = getFileNameWithExtension(uri)
+            val tempFile = File(cacheDir, fileName)
+
+            inputStream?.use { input ->
+                tempFile.outputStream().use { output ->
+                    input.copyTo(output)
+                }
+            }
+
+            // Debug: Check if file exists and has content
+            Log.d("FileDebug", "File path: ${tempFile.absolutePath}")
+            Log.d("FileDebug", "File exists: ${tempFile.exists()}")
+            Log.d("FileDebug", "File size: ${tempFile.length()} bytes")
+
+            if (tempFile.exists() && tempFile.length() > 0) {
+                tempFile
+            } else {
+                null
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+    }
+
+    private fun handleDocumentUri(uri: Uri, caption: String) {
+        val file = getFileFromUri(uri)
+
+        contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+            val nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+            val sizeIndex = cursor.getColumnIndex(OpenableColumns.SIZE)
+            cursor.moveToFirst()
+            val fileName = cursor.getString(nameIndex)
+            val fileSize = cursor.getLong(sizeIndex)
+//            val numberOfPages = getNumberOfPagesFromUri(this, uri)
+            var numberOfPages = 0
+            val formattedFileSize = formatFileSize(fileSize)
+
+            val fileSizes = isFileSizeGreaterThan2MB(fileSize)
+            val documentType = fileType(fileName)
+            Log.d("handleDocumentUri", ": $fileName")
+            Log.d("handleDocumentUri", "uri $uri")
+            Log.d("handleDocumentUri", "formattedFileSize $formattedFileSize")
+            Log.d("handleDocumentUri", "Document type $documentType")
+
+            numberOfPages = when (documentType) {
+                "doc" -> {
+                    getNumberOfPagesFromUriForDoc(uri)
+                }
+
+                "docx", "pptx" -> {
+                    getNumberOfPagesFromUriForDocx(uri)
+                }
+
+                "xlsx", "xls" -> {
+                    getNumberOfSheetsFromUri(uri)
+                }
+
+                else -> {
+                    getNumberOfPagesFromUriForPDF(this, uri)
+                }
+            }
+
+
+            Log.d("handleDocumentUri", "File path: ${file?.absolutePath}")
+
+            if (fileSizes) {
+                if (!isReply) {
+                    Log.d("handleDocumentUri", "handleDocumentUri for main document")
+
+                    uploadDocumentComment(
+                        file?.absolutePath!!,
+                        caption,
+                        numberOfPages,
+                        formattedFileSize,
+                        documentType,
+                        fileName,
+                        isReply
+                    )
+                } else {
+                    Log.d("handleDocumentUri", "This is for document reply")
+                    uploadDocumentComment(
+                        file?.absolutePath!!,
+                        caption,
+                        numberOfPages,
+                        formattedFileSize,
+                        documentType,
+                        fileName,
+                        isReply
+                    )
+                }
+
+            } else {
+
+                if (!isReply) {
+                    Log.d("handleDocumentUri", "handleDocumentUri for main document")
+                    uploadDocumentComment(
+                        file?.absolutePath!!,
+                        caption,
+                        numberOfPages,
+                        formattedFileSize,
+                        documentType,
+                        fileName,
+                        isReply
+                    )
+                } else {
+                    Log.d("handleDocumentUri", "This is for document reply")
+                    uploadDocumentComment(
+                        file?.absolutePath!!,
+                        caption,
+                        numberOfPages,
+                        formattedFileSize,
+                        documentType,
+                        fileName,
+                        isReply
+                    )
+                }
+            }
+
+        }
+    }
+
+    private fun getNumberOfPagesFromUriForDoc(uri: Uri): Int {
+        var numberOfPages = 0
+        val inputStream: InputStream = contentResolver.openInputStream(uri) ?: return 0
+        val hwpfDocument = HWPFDocument(inputStream)
+        val range = hwpfDocument.range
+
+        // Count the paragraphs within the range
+        val paragraphs = Range(range.startOffset, range.endOffset, hwpfDocument).numParagraphs()
+        numberOfPages = paragraphs
+
+        hwpfDocument.close()
+        inputStream.close()
+
+        return numberOfPages
+
+    }
+
+    private fun getNumberOfPagesFromUriForPDF(context: Context, uri: Uri): Int {
+        var inputStream: InputStream? = null
+        var numberOfPages = 0
+        try {
+            inputStream = contentResolver.openInputStream(uri)
+            if (inputStream != null) {
+                val document = PDDocument.load(inputStream)
+                numberOfPages = document.numberOfPages
+                document.close()
+            }
+        } catch (e: Exception) {
+            // Handle exceptions
+            Log.e("getNumberOfPagesFromUri", "getNumberOfPagesFromUri ex $e")
+            e.printStackTrace()
+        } finally {
+            inputStream?.close()
+        }
+        return numberOfPages
+    }
+
+    private fun getNumberOfSheetsFromUri(uri: Uri): Int {
+        try {
+            var numberOfPages = 0
+            val inputStream = contentResolver.openInputStream(uri)
+            val mimeType = contentResolver.getType(uri)
+
+            val workbook = when {
+                // .xlsx (newer format)
+                mimeType == "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" ||
+                        uri.path?.endsWith(".xlsx", ignoreCase = true) == true -> {
+                    XSSFWorkbook(inputStream)
+                }
+                // .xls (older format)
+                mimeType == "application/vnd.ms-excel" ||
+                        uri.path?.endsWith(".xls", ignoreCase = true) == true -> {
+                    HSSFWorkbook(inputStream)
+                }
+
+                else -> null
+            }
+
+            workbook?.let {
+                numberOfPages = it.numberOfSheets
+                it.close()
+            }
+            inputStream?.close()
+
+            return numberOfPages
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        return 0
+    }
+
+    private fun getNumberOfPagesFromUriForDocx(uri: Uri): Int {
+        var numberOfPages = 0
+        val inputStream: InputStream = contentResolver.openInputStream(uri) ?: return 0
+        val xwpfDocument = XWPFDocument(inputStream)
+
+        // Count the paragraphs or sections in the document
+        numberOfPages = xwpfDocument.paragraphs.size
+
+        xwpfDocument.close()
+        inputStream.close()
+
+        return numberOfPages
+
+    }
+
     private fun uploadImageComment(
         imageFilePathToUpload: String,
-        placeholder: Boolean = false,
-        update: Boolean = false
+        caption: String = "",
+        isReply1: Boolean
     ) {
+
         Log.d("uploadImageComment", "uploadImageComment: $imageFilePathToUpload")
         Log.d("uploadImageComment", "uploadImageComment: isReply is $isReply")
-
-        val mongoDbTimeStamp = generateMongoDBTimestamp()
 
         val file = File(imageFilePathToUpload)
 
         val localUpdateId = generateRandomId()
-        if (file.exists()) {
-            Log.d("uploadImageComment", "File exists, creating comment.......")
-            val profilePic2 = settings.getString("profile_pic", "").toString()
-            val avatar = Avatar("", "", url = profilePic2)
-            val account =
-                Account(_id = "", avatar = avatar, "", LocalStorage.getInstance(this).getUsername())
-            val author = Author(
-                _id = "12", account = account, firstName = "", lastName = "",
-                avatar = TODO()
-            )
-            val imageFile = CommentFiles(
-                _id = "124",
-                url = imageFilePathToUpload,
-                localPath = imageFilePathToUpload
-            )
-            val comment = Comment(
-                __v = 1,
-                _id = adapter!!.itemCount.toString(),
-                author = author,
-                content = "",
-                createdAt = mongoDbTimeStamp,
-                isLiked = false,
-                likes = 0,
-                postId = postId,
-                updatedAt = mongoDbTimeStamp,
-                replyCount = 0,
-                images = mutableListOf(imageFile),
-                audios = mutableListOf(),
-                docs = mutableListOf(),
-                gifs = "",
-                thumbnail = mutableListOf(),
-                videos = mutableListOf(),
-                contentType = "image",
-                isPlaying = data?.isPlaying ?: false,
-                progress = data?.progress ?: 0f,
-                localUpdateId = localUpdateId
-            )
 
-            if (!placeholder) {
-                val newCommentEntity =
-                    CommentsFilesEntity(
-                        postId,
-                        "image",
-                        imageFilePathToUpload,
-                        isReply = 0,
-                        localUpdateId
-                    )
-                commentFilesViewModel.insertCommentFile(newCommentEntity)
-                Log.d(
-                    "uploadImageComment",
-                    "uploadImageComment: inserted comment $newCommentEntity"
+        if (file.exists()) {
+            if (isReply) {
+                shotPostViewModel.addCommentReply(
+                    commentId,
+                    content = caption,
+                    contentType = "image",
+                    localUpdateId = localUpdateId,
+                    file = file,
+                    isReply = isReply1
+                )
+                isReply = false
+            } else {
+                shotPostViewModel.addComment(
+                    postId,
+                    content = caption,
+                    contentType = "image",
+                    localUpdateId = localUpdateId,
+                    file = file
+                )
+            }
+        }
+
+    }
+
+    private fun uploadVideoComment(
+        videoFilePathToUpload: String,
+        caption: String,
+        isReply1: Boolean = false
+    ) {
+        Log.d("uploadVideoComment", "uploadVideoComment: $videoFilePathToUpload")
+
+        val file = File(videoFilePathToUpload)
+
+        val localUpdateId = generateRandomId()
+
+        if (file.exists()) {
+            if (isReply) {
+                shotPostViewModel.addCommentReply(
+                    commentId,
+                    content = caption,
+                    contentType = "video",
+                    localUpdateId = localUpdateId,
+                    file = file,
+                    isReply = isReply1
+                )
+                isReply = false
+            } else {
+                shotPostViewModel.addComment(
+                    postId,
+                    content = caption,
+                    contentType = "video",
+                    localUpdateId = localUpdateId,
+                    file = file
+                )
+            }
+        }
+
+    }
+
+    private fun uploadDocumentComment(
+        documentFilePathToUpload: String,
+        caption: String,
+        numberOfPages: Int,
+        fileSize: String,
+        fileType: String,
+        fileName: String,
+        isReply1: Boolean
+    ) {
+
+        val file = File(documentFilePathToUpload)
+
+        val localUpdateId = generateRandomId()
+        Log.d("UploadingDocument", "File exist: ${file.exists()}")
+        if (file.exists()) {
+            Log.d("UploadingDocument", "Upload document called")
+
+            if (isReply) {
+                shotPostViewModel.addCommentReply(
+                    commentId,
+                    content = caption,
+                    file = file,
+                    contentType = "docs",
+                    localUpdateId = localUpdateId,
+                    numberOfPages = numberOfPages,
+                    fileType = fileType,
+                    fileName = fileName,
+                    fileSize = fileSize,
+                    isReply = isReply1
+                )
+
+                isReply = false
+            } else {
+                shotPostViewModel.addComment(
+                    postId,
+                    content = caption,
+                    file = file,
+                    contentType = "docs",
+                    localUpdateId = localUpdateId,
+                    numberOfPages = numberOfPages,
+                    fileType = fileType,
+                    fileName = fileName,
+                    fileSize = fileSize
                 )
             }
 
-            if (update) {
-                Log.d("uploadVideoComment", "updatePosition: $updatePosition")
-                updateAdapter(comment, updatePosition)
-                updatePosition = -1
+        }
+
+    }
+
+    private fun uploadAudioComment(
+        audio: String,
+        caption: String = "",
+        contentType: String = "audio",
+        isReply1: Boolean,
+        fileType: String
+    ) {
+        val localUpdateId = generateRandomId()
+        val file = File(audio)
+
+        if (file.exists()) {
+            if (isReply) {
+                shotPostViewModel.addCommentReply(
+                    commentId,
+                    content = caption,
+                    file = file,
+                    contentType = contentType,
+                    localUpdateId = localUpdateId,
+                    isReply = isReply1,
+                    fileType = fileType
+                )
+
+                isReply = false
+            } else {
+                shotPostViewModel.addComment(
+                    postId,
+                    content = caption,
+                    file = file,
+                    contentType = contentType,
+                    localUpdateId = localUpdateId,
+                    fileType = fileType
+                )
             }
 
-            Log.d("uploadImageComment", "uploadImageComment: comment $comment")
-            recordedAudioFiles.clear()
-            if (!update) {
-                listOfReplies.add(comment)
-
-                adapter!!.submitItem(comment, adapter!!.itemCount)
-
-                shortToComment = shortsViewModel.mutableShortsList.find { it._id == postId }
+        }
+    }
 
 
-                if (shortToComment != null) {
-                    shortToComment!!.comments += 1
-                    Log.d(
-                        "uploadImageComment",
-                        "uploadImageComment: count before ${shortToComment!!.comments}"
-                    )
-                    // Update the count in the mutableShortsList
-                    // Update the count in the mutableShortsList
-                    shortsViewModel.mutableShortsList.forEach { short ->
-                        if (short._id == postId) {
-                            short.comments = shortToComment!!.comments
-                        }
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    @SuppressLint("SetTextI18n")
+    private fun handleActionEvents() {
+
+
+        binding.click.setOnClickListener {
+            hideKeyboard(binding.input.inputEditText)
+            toggleCommentBottomSheet()
+        }
+
+        binding.deleteVN.setOnClickListener {
+
+            if (mediaRecorder != null) {
+                Log.d(TAG, "onCreate: media recorder not null")
+            } else {
+                Log.d(TAG, "onCreate: media recorder null")
+            }
+            lifecycleScope.launch(Dispatchers.Main) {
+                delay(500)
+                deleteRecording()
+                binding.sendVN.isClickable = true
+            }
+            if (player?.isPlaying == true) {
+                stopPlayingVn()
+            }
+
+            binding.VnLayout.visibility = View.GONE
+        }
+
+        binding.sendVN.setOnClickListener {
+            sending = true
+            CoroutineScope(Dispatchers.Main).launch {
+                if (!wasPaused) {
+                    timer.stop()
+                    mediaRecorder?.apply {
+                        stop()
+                        release()
                     }
-                    val newShortToComment =
-                        shortsViewModel.mutableShortsList.find { it._id == postId }
-                    Log.d(
-                        "uploadImageComment",
-                        "onSubmit: count after ${newShortToComment!!.comments}"
-                    )
+                    mediaRecorder = null
+                    Log.d("SendVN", "When sending vn was paused was false")
+                    mixVN() // Execute mixVN asynchronously
+                }
 
-                    EventBus.getDefault().post(ShortAdapterNotifyDatasetChanged())
+                lifecycleScope.launch(Dispatchers.Main) {
+                    delay(500)
+                    stopRecordingAndSendVn()
+                }
+
+            }
+        }
+
+        binding.recordVN.setOnClickListener {
+            when {
+                isPaused -> resumeRecordingVn()
+                isRecording -> pauseRecordingVn()
+                else -> {
+                    if (ContextCompat.checkSelfPermission(
+                            this,
+                            Manifest.permission.RECORD_AUDIO
+                        ) == PackageManager.PERMISSION_GRANTED
+                    ) {
+                        startRecordingVn()
+                    } else {
+                        requestPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                    }
+
                 }
             }
-        } else {
-            Log.e(TAG, "File does not exist")
         }
+
+        onGoBack()
+    }
+
+    private fun hideKeyboard(view: View) {
+        val imm = inputMethodManager
+        imm.hideSoftInputFromWindow(view.windowToken, 0)
+    }
+
+
+    private fun setupStatusBar() {
+        window.apply {
+            // Set status bar color to black (API 21+)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                statusBarColor = Color.BLACK
+            }
+
+            // Set status bar icons to light/white color for visibility on black background
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                // API 23+ - Ensure icons are white (light) on black background
+                @Suppress("DEPRECATION")
+                var flags = decorView.systemUiVisibility
+                // Remove the LIGHT_STATUS_BAR flag to make icons white
+                flags = flags and View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR.inv()
+                decorView.systemUiVisibility = flags
+            }
+            // For API < 23, status bar icons are always white by default
+        }
+    }
+
+    private fun extractIntentExtras() {
+        postId = intent.getStringExtra("post_id") ?: ""
+        targetCommentId = intent.getStringExtra("comment_id") ?: ""
+        showComments = intent.getBooleanExtra("showComments", false)
+    }
+
+    private fun setupViews() {
+        // Initialize video player
+        videoPlayerManager.initialize(binding.videoView)
+
+        // Set initial visibility
+        binding.progressBar.isVisible = true
+        binding.btnPlayPause.isVisible = false
+        binding.videoLayout.isVisible = false
+
+        inputMethodManager = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
+
+        timer = Timer(this)
+        audioDurationTVCount = TextView(this)
+        audioFormWave = WaveformSeekBar(this)
+        audioSeekBar = SeekBar(this)
+
+
+        // Setup SeekBar
+        binding.bottomShortsVideoProgressSeekBar.setOnSeekBarChangeListener(object :
+            SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(
+                seekBar: SeekBar?,
+                progress: Int,
+                fromUser: Boolean
+            ) {
+                if (fromUser) {
+                    videoPlayerManager.seekTo(progress.toLong())
+                }
+            }
+
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {}
+        })
+    }
+
+    private fun setupClickListeners() {
+        // Play/Pause functionality
+        binding.shortsViewPager.setOnClickListener {
+            togglePlayPause()
+        }
+
+        binding.videoView.setOnClickListener {
+            togglePlayPause()
+        }
+
+        // Like button
+        binding.btnLike.setOnClickListener {
+            toggleLike()
+        }
+
+        // Comments
+        binding.commentsParentLayout.setOnClickListener {
+            openComments()
+        }
+
+        // Favorite/Bookmark
+        binding.favorite.setOnClickListener {
+            toggleFavorite()
+        }
+
+        // Share button
+        binding.shareBtn.setOnClickListener {
+            sharePost()
+        }
+
+        // Download button
+        binding.downloadBtn.setOnClickListener {
+            downloadVideo()
+        }
+
+        // Profile image click
+        binding.profileImageForShort.setOnClickListener {
+            openUserProfile()
+        }
+
+        // Username click
+        binding.shortUsername.setOnClickListener {
+            openUserProfile()
+        }
+
+        // Follow button
+        binding.followButton.setOnClickListener {
+            toggleFollow()
+        }
+
+        // Read more/less caption
+        binding.tvReadMoreLess.setOnClickListener {
+            toggleCaptionExpansion()
+        }
+    }
+
+    private fun loadPostData() {
+
+        binding.progressBar.isVisible = true
+
+        lifecycleScope.launch {
+            try {
+
+                val response = shotPostViewModel.getShotPost(postId)
+                if (response != null) {
+                    binding.progressBar.isVisible = false
+                    binding.videoLayout.isVisible = true
+                    val shot = response
+                    updateUI(shot)
+                    Log.d("ShotDetails", "Details: $response")
+                } else {
+                    binding.progressBar.isVisible = false
+                    binding.showError.isVisible = true
+                    Log.d("ShotDetails", "Details: $response")
+                }
+
+            } catch (e: Exception) {
+                binding.progressBar.isVisible = false
+                binding.showError.isVisible = true
+            }
+        }
+    }
+
+    private fun updateUI(post: Data) {
+        currentPost = post
+
+        binding.followButton.isVisible = post.author.owner != localStorage.getUserId()
+
+        // Update username
+        binding.shortUsername.text = post.author.account.username
+
+        // Update caption
+        binding.tvReadMoreLess.text = post.content
+
+        // Update counts
+        binding.likeCount.text = formatCount(post.likes)
+        binding.commentsCount.text = formatCount(post.comments)
+        binding.favoriteCounts.text = formatCount(post.bookmarks)
+//        binding.shareCount.text = formatCount(post.shareCount)
+//        binding.downloadCounts.text = formatCount(post.downloadCount)
+
+        // Update states
+        isLiked = post.isLiked
+        isFavorited = post.isBookmarked
+        isFollowing = post.isFollowing
+
+        updateLikeButton()
+        updateFavoriteButton()
+        updateFollowButton()
+
+        // Load profile image
+        Glide.with(this)
+            .load(post.author.account.avatar.url)
+            .placeholder(R.drawable.baseline_person_outline_24)
+            .circleCrop()
+            .into(binding.profileImageForShort)
+
+        // Load video thumbnail
+        Glide.with(this)
+            .load(post.thumbnail.first().thumbnailUrl)
+            .into(binding.videoThumbnail)
+
+        // Load and play video
+        loadVideo(post.images.first().url)
+        observeViewModel(currentPost!!)
+    }
+
+    private fun loadVideo(videoUrl: String) {
+        videoPlayerManager.loadVideo(
+            url = videoUrl,
+            onReady = {
+                binding.progressBar.isVisible = false
+                binding.videoThumbnail.isVisible = false
+                startVideoPlayback()
+            },
+            onError = { error ->
+                binding.progressBar.isVisible = false
+                showError("Video loading failed: $error")
+            }
+        )
+    }
+
+    private fun startVideoPlayback() {
+        videoPlayerManager.play()
+        isPlaying = true
+        updatePlayPauseButton()
+
+        // Start updating seek bar
+        updateSeekBar()
+    }
+
+    private fun updateSeekBar() {
+        lifecycleScope.launch {
+            while (isPlaying) {
+                val progress = videoPlayerManager.getCurrentProgress()
+                binding.bottomShortsVideoProgressSeekBar.progress = progress
+                kotlinx.coroutines.delay(100)
+            }
+        }
+    }
+
+    private fun togglePlayPause() {
+        if (isPlaying) {
+            videoPlayerManager.pause()
+            isPlaying = false
+            binding.btnPlayPause.isVisible = false
+        } else {
+            videoPlayerManager.play()
+            isPlaying = true
+            binding.btnPlayPause.isVisible = false
+            updateSeekBar()
+        }
+        updatePlayPauseButton()
+    }
+
+    private fun updatePlayPauseButton() {
+        binding.btnPlayPause.setImageResource(
+            if (isPlaying) R.drawable.baseline_pause_black
+            else R.drawable.baseline_play_black // You'll need to add this drawable
+        )
+    }
+
+    private fun toggleLike() {
+        isLiked = !isLiked
+        updateLikeButton()
+
+        lifecycleScope.launch {
+            try {
+
+                EventBus.getDefault().post(ShortsLikeUnLike(postId))
+
+                val currentCount = binding.likeCount.text.toString().toIntOrNull() ?: 0
+                binding.likeCount.text = formatCount(currentCount + if (isLiked) 1 else -1)
+
+            } catch (e: Exception) {
+                // Revert on error
+                isLiked = !isLiked
+                updateLikeButton()
+                showError("Failed to update like")
+            }
+        }
+    }
+
+    private fun updateLikeButton() {
+        if (isLiked) {
+            binding.btnLike.setImageResource(R.drawable.filled_favorite_like) // You'll need this
+            binding.btnLike.tag = "filled"
+        } else {
+            binding.btnLike.setImageResource(R.drawable.favorite_svgrepo_com)
+            binding.btnLike.tag = "unfilled"
+        }
+    }
+
+    private fun toggleFavorite() {
+        isFavorited = !isFavorited
+        updateFavoriteButton()
+
+        lifecycleScope.launch {
+            try {
+                EventBus.getDefault().post(ShortsFavoriteUnFavorite(postId))
+                val currentCount = binding.favoriteCounts.text.toString().toIntOrNull() ?: 0
+                binding.favoriteCounts.text = formatCount(currentCount + if (isFavorited) 1 else -1)
+            } catch (e: Exception) {
+                isFavorited = !isFavorited
+                updateFavoriteButton()
+                showError("Failed to update favorite")
+            }
+        }
+    }
+
+    private fun updateFavoriteButton() {
+        if (isFavorited) {
+            binding.favorite.setImageResource(R.drawable.filled_favorite) // Add this
+            binding.favorite.tag = "filled"
+        } else {
+            binding.favorite.setImageResource(R.drawable.favorite_svgrepo_com__1_)
+            binding.favorite.tag = "unfilled"
+        }
+    }
+
+    private fun toggleFollow() {
+        isFollowing = !isFollowing
+        updateFollowButton()
+        binding.followButton.isEnabled = false
+
+        lifecycleScope.launch {
+            try {
+                val response =
+                    retrofitInstance.apiService.followUnFollow(currentPost!!.author.owner)
+                if (response.isSuccessful) {
+                    binding.followButton.isEnabled = true
+                } else {
+                    isFollowing = !isFollowing
+                    updateFollowButton()
+                    showError("Failed to update follow status")
+                }
+
+            } catch (e: Exception) {
+                isFollowing = !isFollowing
+                updateFollowButton()
+                showError("Failed to update follow status")
+            }
+        }
+    }
+
+    private fun updateFollowButton() {
+        if (isFollowing) {
+            binding.followButton.text =
+                resources.getString(com.uyscuti.social.business.R.string.following)
+            binding.followButton.setBackgroundResource(R.drawable.shorts_following_button)
+        } else {
+            binding.followButton.text =
+                resources.getString(com.uyscuti.social.business.R.string.follow)
+            binding.followButton.setBackgroundResource(R.drawable.shorts_follow_button_border)
+        }
+    }
+
+    private fun initCommentAdapter() {
+        commentAdapter = CommentsRecyclerViewAdapter(this, this)
+        commentAdapter?.setDefaultRecyclerView(this, R.id.recyclerView)
+
+        commentRecyclerView = binding.recyclerView
+
+        commentRecyclerView.itemAnimator = null
+    }
+
+    private fun toggleCommentBottomSheet() {
+        val currentVisibility = binding.motionLayout.visibility
+
+        if (currentVisibility == View.VISIBLE) {
+            binding.motionLayout.visibility = View.GONE
+            binding.VnLayout.visibility = View.GONE
+
+            binding.replyToLayout.visibility = View.GONE
+            binding.input.inputEditText.setText("")
+            binding.placeholderLayout.visibility = View.GONE
+
+            deleteRecording()
+            stopPlayingVn()
+            commentAudioStop()
+            stopWaveRunnable()
+            stopRecordWaveRunnable()
+            exoPlayer?.release()
+
+        } else {
+            binding.motionLayout.visibility = View.VISIBLE
+            binding.motionLayout.transitionToStart()
+        }
+
+    }
+
+    private fun setCommentAdapterPagination() {
+        commentAdapter!!.setOnPaginationListener(object : AdPaginatedAdapter.OnPaginationListener {
+
+            override fun onCurrentPage(page: Int) {
+                Log.d(TAG, "currentPage: page number $page")
+            }
+
+            override fun onNextPage(page: Int) {
+                lifecycleScope.launch(Dispatchers.Main) {
+                    Log.d(TAG, "onNextPage: page number $page")
+                    getShotsComments(page)
+                }
+            }
+
+            override fun onFinish() {
+                Log.d(TAG, "finished: page number")
+            }
+        })
+    }
+
+    private fun getShotsComments(page: Int) {
+
+        lifecycleScope.launch(Dispatchers.IO) {
+
+            withContext(Dispatchers.Main) {
+                if (page == 1) {
+                    showShimmer()
+                } else {
+                    showProgressBar()
+                }
+            }
+
+            try {
+
+                val commentsWithReplies = loadComment(page)
+                withContext(Dispatchers.Main) {
+
+                    if (page == 1) {
+                        hideShimmer()
+                    } else {
+                        hideProgressBar()
+                    }
+
+                    commentAdapter!!.submitItems(commentsWithReplies)
+                    if (commentsWithReplies.isEmpty()) {
+                        updateUI(true)
+                    } else {
+                        updateUI(false)
+                    }
+                }
+
+            } catch (e: Exception) {
+                lifecycleScope.launch {
+
+                    if (page == 1) {
+                        hideShimmer()
+                    } else {
+                        hideProgressBar()
+                    }
+                }
+                e.printStackTrace()
+            }
+
+        }
+
+    }
+
+    private suspend fun loadComment(page: Int): List<Comment> {
+        val response = shotPostViewModel.getShotPostComments(postId, page)
+        Log.d(TAG, "Comments: $response")
+        return response
+    }
+
+    private fun loadInitialComments() {
+        lifecycleScope.launch(Dispatchers.Main) {
+            getShotsComments(commentAdapter!!.startPage)
+        }
+    }
+
+    private fun showProgressBar() {
+        binding.progressBar.visibility = View.VISIBLE
+    }
+
+    private fun hideProgressBar() {
+        binding.progressBar.visibility = View.GONE
+    }
+
+
+    private fun updateUI(dataEmpty: Boolean) {
+        if (dataEmpty) {
+            commentRecyclerView.visibility = View.GONE
+            binding.placeholderLayout.visibility = View.VISIBLE
+        } else {
+            binding.placeholderLayout.visibility = View.GONE
+            commentRecyclerView.visibility = View.VISIBLE
+        }
+    }
+
+    private fun showShimmer() {
+        binding.shimmerLayout.startShimmerAnimation()
+        binding.shimmerLayout.visibility = View.VISIBLE
+    }
+
+    private fun hideShimmer() {
+        binding.shimmerLayout.stopShimmerAnimation()
+        binding.shimmerLayout.visibility = View.GONE
+    }
+
+    private fun openComments() {
+        initCommentAdapter()
+        toggleCommentBottomSheet()
+        setCommentAdapterPagination()
+        loadInitialComments()
+    }
+
+    private fun sharePost() {
+        val bottomSheetDialog = BottomSheetDialog(this)
+        val shareBinding = BottomDialogForShareBinding.inflate(layoutInflater)
+        bottomSheetDialog.setContentView(shareBinding.root)
+
+        // Prepare share content
+        val shareText = "Check out this video on Flash!\n" +
+                "By: ${currentPost!!.author.account.username}\n" +
+                "${currentPost!!.content}"
+        val videoUrl = currentPost!!.images.firstOrNull()?.url
+        val fullShareText = if (videoUrl != null) "$shareText\n$videoUrl" else shareText
+
+        // Setup share buttons
+        shareBinding.btnWhatsApp.setOnClickListener {
+            shareToWhatsApp(this, fullShareText)
+            bottomSheetDialog.dismiss()
+        }
+
+        shareBinding.btnSMS.setOnClickListener {
+            shareViaSMS(this, fullShareText)
+            bottomSheetDialog.dismiss()
+        }
+
+        shareBinding.btnInstagram.setOnClickListener {
+            shareToInstagram(this, fullShareText)
+            bottomSheetDialog.dismiss()
+        }
+
+        shareBinding.btnMessenger.setOnClickListener {
+            shareToMessenger(this, fullShareText)
+            bottomSheetDialog.dismiss()
+        }
+
+        shareBinding.btnFacebook.setOnClickListener {
+            shareToFacebook(this, fullShareText)
+            bottomSheetDialog.dismiss()
+        }
+
+        shareBinding.btnTelegram.setOnClickListener {
+            shareToTelegram(this, fullShareText)
+            bottomSheetDialog.dismiss()
+        }
+
+        // Setup action buttons
+        shareBinding.btnReport.setOnClickListener {
+            Toast.makeText(this, "Report functionality", Toast.LENGTH_SHORT).show()
+            bottomSheetDialog.dismiss()
+        }
+
+        shareBinding.btnNotInterested.setOnClickListener {
+            Toast.makeText(this, "Not interested", Toast.LENGTH_SHORT).show()
+            bottomSheetDialog.dismiss()
+        }
+
+        shareBinding.btnSaveVideo.setOnClickListener {
+            Toast.makeText(this, "Save video functionality", Toast.LENGTH_SHORT).show()
+            bottomSheetDialog.dismiss()
+        }
+
+        shareBinding.btnDuet.setOnClickListener {
+            Toast.makeText(this, "Duet functionality", Toast.LENGTH_SHORT).show()
+            bottomSheetDialog.dismiss()
+        }
+
+        shareBinding.btnReact.setOnClickListener {
+            Toast.makeText(this, "React functionality", Toast.LENGTH_SHORT).show()
+            bottomSheetDialog.dismiss()
+        }
+
+        shareBinding.btnAddToFavorites.setOnClickListener {
+            Toast.makeText(this, "Add to favorites", Toast.LENGTH_SHORT).show()
+            bottomSheetDialog.dismiss()
+        }
+
+        // Setup cancel button
+        shareBinding.btnCancel.setOnClickListener {
+            bottomSheetDialog.dismiss()
+        }
+
+        bottomSheetDialog.show()
+    }
+
+    private fun shareToWhatsApp(context: Context, text: String) {
+        val packages = listOf(
+            "com.whatsapp",
+            "com.whatsapp.w4b"  // WhatsApp Business
+        )
+        shareToApp(context, text, packages, "WhatsApp")
+    }
+
+    private fun shareViaSMS(context: Context, text: String) {
+        try {
+            val intent = Intent(Intent.ACTION_SENDTO).apply {
+                data = "smsto:".toUri()
+                putExtra("sms_body", text)
+            }
+            context.startActivity(intent)
+        } catch (e: Exception) {
+            Toast.makeText(context, "SMS app not available", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun shareToInstagram(context: Context, text: String) {
+        val packages = listOf(
+            "com.instagram.android"
+        )
+        shareToApp(context, text, packages, "Instagram")
+    }
+
+    private fun shareToFacebook(context: Context, text: String) {
+        val packages = listOf(
+            "com.facebook.katana",
+            "com.facebook.lite"
+        )
+        shareToApp(context, text, packages, "Facebook")
+    }
+
+    private fun shareToMessenger(context: Context, text: String) {
+        try {
+            // Try Messenger URI scheme first
+            val messengerIntent = Intent(Intent.ACTION_VIEW).apply {
+                data = Uri.parse("fb-messenger://share/?link=${Uri.encode(text)}")
+            }
+
+            if (messengerIntent.resolveActivity(context.packageManager) != null) {
+                context.startActivity(messengerIntent)
+                return
+            }
+
+            // Fallback to standard share with specific package
+            val packages = listOf("com.facebook.orca", "com.facebook.mlite")
+            for (packageName in packages) {
+                try {
+                    val intent = Intent(Intent.ACTION_SEND).apply {
+                        type = "text/plain"
+                        setPackage(packageName)
+                        putExtra(Intent.EXTRA_TEXT, text)
+                    }
+
+                    if (intent.resolveActivity(context.packageManager) != null) {
+                        context.startActivity(intent)
+                        return
+                    }
+                } catch (e: Exception) {
+                    continue
+                }
+            }
+
+            Toast.makeText(context, "Messenger not installed", Toast.LENGTH_SHORT).show()
+        } catch (e: Exception) {
+            Log.e(TAG, "Messenger share error", e)
+            Toast.makeText(context, "Messenger not available", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun shareToTelegram(context: Context, text: String) {
+        try {
+            // Try Telegram URI scheme first
+            val telegramIntent = Intent(Intent.ACTION_VIEW).apply {
+                data = Uri.parse("tg://msg?text=${Uri.encode(text)}")
+            }
+
+            if (telegramIntent.resolveActivity(context.packageManager) != null) {
+                context.startActivity(telegramIntent)
+                return
+            }
+
+            // Fallback to web share URL
+            val webIntent = Intent(Intent.ACTION_VIEW).apply {
+                data = Uri.parse("https://t.me/share/url?url=${Uri.encode(text)}")
+            }
+
+            if (webIntent.resolveActivity(context.packageManager) != null) {
+                context.startActivity(webIntent)
+                return
+            }
+
+            // Last fallback - standard share with specific packages
+            val packages = listOf(
+                "org.telegram.messenger",
+                "org.telegram.messenger.web",
+                "org.thunderdog.challegram"
+            )
+
+            for (packageName in packages) {
+                try {
+                    val intent = Intent(Intent.ACTION_SEND).apply {
+                        type = "text/plain"
+                        setPackage(packageName)
+                        putExtra(Intent.EXTRA_TEXT, text)
+                    }
+
+                    if (intent.resolveActivity(context.packageManager) != null) {
+                        context.startActivity(intent)
+                        return
+                    }
+                } catch (e: Exception) {
+                    continue
+                }
+            }
+
+            Toast.makeText(context, "Telegram not installed", Toast.LENGTH_SHORT).show()
+        } catch (e: Exception) {
+            Log.e(TAG, "Telegram share error", e)
+            Toast.makeText(context, "Telegram not available", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun shareToApp(
+        context: Context,
+        text: String,
+        packages: List<String>,
+        appName: String
+    ) {
+        try {
+            for (packageName in packages) {
+                val intent = Intent(Intent.ACTION_SEND).apply {
+                    type = "text/plain"
+                    setPackage(packageName)
+                    putExtra(Intent.EXTRA_TEXT, text)
+                }
+
+                if (intent.resolveActivity(context.packageManager) != null) {
+                    context.startActivity(intent)
+                    return
+                }
+            }
+
+            // If none of the specific packages work, show toast
+            Toast.makeText(context, "$appName not installed", Toast.LENGTH_SHORT).show()
+        } catch (e: Exception) {
+            Toast.makeText(context, "$appName not available", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    @OptIn(UnstableApi::class)
+    private fun openUserProfile() {
+        val otherUsersProfile = OtherUsersProfile(
+            currentPost!!.author.account.username, currentPost!!.author.account.username,
+            currentPost!!.author.account.avatar.url, currentPost!!.author.owner
+        )
+
+        OtherUserProfileAccount.open(
+            this,
+            otherUsersProfile,
+            currentPost!!.author.account.avatar.url,
+            currentPost!!.author.owner
+        )
+    }
+
+    private fun toggleCaptionExpansion() {
+        // TODO: Implement expand/collapse caption functionality
+        // You can use a custom TextView or library for this
+    }
+
+    private fun formatCount(count: Int): String {
+        return when {
+            count >= 1_000_000 -> String.format("%.1fM", count / 1_000_000.0)
+            count >= 1_000 -> String.format("%.1fK", count / 1_000.0)
+            else -> count.toString()
+        }
+    }
+
+    private fun showError(message: String) {
+        Snackbar.make(binding.root, message, Snackbar.LENGTH_LONG).show()
+    }
+
+    private fun showSuccess(message: String) {
+        Snackbar.make(binding.root, message, Snackbar.LENGTH_SHORT).show()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        videoPlayerManager.pause()
+        isPlaying = false
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (!isPlaying) {
+            videoPlayerManager.play()
+            isPlaying = true
+            updateSeekBar()
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        videoPlayerManager.release()
+        EventBus.getDefault().unregister(this)
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    fun likeUnlikeShot(event: ShortsLikeUnLike) {
+        val TAG = "likeUnLikeShort"
+
+        Log.d(TAG, "likeUnlikeShot ${event.postId}")
+
+        lifecycleScope.launch {
+            try {
+                if (NetworkUtil.isConnected(this@PostDetailsActivity2)) {
+                    val response = retrofitInstance.apiService.likeUnLikeShort(event.postId)
+                    if (response.isSuccessful) {
+                        Log.d(TAG, "Shot like successfully")
+                    } else {
+                        Log.d(TAG, "Error: ${response.message()}")
+                    }
+                } else {
+                    showToast(this@PostDetailsActivity2, "Failed to connect try again...")
+                }
+            } catch (e: HttpException) {
+                Log.d(TAG, "Http Exception ${e.message}")
+            } catch (e: IOException) {
+                Log.d(TAG, "IOException ${e.message}")
+            }
+        }
+
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    fun favoriteUnFavoriteShort(event: ShortsFavoriteUnFavorite) {
+        var TAG = "favoriteUnFavoriteShort"
+
+        lifecycleScope.launch {
+            try {
+                if (NetworkUtil.isConnected(this@PostDetailsActivity2)) {
+                    val response = retrofitInstance.apiService.favoriteShort(event.postId)
+                    if (response.isSuccessful) {
+                        Log.d(TAG, "Shot has been bookmarked")
+                    } else {
+                        Log.d(TAG, "Error: ${response.message()}")
+                    }
+                } else {
+                    showToast(this@PostDetailsActivity2, "Failed to connect try again...")
+                }
+
+            } catch (e: HttpException) {
+                Log.d(TAG, "Http Exception ${e.message}")
+                runOnUiThread {
+                    showToast(this@PostDetailsActivity2, "Failed to connect try again...")
+                }
+            } catch (e: IOException) {
+                Log.d(TAG, "IOException ${e.message}")
+            }
+        }
+    }
+
+    private fun observeViewModel(post: Data) {
+
+        shotPostViewModel.commentLiveData.observe(this) { commentState ->
+
+            if (commentState.isReply) {
+                processReplyComments(commentState.comment)
+            } else {
+                commentAdapter!!.submitItem(commentState.comment, 0)
+                var commentCount = post.comments
+                ++commentCount
+                binding.commentsCount.text = commentCount.toString()
+                post.comments = commentCount
+                if (commentAdapter!!.itemCount == 1) {
+                    updateUI(false)
+                }
+            }
+        }
+    }
+
+    private fun processReplyComments(comment: Comment) {
+
+        if (comment.contentType == "text") {
+            val newReply = com.uyscuti.social.network.api.response.commentreply.allreplies.Comment(
+                __v = comment.__v,
+                _id = comment._id,
+                author = getReliesAuthor(),
+                content = comment.content!!,
+                contentType = comment.contentType,
+                createdAt = comment.createdAt,
+                isLiked = false,
+                likes = 0,
+                commentId = commentId,
+                updatedAt = comment.updatedAt,
+            )
+
+            commentToAddReplies?.replies?.add(0, newReply)
+
+        } else if (comment.contentType == "image") {
+            val newReply = com.uyscuti.social.network.api.response.commentreply.allreplies.Comment(
+                __v = comment.__v,
+                _id = comment._id,
+                author = getReliesAuthor(),
+                contentType = comment.contentType,
+                createdAt = comment.createdAt,
+                isLiked = false,
+                likes = 0,
+                commentId = commentId,
+                updatedAt = comment.updatedAt,
+                images = comment.images
+            )
+
+            commentToAddReplies?.replies?.add(0, newReply)
+
+        } else if (comment.contentType == "gif") {
+            val newReply = com.uyscuti.social.network.api.response.commentreply.allreplies.Comment(
+                __v = comment.__v,
+                _id = comment._id,
+                author = getReliesAuthor(),
+                contentType = comment.contentType,
+                createdAt = comment.createdAt,
+                isLiked = comment.isLiked,
+                likes = comment.likes,
+                commentId = commentId,
+                updatedAt = comment.updatedAt,
+                gifs = comment.gifs
+            )
+
+            commentToAddReplies?.replies?.add(0, newReply)
+
+        } else if (comment.contentType == "video") {
+            val newReply = com.uyscuti.social.network.api.response.commentreply.allreplies.Comment(
+                __v = comment.__v,
+                _id = comment._id,
+                author = getReliesAuthor(),
+                contentType = comment.contentType,
+                createdAt = comment.createdAt,
+                isLiked = comment.isLiked,
+                likes = comment.likes,
+                commentId = commentId,
+                updatedAt = comment.updatedAt,
+                duration = comment.duration,
+                videos = comment.videos
+            )
+
+            commentToAddReplies?.replies?.add(0, newReply)
+        } else if (comment.contentType == "audio") {
+            val newReply = com.uyscuti.social.network.api.response.commentreply.allreplies.Comment(
+                __v = comment.__v,
+                _id = comment._id,
+                author = getReliesAuthor(),
+                contentType = comment.contentType,
+                createdAt = comment.createdAt,
+                isLiked = comment.isLiked,
+                likes = comment.likes,
+                commentId = commentId,
+                updatedAt = comment.updatedAt,
+                duration = comment.duration,
+                audios = comment.audios,
+                fileSize = comment.fileSize,
+                fileType = comment.fileType,
+                fileName = comment.fileName
+            )
+
+            commentToAddReplies?.replies?.add(0, newReply)
+        } else if (comment.contentType == "docs") {
+            val newReply = com.uyscuti.social.network.api.response.commentreply.allreplies.Comment(
+                __v = comment.__v,
+                _id = comment._id,
+                author = getReliesAuthor(),
+                contentType = comment.contentType,
+                createdAt = comment.createdAt,
+                isLiked = comment.isLiked,
+                likes = comment.likes,
+                commentId = commentId,
+                updatedAt = comment.updatedAt,
+                docs = comment.docs,
+                fileSize = comment.fileSize,
+                fileType = comment.fileType,
+                fileName = comment.fileName,
+                numberOfPages = comment.numberOfPages
+            )
+
+            commentToAddReplies?.replies?.add(0, newReply)
+        }
+
+
+        val replyCount = commentToAddReplies?.replyCount?.plus(1)
+        commentToAddReplies?.replyCount = replyCount!!
+        commentAdapter?.updateItem(commentPosition, commentToAddReplies)
+    }
+
+    private fun getReliesAuthor(): com.uyscuti.social.network.api.response.commentreply.allreplies.Author {
+        val localSettings = getSharedPreferences("LocalSettings", MODE_PRIVATE)
+        val profilePic = localSettings.getString("profile_pic", "").toString()
+
+        val avatar = com.uyscuti.social.network.api.response.commentreply.allreplies.Avatar(
+            "", "", url = profilePic
+        )
+
+        val account = com.uyscuti.social.network.api.response.commentreply.allreplies.Account(
+            _id = "", avatar = avatar, "", LocalStorage.getInstance(this).getUsername()
+        )
+        val author =
+            com.uyscuti.social.network.api.response.commentreply.allreplies.Author(
+                _id = "21", account = account, firstName = "", lastName = ""
+            )
+
+        return author
+    }
+
+    private fun openImagePicker() {
+        val intent = Intent(this, ImagesActivity::class.java)
+        imagePickerLauncher.launch(intent)
+    }
+
+    private fun openDocPickerLauncher() {
+        val intent = Intent(this, DocumentsActivity::class.java)
+        docsPickerLauncher.launch(intent)
+    }
+
+    @SuppressLint("InflateParams")
+    private fun showAttachmentDialog() {
+        val dialog = BottomSheetDialog(this)
+
+        val view = LayoutInflater.from(this).inflate(
+            com.uyscuti.social.business.R.layout.file_upload_dialog,
+            null
+        )
+
+        val video = view.findViewById<LinearLayout>(com.uyscuti.social.business.R.id.upload_video)
+        val audio = view.findViewById<LinearLayout>(com.uyscuti.social.business.R.id.upload_audio)
+        val image = view.findViewById<LinearLayout>(com.uyscuti.social.business.R.id.upload_image)
+        val camera = view.findViewById<LinearLayout>(com.uyscuti.social.business.R.id.open_camera)
+        val doc = view.findViewById<LinearLayout>(com.uyscuti.social.business.R.id.upload_doc)
+        val location =
+            view.findViewById<LinearLayout>(com.uyscuti.social.business.R.id.share_location)
+
+        image!!.setOnClickListener {
+            openImagePicker()
+            dialog.dismiss()
+        }
+
+        video!!.setOnClickListener {
+            val intent = Intent(this, VideosActivity::class.java)
+            videoPickerLauncher.launch(intent)
+            dialog.dismiss()
+        }
+
+        audio!!.setOnClickListener {
+            val intent = Intent(this, AudioActivity::class.java)
+            audioPickerLauncher.launch(intent)
+            dialog.dismiss()
+        }
+
+        doc?.setOnClickListener {
+            openDocPickerLauncher()
+            dialog.dismiss()
+        }
+
+        camera!!.setOnClickListener {
+            val intent = Intent(this, CameraActivity::class.java)
+            cameraLauncher.launch(intent)
+            dialog.dismiss()
+        }
+
+        location?.visibility = View.INVISIBLE
+        dialog.setContentView(view)
+        dialog.show()
+
+    }
+
+    private fun updateRecordWaveProgress(progress: Float) {
+
+        CoroutineScope(Dispatchers.Main).launch {
+            binding.wave.progress = progress
+//            currentComment?.progress = progress
+            Log.d("updateWaveProgress", "updateWaveProgress: $progress")
+        }
+    }
+
+    private val onRecordWaveRunnable = object : Runnable {
+        override fun run() {
+            try {
+                if (!isOnRecordDurationOnPause) {
+                    val currentPosition = player?.currentPosition?.toFloat()!!
+                    updateRecordWaveProgress(currentPosition)
+                }
+                waveHandler.postDelayed(this, 20)
+            } catch (e: Exception) {
+                e.printStackTrace()
+                Log.d("Exception", "run: ${e.message}")
+            }
+
+        }
+    }
+
+    private val waveRunnable = object : Runnable {
+        override fun run() {
+//            Log.d("isDurationOnPause" , " in comment audio runnable isDurationOnPause is $isDurationOnPause")
+            if (!isDurationOnPause) {
+                val currentPosition = exoPlayer?.currentPosition?.toFloat()!!
+
+                Log.d("ExoPlayerPosition", "Current Position: $currentPosition")
+
+                waveProgress = currentPosition
+                if (isReplyVnPlaying) {
+                    commentAdapter!!.updateReplyWaveProgress(currentPosition, audioFormWave)
+                } else {
+                    commentAdapter!!.updateWaveProgress(currentPosition, wavePosition)
+                }
+                audioDurationTVCount.text = String.format(
+                    "%s",
+                    TrimVideoUtils.stringForTime(currentPosition)
+                )
+            }
+            waveHandler.postDelayed(this, 20)
+        }
+    }
+
+    private fun startWaveRunnable() {
+        try {
+            waveHandler.removeCallbacks(waveRunnable)
+            waveHandler.post(waveRunnable)
+            isDurationOnPause = false
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    private fun startRecordWaveRunnable() {
+        try {
+            waveHandler.removeCallbacks(onRecordWaveRunnable)
+            waveHandler.post(onRecordWaveRunnable)
+            isOnRecordDurationOnPause = false
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    private fun stopRecordWaveRunnable() {
+        try {
+            waveHandler.removeCallbacks(onRecordWaveRunnable)
+            isOnRecordDurationOnPause = true
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    private fun stopPlayingVn() {
+        binding.playVnAudioBtn.setImageResource(com.uyscuti.social.business.R.drawable.play_svgrepo_com)
+        player?.release()
+        player = null
+        isAudioVNPlaying = false
+        vnRecordAudioPlaying = false
+        isOnRecordDurationOnPause = false
+        stopRecordWaveRunnable()
+        binding.wave.progress = 0F
+        vnRecordProgress = 0
     }
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-    private fun resumeRecording() {
+    private fun resumeRecordingVn() {
         if (isPaused) {
             isVnResuming = true
-            startRecording() // Start a new recording session, appending to the previous file
+            startRecordingVn() // Start a new recording session, appending to the previous file
             binding.waveForm.visibility = View.VISIBLE
             binding.timerTv.visibility = View.VISIBLE
             binding.playAudioLayout.visibility = View.GONE
-            binding.playVnAudioBtn.setImageResource(R.drawable.play_svgrepo_com)
-            binding.recordVN.setImageResource(R.drawable.baseline_pause_black)
+            binding.playVnAudioBtn.setImageResource(com.uyscuti.social.business.R.drawable.play_svgrepo_com)
+            binding.recordVN.setImageResource(com.uyscuti.social.business.R.drawable.baseline_pause_black)
         }
+
     }
 
-    private fun stopRecording() {
-        val TAG = "StopRecording"
-        try {
+    @RequiresApi(Build.VERSION_CODES.R)
+    private fun pauseRecordingVn() {
+        val TAG = "pauseRecording"
+//        firstTimeSendVn = true
+        if (isRecording && !isPaused) {
 
-            if (mediaRecorder != null) {
+            try {
                 mediaRecorder?.apply {
                     stop()
                     release()
                 }
                 mediaRecorder = null
+            } catch (e: Exception) {
+                Log.d(TAG, " failed to stop media recorder: $e")
+                e.printStackTrace()
             }
-            isRecording = false
-            isPaused = false
 
-            binding.timerTv.text = "00:00.00"
-            binding.recordVN.setImageResource(com.uyscuti.social.call.R.drawable.ic_mic_on)
-            binding.sendVN.setBackgroundResource(R.drawable.ic_ripple_disabled)
-            binding.sendVN.isClickable = false
-            amplitudes = binding.waveForm.clear()
-            amps = 0
-            timer.stop()
-            if (player?.isPlaying == true) {
-                stopPlaying()
+            isPaused = true
+            timer.pause() // Pause the recording timer
+            binding.timerTv.visibility = View.INVISIBLE
+            binding.waveForm.visibility = View.GONE
+            binding.playAudioLayout.visibility = View.VISIBLE
+            binding.playVnAudioBtn.setImageResource(com.uyscuti.social.business.R.drawable.play_svgrepo_com)
+            binding.recordVN.setImageResource(com.uyscuti.social.business.R.drawable.mic_2)
+
+
+            Log.d(TAG, "pauseRecording: list of recordings  size: ${recordedAudioFiles.size}")
+            Log.d(TAG, "pauseRecording: list of recordings $recordedAudioFiles")
+
+            mixVN()
+        }
+    }
+
+    private fun startPlayingVn(vnAudio: String) {
+        binding.playVnAudioBtn.setImageResource(com.uyscuti.social.business.R.drawable.baseline_pause_white_24)
+        EventBus.getDefault().post(PauseShort(true))
+//        player?.reset()
+        isAudioVNPlaying = true
+        vnRecordAudioPlaying = true
+
+        isOnRecordDurationOnPause = false
+        startRecordWaveRunnable()
+        if (isAudioVNPaused) {
+//            progressAnim.resume()
+            Log.d("startPlaying", "(isAudioVNPaused)->vnRecordProgress $vnRecordProgress")
+
+            if (vnRecordProgress != 0) {
+                player?.seekTo(vnRecordProgress)
             }
-            binding.VNLayout.visibility = View.GONE
-            // Add any UI changes or notifications indicating recording has stopped
-            Log.d(TAG, "stopRecording: isReply is $isReply")
-            binding.replyToLayout.visibility = View.GONE
+            player?.start()
+        } else {
 
-            val file = File(outputVnFile)
-            val file2 = File(outputFile)
-            Log.d(TAG, "vn file exists outputVnFile: $outputVnFile")
-            Log.d(TAG, "vn file2 exists: $outputFile")
-            Log.d(TAG, "vn file exists: ${file.exists()}")
-            Log.d(TAG, "vn file2 exists: ${file2.exists()}")
-
-            if (!isReply) {
-                Log.d("firstTimeSendVn", "firstTimeSendVn: ${recordedAudioFiles.size}")
-
-                if (recordedAudioFiles.size != 1) {
-                    val durationString = getFormattedDuration(outputVnFile)
-                    val fileName = getFileNameFromLocalPath(outputVnFile)
-                    Log.d("AudioPicker", "File path: $outputVnFile")
-                    Log.d("AudioPicker", "File name: $fileName")
-                    Log.d("AudioPicker", "durationString: $durationString")
-                    uploadVnComment(outputVnFile, fileName, durationString, "vnAudio")
-
-                } else {
-                    val durationString = getFormattedDuration(outputFile)
-                    val fileName = getFileNameFromLocalPath(outputFile)
-                    Log.d("AudioPicker", "File path: $outputFile")
-                    Log.d("AudioPicker", "File name: $fileName")
-                    Log.d("AudioPicker", "durationString: $durationString")
-                    uploadVnComment(outputFile, fileName, durationString, "vnAudio")
-                }
-            } else {
-                Log.d("firstTimeSendVn", "firstTimeSendVn: ${recordedAudioFiles.size}")
-                if (recordedAudioFiles.size != 1) {
-                    val durationString = getFormattedDuration(outputVnFile)
-                    val reverseDurationString = reverseFormattedDuration(durationString)
-                    val fileName = getFileNameFromLocalPath(outputVnFile)
-                    Log.d("AudioPicker", "File path: $outputVnFile")
-                    Log.d("AudioPicker", "File name: $fileName")
-                    Log.d("AudioPicker", "durationString: $durationString")
-                    Log.d("AudioPicker", "reverseDurationString: $reverseDurationString")
-                    uploadReplyVnComment(outputVnFile, fileName, durationString, "vnAudio")
-
-                } else {
-                    val durationString = getFormattedDuration(outputFile)
-                    val fileName = getFileNameFromLocalPath(outputFile)
-                    Log.d("AudioPicker", "File path: $outputFile")
-                    Log.d("AudioPicker", "File name: $fileName")
-                    Log.d("AudioPicker", "durationString: $durationString")
-                    uploadReplyVnComment(outputFile, fileName, durationString, "vnAudio")
+            player = MediaPlayer().apply {
+                try {
+                    setDataSource(vnAudio)
+//                inputStream.close()
+                    prepare()
+                    Log.d("startPlaying", "vnRecordProgress $vnRecordProgress")
+                    if (vnRecordProgress != 0) {
+                        player?.seekTo(vnRecordProgress)
+                    }
+                    start()
+                    setOnCompletionListener {
+                        // Playback completed, restart playback
+                        isAudioVNPaused = false
+                        stopPlayingVn()
+                    }
+                } catch (e: IOException) {
+                    Log.e("MediaRecorder", "prepare() failed")
                 }
             }
 
-
-        } catch (e: Exception) {
-            e.printStackTrace()
-            // Handle exceptions as needed
         }
     }
 
-    private fun openFilePicker() {
-        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
-            addCategory(Intent.CATEGORY_OPENABLE)
-            type = "application/*"
+    private fun pauseVn(progress: Int) {
+        Log.d("pauseVn", "vnRecordProgress $vnRecordProgress..... progress $progress")
 
-        }
-        getDocumentContent.launch(intent)
+        player?.pause()
+        player?.seekTo(progress)
+        isAudioVNPlaying = false
+        isAudioVNPaused = true
+        isOnRecordDurationOnPause = true
+
+//        progressAnim.pause()
+        binding.playVnAudioBtn.setImageResource(com.uyscuti.social.business.R.drawable.play_svgrepo_com)
     }
 
-    private lateinit var settings: SharedPreferences
+    @SuppressLint("DefaultLocale")
+    private fun inflateWave(outputVN: String) {
 
-    @RequiresApi(Build.VERSION_CODES.O)
-    private fun uploadReplyVnComment(
-        vnToUpload: String,
-        fileName: String,
-        durationString: String,
-        fileType: String,
-        placeholder: Boolean = false, update: Boolean = false
-    ) {
+//        outputVnFile = outputVN
 
-        val localUpdateId = generateRandomId()
-        Log.d("uploadReplyVnComment", "uploadVnComment: $vnToUpload")
-        Log.d("uploadReplyVnComment", "stopRecording: isReply is $isReply")
+        val TAG = "inflateWave"
+        Log.d("playVnAudioBtn", "inflateWave: outputvn $outputVN")
 
+        binding.wave.visibility = View.VISIBLE
+        binding.playerTimerTv.visibility = View.VISIBLE
+        Log.d(TAG, "render: does not start with http")
+        //                audioDuration = 100L
+        val file = File(outputVN)
+        Log.d(TAG, "render: file $outputVN exists: ${file.exists()}")
+        val locaAudioDuration = AudioDurationHelper.getLocalAudioDuration(outputVN)
+        if (locaAudioDuration != null) {
+            // Duration is available, do something with it
+            //                    println("Audio duration: ${duration}ms")
+            val minutes = (locaAudioDuration / 1000) / 60
+            val seconds = (locaAudioDuration / 1000) % 60
+            //                println("Audio duration: $minutes minutes $seconds seconds")
+            binding.thirdTimerTv.text = String.format("%02d:%02d", minutes, seconds)
+        } else {
+            // File does not exist or error retrieving duration
+//            println("Unable to retrieve audio duration.")
+            Log.e(TAG, "render: failed to retrieve audio duration")
 
-        val profilePic2 = settings.getString("profile_pic", "").toString()
-        val avatar = com.uyscuti.social.network.api.response.commentreply.allreplies.Avatar(
-            "", "", url = profilePic2
-        )
-        val account = com.uyscuti.social.network.api.response.commentreply.allreplies.Account(
-            _id = "", avatar = avatar, "", LocalStorage.getInstance(this).getUsername()
-        )
-
-
-        val commentReplyAuthor = com.uyscuti.social.network.api.response.commentreply.allreplies.Author(
-            _id = "21", account = account, firstName = "", lastName = ""
-        )
-
-        Log.d(TAG, "onSubmit: handle reply to a comment")
-        isReply = false
-
-       //if it clash on upload un comment the line below//
-        if (!placeholder) {
-            val newCommentReplyEntity =
-                CommentsFilesEntity(
-                    postId, "audio", vnToUpload, isReply = 1, localUpdateId,
-                    fileName = fileName, fileType = fileType, duration = durationString,
-                    content = binding.input.inputEditText.text.toString()
-                )
-            commentFilesViewModel.insertCommentFile(newCommentReplyEntity)
-
-            Log.d(TAG, "onSubmit: inserted comment $newCommentReplyEntity")
         }
 
-        val mongoDbTimeStamp = generateMongoDBTimestamp()
-        val vnFile = CommentFiles(_id = "", url = vnToUpload, localPath = vnToUpload)
 
-        val newReply = com.uyscuti.social.network.api.response.commentreply.allreplies.Comment(
-            __v = data!!.__v,
-            _id = "commentId",
-            author = commentReplyAuthor,
-            content = binding.input.inputEditText.text.toString(),
-            createdAt = mongoDbTimeStamp,
-            isLiked = false,
-            likes = 0,
-            commentId = commentId,
-            updatedAt = mongoDbTimeStamp,
-            audios = mutableListOf(vnFile),
-            contentType = "audio",
-            fileType = fileType,
-            fileName = fileName,
-            duration = durationString
-        )
+        //                Log.d(TAG, "render: file $audioUrl can execute: ${file.canExecute()}")
 
-        val replyCount = data!!.replyCount + 1
-        val commentWithReplies = Comment(
-            __v = data!!.__v,
-            _id = data!!._id,
-            author = data!!.author,
+//        binding.wave.setSampleFrom(audioFile)
+        CoroutineScope(Dispatchers.IO).launch {
+            WaveFormExtractor.getSampleFrom(applicationContext, outputVN) {
 
-            content = data!!.content,
-            createdAt = data!!.createdAt,
-            isLiked = data!!.isLiked,
-            likes = data!!.likes,
-            postId = data!!.postId,
-            updatedAt = data!!.updatedAt,
-            replyCount = replyCount,
+                CoroutineScope(Dispatchers.Main).launch {
+//                    binding.wave.progress = 0F
+//                    binding.wave.progress = currentItem.progress
 
-            replies = data?.replies?.toMutableList()?.apply {
-                // Assuming newReply is the new reply you want to add
-                add(0, newReply)
-            } ?: mutableListOf(),
-            isRepliesVisible = true,
-            images = mutableListOf(),
-            audios = data?.audios ?: mutableListOf(),
-            docs = mutableListOf(),
-            gifs = data?.gifs ?: "",
-            thumbnail = mutableListOf(),
-            videos = mutableListOf(),
-            contentType = data?.contentType ?: "audio",
-            isPlaying = data?.isPlaying ?: false,
-            localUpdateId = localUpdateId,
-            replyCountVisible = false,
-            fileName = data!!.fileName,
-            fileType = data!!.fileType,
-            duration = data!!.duration,
-            progress = data?.progress ?: 0f,
-            isReplyPlaying = data?.isReplyPlaying ?: false,
-            fileSize = data?.fileSize ?: "",
-            numberOfPages = data?.numberOfPages ?: ""
-        )
+                    if (locaAudioDuration != null) {
+                        binding.wave.maxProgress = locaAudioDuration.toFloat()
+                    }
+                    binding.wave.setSampleFrom(it)
 
-        updateReplyPosition = position
-        if (update) {
-            isReply = false
-            Log.d("uploadVideoComment", "updatePosition: $updatePosition")
-            updateAdapter(commentWithReplies, updateReplyPosition)
-            updateReplyPosition = -1
-        }
+                    binding.wave.onProgressChanged = object : SeekBarOnProgressChanged {
+                        override fun onProgressChanged(
+                            waveformSeekBar: WaveformSeekBar,
+                            progress: Float,
+                            fromUser: Boolean
+                        ) {
+//                                    wave.progress = progress
+                            binding.secondTimerTv.text = String.format(
+                                "%s",
+                                TrimVideoUtils.stringForTime(progress)
+                            )
 
-        if (!update) {
-            listOfReplies.add(commentWithReplies)
-            Log.d(
-                TAG,
-                "onSubmit: comment id = data is? $commentId = ${data!!._id} on position $position"
-            )
-            Log.d(
-                TAG,
-                "onSubmit: comment id = data is? $commentId = ${data!!._id} on position $position"
-            )
-            updateAdapter(commentWithReplies, position)
-        }
+//                            currentItem.progress = progress
 
-        binding.input.inputEditText.setText("")
-        binding.replyToLayout.visibility = View.GONE
-    }
+                            if (fromUser) {
+                                if (vnRecordAudioPlaying) {
+                                    pauseVn(progress = progress.toInt())
+                                } else {
+                                    vnRecordProgress = progress.toInt()
+                                    Log.d("FromUser", "Scroll to this $progress")
+                                }
 
-    private var updateReplyPosition = -1
-    private fun uploadVnComment(
-        vnToUpload: String,
-        fileName: String,
-        durationString: String,
-        fileType: String,
-        placeholder: Boolean = false, update: Boolean = false
-    ) {
-        Log.d("uploadVnComment", "uploadVnComment: $vnToUpload")
-        Log.d("uploadVnComment", "stopRecording: isReply is $isReply")
-        Log.d("uploadVnComment", "stopRecording: duration is $durationString")
+                            }
+                        }
 
-        val mongoDbTimeStamp = generateMongoDBTimestamp()
+                        override fun onRelease(event: MotionEvent?, progress: Float) {
+                            if (outputVN.isNotEmpty()) {
+//                                inflateWave(outputVN)
+                                if (vnRecordAudioPlaying) {
+                                    Log.d(
+                                        "onRelease",
+                                        "vnRecordAudioPlaying $isAudioVNPlaying progress $progress"
+                                    )
+                                    vnRecordProgress = progress.toInt()
+                                    startPlayingVn(outputVN)
+                                } else {
+                                    Log.d("onRelease", "Start playing from this progress $progress")
+                                    vnRecordProgress = progress.toInt()
+                                }
 
-        val localUpdateId = generateRandomId()
-        val file = File(vnToUpload)
-
-        if (file.exists()) {
-            Log.d(TAG, "File exists, creating comment.......")
-            val profilePic2 = settings.getString("profile_pic", "").toString()
-            val avatar = Avatar("", "", url = profilePic2)
-            val account =
-                Account(_id = "", avatar = avatar, "", LocalStorage.getInstance(this).getUsername())
-            val author = Author(
-                _id = "12", account = account, firstName = "", lastName = "",
-                avatar = TODO()
-            )
-            val vnFile = CommentFiles(_id = "124", url = vnToUpload, localPath = vnToUpload)
-            val comment = Comment(
-                __v = 1,
-                _id = adapter!!.itemCount.toString(),
-                author = author,
-                content = "",
-                createdAt = mongoDbTimeStamp,
-                isLiked = false,
-                likes = 0,
-                postId = postId,
-                updatedAt = mongoDbTimeStamp,
-                replyCount = 0,
-                images = mutableListOf(),
-                audios = mutableListOf(vnFile),
-                docs = mutableListOf(),
-                gifs = "",
-                thumbnail = mutableListOf(),
-                videos = mutableListOf(),
-                contentType = "audio",
-                isPlaying = data?.isPlaying ?: false,
-                progress = data?.progress ?: 0f,
-                localUpdateId = localUpdateId,
-                fileName = fileName,
-                duration = durationString,
-                fileType = fileType
-            )
-
-            if (!placeholder) {
-                val newCommentEntity =
-                    CommentsFilesEntity(
-                        postId, "audio", vnToUpload, isReply = 0, localUpdateId,
-                        fileName = fileName, duration = durationString, fileType = fileType
-                    )
-                commentFilesViewModel.insertCommentFile(newCommentEntity)
-                Log.d(TAG, "uploadVnComment: inserted comment $newCommentEntity")
-            }
-            if (update) {
-                Log.d("uploadVideoComment", "updatePosition: $updatePosition")
-                updateAdapter(comment, updatePosition)
-                updatePosition = -1
-            }
-            Log.d(TAG, "uploadVnComment: comment $comment")
-            recordedAudioFiles.clear()
-
-            if (!update) {
-                listOfReplies.add(comment)
-                adapter!!.submitItem(comment, adapter!!.itemCount)
-
-                shortToComment = shortsViewModel.mutableShortsList.find { it._id == postId }
-                if (shortToComment != null) {
-                    Log.d(TAG, "uploadVnComment: count before ${shortToComment!!.comments}")
-
-                    shortToComment!!.comments += 1
-                    // Update the count in the mutableShortsList
-                    // Update the count in the mutableShortsList
-                    shortsViewModel.mutableShortsList.forEach { short ->
-                        if (short._id == postId) {
-                            short.comments = shortToComment!!.comments
+                            } else {
+                                Log.d("onRelease", "output vn is empty")
+                            }
                         }
                     }
-                    val newShortToComment =
-                        shortsViewModel.mutableShortsList.find { it._id == postId }
-                    Log.d(TAG, "onSubmit: count after ${newShortToComment!!.comments}")
-
-                    EventBus.getDefault().post(ShortAdapterNotifyDatasetChanged())
                 }
             }
-
-        } else {
-            Log.e(TAG, "File does not exist")
         }
-    }
 
-    private var updatePosition = -1
+    }
 
     private fun mixVN() {
         val TAG = "mixVN"
@@ -1752,12 +2724,12 @@ class PostDetailsActivity2 : AppCompatActivity(),
                             Log.d("playVnAudioBtn", "onEnd: play vn button clicked")
                             when {
                                 !isAudioVNPlaying -> {
-                                    binding.playVnAudioBtn.setImageResource(R.drawable.baseline_pause_black)
+                                    binding.playVnAudioBtn.setImageResource(com.uyscuti.social.business.R.drawable.baseline_pause_black)
                                     Log.d(
                                         "playVnAudioBtn",
                                         "play vn"
                                     )
-                                    startPlaying(outputVnFile)
+                                    startPlayingVn(outputVnFile)
                                 }
 
                                 else -> {
@@ -1765,7 +2737,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
                                         "playVnAudioBtn",
                                         "pause VN"
                                     )
-                                    binding.playVnAudioBtn.setImageResource(R.drawable.play_svgrepo_com)
+                                    binding.playVnAudioBtn.setImageResource(com.uyscuti.social.business.R.drawable.play_svgrepo_com)
                                     vnRecordAudioPlaying = true
                                     pauseVn(vnRecordProgress)
                                 }
@@ -1791,80 +2763,96 @@ class PostDetailsActivity2 : AppCompatActivity(),
         }
     }
 
+    private fun startRecordingVn() {
+
+        Log.d("StartRecording", "startRecoding vn called")
+        try {
+
+            if (player?.isPlaying == true) {
+                stopPlayingVn()
+            }
+
+            binding.playerTimerTv.visibility = View.GONE
+            outputFile = getOutputFilePath("rec")
+            outputVnFile = getOutputFilePath("mix")
+            wasPaused = false
+
+            mediaRecorder = MediaRecorder().apply {
+                setAudioSource(MediaRecorder.AudioSource.MIC)
+                setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
+                setOutputFile(outputFile)
+                setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
+
+//                setAudioSource(MediaRecorder.AudioSource.MIC)
+//                setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP)
+//                setOutputFile(outputFile)
+//                setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB)
+
+                prepare()
+                start()
+            }
+
+            isRecording = true
+            isPaused = false
+            isVnResuming = false
+            binding.recordVN.setImageResource(com.uyscuti.social.business.R.drawable.baseline_pause_white_24)
+            binding.sendVN.setBackgroundResource(com.uyscuti.social.business.R.drawable.ic_ripple)
+            binding.deleteVN.setBackgroundResource(com.uyscuti.social.business.R.drawable.ic_ripple)
+            timer.start()
+
+            binding.deleteVN.isClickable = true
+            binding.sendVN.isClickable = true
+            recordedAudioFiles.add(outputFile)
+
+            Log.d("VNFile", outputFile)
+
+        } catch (e: Exception) {
+            Log.d("VNFile", "Failed to record audio properly")
+            e.printStackTrace()
+        }
+    }
+
     private fun deleteRecording() {
+
         val TAG = "Recording"
+
         try {
             mediaRecorder?.apply {
                 stop()
                 release()
-
             }
             mediaRecorder = null
             isRecording = false
             isPaused = false
             isAudioVNPlaying = false
 
-//            binding.timerTv.text = "00:00.00"
-            binding.recordVN.setImageResource(R.drawable.baseline_pause_white_24)
-            binding.recordVN.setImageResource(com.uyscuti.social.call.R.drawable.ic_mic_on)
+            binding.timerTv.text = "00:00.00"
+            binding.secondTimerTv.visibility = View.GONE
+            binding.thirdTimerTv.visibility = View.GONE
+//            binding.recordVN.setImageResource(R.drawable.baseline_pause_24)
+            binding.recordVN.setImageResource(com.uyscuti.social.business.R.drawable.mic_2)
 
-            binding.deleteVN.setBackgroundResource(R.drawable.ic_ripple_disabled)
-            binding.deleteVN.isClickable = false
-            binding.sendVN.setBackgroundResource(R.drawable.ic_ripple_disabled)
+
+            binding.sendVN.setBackgroundResource(com.uyscuti.social.business.R.drawable.ic_ripple_disabled)
             binding.sendVN.isClickable = false
 
             amplitudes = binding.waveForm.clear()
             amps = 0
-
             timer.stop()
             Log.d("TAG", "deleteRecording: recorded files size ${recordedAudioFiles.size}")
             deleteVn()
-
-
+//            if()
         } catch (e: Exception) {
             e.printStackTrace()
             // Handle exceptions as needed
         }
     }
 
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    fun cleanCache(event: CleanCache) {
-
-
-        val TAG = "CleanCache"
-
-        Log.d(TAG, "cleanCache: inside clean cache bus in main activity")
-        initMediaLoader()
-        try {
-            Log.d(TAG, "cleanCache: inside clean cache bus in main activity try download")
-
-            DownloadManager.getInstance(applicationContext).cleanCacheDir()
-
-        } catch (e: IOException) {
-            Toast.makeText(this@PostDetailsActivity2, "Error clean cache", Toast.LENGTH_LONG).show()
-        }
-    }
-
-    private fun initMediaLoader() {
-        Log.d("CleanCache", "cleanCache: initMediaLoader")
-
-        val mediaLoaderConfig: MediaLoaderConfig = MediaLoaderConfig.Builder(this)
-            .cacheRootDir(DefaultConfigFactory.createCacheRootDir(this))
-            .cacheFileNameGenerator(Md5FileNameCreator())
-            .maxCacheFilesCount(100)
-            .maxCacheFilesSize(100 * 1024 * 1024)
-            .maxCacheFileTimeLimit(15 * 24 * 60 * 60)
-            .downloadThreadPoolSize(3)
-            .downloadThreadPriority(Thread.NORM_PRIORITY)
-            .build()
-        MediaLoader.getInstance(this).init(mediaLoaderConfig)
-    }
-
     private fun deleteVn() {
         recordedAudioFiles.clear()
-
+//        if (recordedAudioFiles.isNotEmpty()) {
         val isDeleted = deleteFiles(recordedAudioFiles)
-        val outputVnFileList = mutableListOf<String>()
+        var outputVnFileList = mutableListOf<String>()
         outputVnFileList.add(outputVnFile)
         val deleteMixVn = deleteFiles(outputVnFileList)
         if (isDeleted) {
@@ -1878,3431 +2866,295 @@ class PostDetailsActivity2 : AppCompatActivity(),
         } else {
             println("Failed to delete file.")
         }
+//        }
     }
 
+    private fun stopRecordingAndSendVn() {
 
-    private fun pauseVn(progress: Int) {
-        Log.d("pauseVn", "vnRecordProgress $vnRecordProgress..... progress $progress")
-
-        player?.pause()
-        player?.seekTo(progress)
-        isAudioVNPlaying = false
-        isAudioVNPaused = true
-        isOnRecordDurationOnPause = true
-
-        binding.playVnAudioBtn.setImageResource(R.drawable.play_svgrepo_com)
-    }
-
-    private fun startPlaying(vnAudio: String) {
-        binding.playVnAudioBtn.setImageResource(R.drawable.baseline_pause_white_24)
-        EventBus.getDefault().post(PauseShort(true))
-
-        isAudioVNPlaying = true
-        vnRecordAudioPlaying = true
-        isOnRecordDurationOnPause = false
-        startRecordWaveRunnable()
-        if (isAudioVNPaused) {
-
-            Log.d("startPlaying", "(isAudioVNPaused)->vnRecordProgress $vnRecordProgress")
-
-            if (vnRecordProgress != 0) {
-                player?.seekTo(vnRecordProgress)
-            }
-            player?.start()
-        } else {
-            player = MediaPlayer().apply {
-                try {
-                    setDataSource(vnAudio)
-
-                    prepare()
-                    Log.d("startPlaying", "vnRecordProgress $vnRecordProgress")
-                    if (vnRecordProgress != 0) {
-                        player?.seekTo(vnRecordProgress)
-                    }
-                    start()
-                    setOnCompletionListener {
-                        // Playback completed, restart playback
-                        isAudioVNPaused = false
-                        stopPlaying()
-                    }
-                } catch (e: IOException) {
-                    Log.e("MediaRecorder", "prepare() failed")
-                }
-            }
-        }
-    }
-
-    private fun startRecordWaveRunnable() {
         try {
-            Log.d(
-                "isDurationOnPause",
-                " in comment audio start wave isDurationOnPause is $isOnRecordDurationOnPause"
-            )
-            waveHandler.removeCallbacks(onRecordWaveRunnable)
-            waveHandler.post(onRecordWaveRunnable)
-            isOnRecordDurationOnPause = false
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-    }
 
-
-    @SuppressLint("DefaultLocale")
-    private fun inflateWave(outputVN: String) {
-
-        val TAG = "inflateWave"
-        Log.d("playVnAudioBtn", "inflateWave: outputvn $outputVN")
-
-        val audioFile = File(outputVN)
-        binding.wave.visibility = View.VISIBLE
-        binding.playerTimerTv.visibility = View.VISIBLE
-        Log.d(TAG, "render: does not start with http")
-        //                audioDuration = 100L
-        val file = File(outputVN)
-        Log.d(TAG, "render: file $outputVN exists: ${file.exists()}")
-        val locaAudioDuration = AudioDurationHelper.getLocalAudioDuration(outputVN)
-        if (locaAudioDuration != null) {
-            // Duration is available, do something with it
-            //                    println("Audio duration: ${duration}ms")
-            val minutes = (locaAudioDuration / 1000) / 60
-            val seconds = (locaAudioDuration / 1000) % 60
-            //                println("Audio duration: $minutes minutes $seconds seconds")
-            binding.thirdTimerTv.text = String.format("%02d:%02d", minutes, seconds)
-        } else {
-            // File does not exist or error retrieving duration
-
-            Log.e(TAG, "render: failed to retrieve audio duration")
-
-        }
-
-        CoroutineScope(Dispatchers.IO).launch {
-            WaveFormExtractor.getSampleFrom(applicationContext, outputVN) {
-
-                CoroutineScope(Dispatchers.Main).launch {
-
-
-                    if (locaAudioDuration != null) {
-                        binding.wave.maxProgress = locaAudioDuration.toFloat()
-                    }
-                    binding.wave.setSampleFrom(it)
-
-                    binding.wave.onProgressChanged = object : SeekBarOnProgressChanged {
-                        override fun onProgressChanged(
-                            waveformSeekBar: WaveformSeekBar,
-                            progress: Float,
-                            fromUser: Boolean
-                        ) {
-
-                            binding.secondTimerTv.text = String.format(
-                                "%s",
-                                TrimVideoUtils.stringForTime(progress)
-                            )
-
-
-                            if (fromUser) {
-                                if (vnRecordAudioPlaying) {
-                                    pauseVn(progress = progress.toInt())
-                                } else {
-                                    vnRecordProgress = progress.toInt()
-                                    Log.d("FromUser", "Scroll to this $progress")
-                                }
-
-                            }
-                        }
-
-                        override fun onRelease(event: MotionEvent?, progress: Float) {
-                            if (outputVN.isNotEmpty()) {
-
-                                if (vnRecordAudioPlaying) {
-                                    Log.d(
-                                        "onRelease",
-                                        "vnRecordAudioPlaying $isAudioVNPlaying progress $progress"
-                                    )
-                                    vnRecordProgress = progress.toInt()
-                                    startPlaying(outputVN)
-                                } else {
-                                    Log.d("onRelease", "Start playing from this progress $progress")
-                                    vnRecordProgress = progress.toInt()
-                                }
-
-                            } else {
-                                Log.d("onRelease", "output vn is empty")
-                            }
-                        }
-                    }
+            if (mediaRecorder != null) {
+                mediaRecorder?.apply {
+                    stop()
+                    release()
                 }
+                mediaRecorder = null
             }
-        }
-
-    }
-
-    private val READ_EXTERNAL_STORAGE_REQUEST_CODE = 101 // Any integer value
-
-
-    private fun installTwitter() {
-        EmojiManager.install(TwitterEmojiProvider())
-    }
-
-    private fun addCommentReply() {
-        val TAG = "addCommentReply"
-        Log.d(TAG, "addCommentReply: inside")
-
-        if (isInternetAvailable(this)) {
-
-            roomCommentReplyViewModel.allCommentReplies.observe(this) {
-
-                if (it.isNotEmpty()) {
-                    Log.d(TAG, "addComment: comments in room count is ${it.size}")
-                    commentsReplyViewModel.commentReply(
-                        it[0].commentId,
-                        it[0].content,
-                        it[0].localUpdateId
-                    )
-                    roomCommentReplyViewModel.viewModelScope.launch {
-                        val isDeleted =
-                            roomCommentReplyViewModel.deleteCommentReplyById(it[0].commentId)
-                        if (isDeleted) {
-                            // Deletion was successful, update UI or perform other actions
-                            Log.d(TAG, "Follow deleted successfully.")
-                        } else {
-                            // Deletion was not successful, handle accordingly
-                            Log.d(TAG, "Failed to delete follow.")
-                        }
-                    }
-
-                } else {
-                    Log.d(TAG, "onSubmit: Room database has no comments")
-                }
-            }
-        } else {
-            Log.d(TAG, "addComment: no internet connection")
-        }
-    }
-
-    private fun addCommentVN() {
-        val TAG = "addCommentVN"
-        Log.d("addCommentReply", "addComment: is reply $isReply")
-
-        if (isInternetAvailable(this)) {
-
-            commentFilesViewModel.allCommentFiles.observe(this) {
-
-
-                Log.d(TAG, "Comments observed size:${it.size}")
-
-                if (it.isNotEmpty()) {
-
-                    for (i in it) {
-                        val file = File(i.url)
-
-                        if (i.localPath == "audio" && i.isReply == 0) {
-                            Log.d("FileSend", "Local path is audio")
-                            Log.d(TAG, "url ${i.url}")
-                            if (file.exists()) {
-                                val requestFile =
-                                    file.asRequestBody("multipart/form-data".toMediaTypeOrNull())
-
-                                // Create MultipartBody.Part instance from RequestBody
-                                val filePart =
-                                    MultipartBody.Part.createFormData(
-                                        "audio",
-                                        file.name,
-                                        requestFile
-                                    )
-                                val video =
-                                    MultipartBody.Part.createFormData(
-                                        "video",
-                                        file.name,
-                                        requestFile
-                                    )
-                                val image =
-                                    MultipartBody.Part.createFormData(
-                                        "image",
-                                        file.name,
-                                        requestFile
-                                    )
-                                val docs =
-                                    MultipartBody.Part.createFormData(
-                                        "docs",
-                                        file.name,
-                                        requestFile
-                                    )
-                                val gif =
-                                    MultipartBody.Part.createFormData("gif", file.name, requestFile)
-                                val thumbnail =
-                                    MultipartBody.Part.createFormData(
-                                        "thumbnail",
-                                        file.name,
-                                        requestFile
-                                    )
-
-                                Log.d(TAG, "addComment: comments in room count is ${it.size}")
-                                commentsViewModel.commentAudio(
-                                    postId,
-                                    "",
-                                    "audio",
-                                    filePart,
-                                    video,
-                                    image,
-                                    docs,
-                                    gif,
-                                    thumbnail,
-                                    i.localUpdateId,
-                                    fileName = i.fileName,
-                                    fileType = i.fileType,
-                                    duration = i.duration,
-                                    isFeedComment = i.isFeedComment
-
-                                )
-
-                                commentFilesViewModel.viewModelScope.launch {
-                                    val isDeleted = commentFilesViewModel.deleteCommentById(i.id)
-                                    if (isDeleted) {
-                                        // Deletion was successful, update UI or perform other actions
-                                        Log.d(TAG, "addCommentVN deleted successfully.")
-                                        recordedAudioFiles.clear()
-
-                                    } else {
-                                        // Deletion was not successful, handle accordingly
-                                        Log.d(TAG, "Failed to delete addCommentVN.")
-                                    }
-                                }
-                            } else {
-                                Log.d(TAG, "File does not exist")
-                                commentFilesViewModel.viewModelScope.launch {
-                                    val isDeleted = commentFilesViewModel.deleteCommentById(i.id)
-                                    if (isDeleted) {
-                                        // Deletion was successful, update UI or perform other actions
-                                        Log.d(TAG, "vn deleted successfully.")
-                                        recordedAudioFiles.clear()
-                                    } else {
-                                        // Deletion was not successful, handle accordingly
-                                        Log.d(TAG, "Failed to delete follow.")
-                                    }
-                                }
-                            }
-                        } else {
-                            Log.d("FileSend", "i.isReply: ${i.isReply} send reply audio")
-                        }
-
-                    }
-
-
-                } else {
-                    Log.d(TAG, "onSubmit: Room database has no comments")
-                }
-            }
-
-
-        } else {
-            Log.d(TAG, "addComment: no internet connection")
-        }
-
-    }
-
-    @SuppressLint("DefaultLocale")
-    private fun addCommentFileReply() {
-        val TAG = "addCommentReply"
-        Log.d(TAG, "addCommentReply: inside ")
-
-        if (isInternetAvailable(this)) {
-
-            commentFilesViewModel.allCommentReplyFiles.observe(this) {
-
-                if (it.isNotEmpty()) {
-                    val file = File(it[0].url)
-                    val requestFile = file.asRequestBody("multipart/form-data".toMediaTypeOrNull())
-                    val filePart =
-                        MultipartBody.Part.createFormData("audio", file.name, requestFile)
-                    val video = MultipartBody.Part.createFormData("video", file.name, requestFile)
-                    val image = MultipartBody.Part.createFormData("image", file.name, requestFile)
-                    val docs = MultipartBody.Part.createFormData("docs", file.name, requestFile)
-                    val gif = MultipartBody.Part.createFormData("gif", file.name, requestFile)
-                    val thumbnail =
-                        MultipartBody.Part.createFormData("thumbnail", file.name, requestFile)
-                    Log.d(
-                        "LocalPath",
-                        "url ${it[0].url} local path ${it[0].localPath} ${it[0].isReply}"
-                    )
-                    if (it[0].localPath == "image") {
-                        Log.d("LocalPath", "is set to image")
-                        if (::commentId.isInitialized) {
-                            commentsReplyViewModel.commentReply(
-                                commentId,
-                                it[0].content,
-                                "image",
-                                filePart,
-                                video,
-                                docs,
-                                "",
-                                thumbnail,
-                                image,
-                                it[0].localUpdateId,
-                                "00:00",
-                                numberOfPages = "",
-                                fileName = "",
-                                fileType = "",
-                                fileSize = "",
-                                isFeedCommentReply = it[0].isFeedComment
-                            ) {
-
-                            }
-                        } else {
-                            Log.e("CommentId", "Comment Id not initialized ")
-                        }
-                    } else if (it[0].localPath == "video") {
-                        Log.d("LocalPath", "is set to video $")
-
-                        val durationString = getFormattedDuration(it[0].url)
-                        Log.d("durationString", "durationString $durationString")
-                        val (success, bitmapThumbnail) = extractThumbnailFromVideo(it[0].url)
-                        if (success) {
-                            // Thumbnail extraction successful, use the 'thumbnail' Bitmap
-                            Log.d("ThumbnailExtract", "ThumbnailExtract successful")
-                        } else {
-                            // Thumbnail extraction failed
-                            Log.d("ThumbnailExtract", "ThumbnailExtract failed")
-                        }
-                        val outputStream = ByteArrayOutputStream()
-                            // Compress the bitmap to a byte array
-                        bitmapThumbnail?.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
-
-                        val requestBody = outputStream.toByteArray()
-                            .toRequestBody(
-                                "image/*".toMediaTypeOrNull(),
-                                0, outputStream.size()
-                            )
-
-                        val videoThumbnail = MultipartBody.Part.createFormData(
-                            "thumbnail",
-                            "thumbnail.png",
-                            requestBody
-                        )
-
-                        val videos =
-                            MultipartBody.Part.createFormData("video", file.name, requestFile)
-                        if (::commentId.isInitialized) {
-                            commentsReplyViewModel.commentReply(
-                                commentId,
-                                it[0].content,
-                                "video",
-                                audio = filePart,
-                                video = videos,
-                                docs = docs,
-                                gif = "",
-                                thumbnail = videoThumbnail,
-                                image = image,
-                                localUpdateId = it[0].localUpdateId,
-                                duration = durationString,
-                                numberOfPages = "",
-                                fileName = "",
-                                fileType = "",
-                                fileSize = "",
-                                isFeedCommentReply = it[0].isFeedComment
-                            ) { data ->
-                                val deleted = deleteFile(it[0].url)
-                                if (deleted) {
-                                    Log.d(" onSuccess()", " onSuccess(): deleted successful")
-                                } else {
-                                    Log.d(" onSuccess()", " onSuccess(): failed to delete")
-                                }
-                            }
-                        } else {
-                            Log.e("CommentId", "Comment Id not initialized ")
-                        }
-                    } else if (it[0].localPath == "docs") {
-                        val replyDocs = createMultipartBody(this, it[0].url.toUri(), "docs")
-                        Log.d("LocalPath", "is set to docs")
-                        if (::commentId.isInitialized) {
-                            commentsReplyViewModel.commentReply(
-                                commentId,
-                                it[0].content,
-                                "docs",
-                                audio = filePart,
-                                video = video,
-                                docs = replyDocs!!,
-                                gif = "",
-                                thumbnail = thumbnail,
-                                image = image,
-                                localUpdateId = it[0].localUpdateId,
-                                duration = "00:00",
-                                numberOfPages = it[0].numberOfPages.toString(),
-                                fileName = it[0].fileName,
-                                fileType = it[0].fileType,
-                                fileSize = it[0].fileSize,
-                                isFeedCommentReply = it[0].isFeedComment
-                            ) {
-
-                            }
-                        } else {
-                            Log.e("CommentId", "Comment Id not initialized ")
-                        }
-                    } else if (it[0].localPath == "gif") {
-
-                        Log.d("LocalPath", "is set to gif")
-                        if (::commentId.isInitialized) {
-                            commentsReplyViewModel.commentReply(
-                                commentId,
-                                it[0].content,
-                                "gif",
-                                audio = filePart,
-                                video = video,
-                                docs = docs,
-                                gif = it[0].url,
-                                thumbnail = thumbnail,
-                                image = image,
-                                localUpdateId = it[0].localUpdateId,
-                                duration = "00:00",
-                                numberOfPages = "",
-                                fileName = "",
-                                fileType = "",
-                                fileSize = "",
-                                isFeedCommentReply = it[0].isFeedComment
-                            ) {
-
-                            }
-                        } else {
-                            Log.e("CommentId", "Comment Id not initialized ")
-                        }
-                    } else {
-                        Log.d("LocalPath", "is set to audio duration ${it[0].duration}")
-
-                        if (::commentId.isInitialized) {
-                            commentsReplyViewModel.commentReply(
-                                commentId = commentId,
-                                content = it[0].content,
-                                contentType = "audio",
-                                audio = filePart,
-                                video = video,
-                                image = image,
-                                docs = docs,
-                                gif = "",
-                                thumbnail = thumbnail,
-                                localUpdateId = it[0].localUpdateId,
-                                duration = it[0].duration,
-                                numberOfPages = "",
-                                fileName = it[0].fileName,
-                                fileType = it[0].fileType,
-                                fileSize = "",
-                                isFeedCommentReply = it[0].isFeedComment
-                            ) { data ->
-                                Log.d(
-                                    "OnSuccess",
-                                    "OnSuccess: addCommentFileReply id: ${data._id} parent position ${it[0].parentPosition}"
-                                )
-
-                                val comment = adapter?.getComment(it[0].parentPosition)
-
-                                Log.d(TAG, "addCommentFileReply: comment get successful  $comment")
-                                val replyToUpdate = comment?.replies?.find { reply ->
-                                    Log.d(
-                                        TAG,
-                                        "addCommentFileReply: ids it[0].uploadId  ${it[0].uploadId} reply.uploadId  ${reply.uploadId}"
-                                    )
-                                    reply.uploadId == it[0].uploadId
-                                }
-                                replyToUpdate?._id = data._id
-                                adapter?.notifyItemChanged(it[0].parentPosition)
-
-                            }
-                        } else {
-                            Log.e("CommentId", "Comment Id not initialized ")
-                        }
-
-                    }
-
-                    commentFilesViewModel.viewModelScope.launch {
-                        val isDeleted = commentFilesViewModel.deleteCommentById(it[0].id)
-                        if (isDeleted) {
-                            // Deletion was successful, update UI or perform other actions
-                            Log.d(TAG, "File in local database deleted successfully.")
-                        } else {
-                            // Deletion was not successful, handle accordingly
-                            Log.d(TAG, "Failed to delete the file in local db.")
-                        }
-                    }
-
-                } else {
-                    Log.d(TAG, "onSubmit: Room database has no comments")
-                }
-            }
-
-
-        } else {
-            Log.d(TAG, "addComment: no internet connection")
-        }
-
-    }
-
-    private fun addImageComment() {
-        val TAG = "addImageComment"
-        Log.d("addImageComment", "addImageComment: is reply $isReply")
-
-
-        if (isInternetAvailable(this)) {
-
-            commentFilesViewModel.allCommentFiles.observe(this) {
-
-                Log.d(TAG, "Comments observed size:${it.size}")
-
-                if (it.isNotEmpty()) {
-
-                    for (i in it) {
-                        val file = File(i.url)
-
-                        if (i.localPath == "image") {
-                            Log.d("LocalPath", "Local path is image")
-                            Log.d(TAG, "url ${i.url} type ${i.localPath}")
-                            if (file.exists()) {
-                                val requestFile =
-                                    file.asRequestBody("multipart/form-data".toMediaTypeOrNull())
-
-                                val filePart =
-                                    MultipartBody.Part.createFormData(
-                                        "audio",
-                                        file.name,
-                                        requestFile
-                                    )
-                                val video =
-                                    MultipartBody.Part.createFormData(
-                                        "video",
-                                        file.name,
-                                        requestFile
-                                    )
-                                val image =
-                                    MultipartBody.Part.createFormData(
-                                        "image",
-                                        file.name,
-                                        requestFile
-                                    )
-                                val docs =
-                                    MultipartBody.Part.createFormData(
-                                        "docs",
-                                        file.name,
-                                        requestFile
-                                    )
-                                val gif =
-                                    MultipartBody.Part.createFormData("gif", file.name, requestFile)
-                                val thumbnail =
-                                    MultipartBody.Part.createFormData(
-                                        "thumbnail",
-                                        file.name,
-                                        requestFile
-                                    )
-
-                                Log.d(TAG, "addComment: comments in room count is ${it.size}")
-                                commentsViewModel.commentImage(
-                                    postId,
-                                    "",
-                                    "image",
-                                    filePart,
-                                    video,
-                                    thumbnail,
-                                    gif,
-                                    docs,
-                                    image,
-                                    i.localUpdateId,
-                                    i.isFeedComment
-                                )
-                                commentFilesViewModel.viewModelScope.launch {
-                                    val isDeleted = commentFilesViewModel.deleteCommentById(i.id)
-                                    if (isDeleted) {
-                                        // Deletion was successful, update UI or perform other actions
-                                        Log.d(TAG, "addImageComment deleted successfully.")
-                                    } else {
-                                        // Deletion was not successful, handle accordingly
-                                        Log.d(TAG, "Failed to delete follow.")
-                                    }
-                                }
-                            } else {
-                                Log.d(TAG, "File does not exist")
-                                commentFilesViewModel.viewModelScope.launch {
-                                    val isDeleted = commentFilesViewModel.deleteCommentById(i.id)
-                                    if (isDeleted) {
-                                        // Deletion was successful, update UI or perform other actions
-                                        Log.d(TAG, "Follow deleted successfully.")
-                                        recordedAudioFiles.clear()
-                                    } else {
-                                        // Deletion was not successful, handle accordingly
-                                        Log.d(TAG, "Failed to delete follow.")
-                                    }
-                                }
-                            }
-                        }
-
-
-                    }
-
-
-                } else {
-                    Log.d(TAG, "onSubmit: Room database has no comments")
-                }
-            }
-
-
-        } else {
-            Log.d(TAG, "addComment: no internet connection")
-        }
-
-    }
-
-    private fun addDocumentComment() {
-        val TAG = "addDocumentComment"
-        Log.d("addDocumentComment", "addDocumentComment: is reply $isReply")
-
-        if (isInternetAvailable(this)) {
-
-            commentFilesViewModel.allCommentFiles.observe(this) {
-
-                Log.d(TAG, "Comments observed size:${it.size}")
-
-                if (it.isNotEmpty()) {
-
-                    for (i in it) {
-                        val file = File(i.url)
-
-                        if (i.localPath == "docs") {
-                            Log.d("LocalPath", "Local path is docs")
-                            Log.d(TAG, "url ${i.url} type ${i.localPath}")
-                            if (isFileExists(this, i.url.toUri())) {
-                                val requestFile =
-                                    file.asRequestBody("multipart/form-data".toMediaTypeOrNull())
-
-                                val filePart =
-                                    MultipartBody.Part.createFormData(
-                                        "audio",
-                                        file.name,
-                                        requestFile
-                                    )
-                                val video =
-                                    MultipartBody.Part.createFormData(
-                                        "video",
-                                        file.name,
-                                        requestFile
-                                    )
-                                val image =
-                                    MultipartBody.Part.createFormData(
-                                        "image",
-                                        file.name,
-                                        requestFile
-                                    )
-
-                                Log.d(
-                                    "addDocumentComment",
-                                    "addDocumentComment: uri ${i.url.toUri()} ::i.url:: ${i.url}"
-                                )
-                                val docs =
-                                    createMultipartBody(this, i.url.toUri(), "docs", i.fileType)
-                                val gif =
-                                    MultipartBody.Part.createFormData("gif", file.name, requestFile)
-                                val thumbnail =
-                                    MultipartBody.Part.createFormData(
-                                        "thumbnail",
-                                        file.name,
-                                        requestFile
-                                    )
-
-                                Log.d(TAG, "addComment: comments in room count is ${it.size}")
-                                commentsViewModel.addComment(
-                                    postId,
-                                    "",
-                                    "docs",
-                                    filePart,
-                                    video,
-                                    thumbnail,
-                                    "",
-                                    docs!!,
-                                    image,
-                                    i.localUpdateId,
-                                    "",
-                                    fileName = i.fileName,
-                                    numberOfPages = i.numberOfPages.toString(),
-                                    fileSize = i.fileSize,
-                                    fileType = i.fileType,
-                                    isFeedComment = i.isFeedComment
-                                ) {
-
-                                }
-                                commentFilesViewModel.viewModelScope.launch {
-                                    val isDeleted = commentFilesViewModel.deleteCommentById(i.id)
-                                    if (isDeleted) {
-                                        // Deletion was successful, update UI or perform other actions
-                                        Log.d(TAG, "addImageComment deleted successfully.")
-                                    } else {
-                                        // Deletion was not successful, handle accordingly
-                                        Log.d(TAG, "Failed to delete follow.")
-                                    }
-                                }
-                            } else {
-                                Log.d(TAG, "File does not exist")
-                                commentFilesViewModel.viewModelScope.launch {
-                                    val isDeleted = commentFilesViewModel.deleteCommentById(i.id)
-                                    if (isDeleted) {
-                                        // Deletion was successful, update UI or perform other actions
-                                        Log.d(TAG, "Follow deleted successfully.")
-                                        recordedAudioFiles.clear()
-                                    } else {
-                                        // Deletion was not successful, handle accordingly
-                                        Log.d(TAG, "Failed to delete follow.")
-                                    }
-                                }
-                            }
-                        }
-
-                    }
-
-
-                } else {
-                    Log.d(TAG, "onSubmit: Room database has no comments")
-                }
-            }
-
-
-        } else {
-            Log.d(TAG, "addComment: no internet connection")
-        }
-
-    }
-
-    private fun addGifComment() {
-        val TAG = "addGifComment"
-        Log.d("addGifComment", "addGifComment: is reply $isReply")
-
-
-        if (isInternetAvailable(this)) {
-
-            commentFilesViewModel.allCommentFiles.observe(this) {
-
-                Log.d(TAG, "Comments observed size:${it.size}")
-
-                if (it.isNotEmpty()) {
-
-                    for (i in it) {
-                        val file = File(i.url)
-
-                        if (i.localPath == "gif") {
-                            Log.d("LocalPath", "Local path is gif")
-                            Log.d(TAG, "url ${i.url} type ${i.localPath}")
-                            if (i.url.isNotEmpty()) {
-                                val requestFile =
-                                    file.asRequestBody("multipart/form-data".toMediaTypeOrNull())
-
-                                val filePart =
-                                    MultipartBody.Part.createFormData(
-                                        "audio",
-                                        file.name,
-                                        requestFile
-                                    )
-                                val video =
-                                    MultipartBody.Part.createFormData(
-                                        "video",
-                                        file.name,
-                                        requestFile
-                                    )
-                                val image =
-                                    MultipartBody.Part.createFormData(
-                                        "image",
-                                        file.name,
-                                        requestFile
-                                    )
-                                val docs =
-                                    MultipartBody.Part.createFormData(
-                                        "docs",
-                                        file.name,
-                                        requestFile
-                                    )
-
-                                val thumbnail =
-                                    MultipartBody.Part.createFormData(
-                                        "thumbnail",
-                                        file.name,
-                                        requestFile
-                                    )
-
-                                Log.d(TAG, "addComment: comments in room count is ${it.size}")
-                                commentsViewModel.addComment(
-                                    postId,
-                                    "",
-                                    "gif",
-                                    filePart,
-                                    video,
-                                    thumbnail,
-                                    gifs = i.url,
-                                    docs,
-                                    image,
-                                    i.localUpdateId,
-                                    "",
-                                    fileName = i.fileName,
-                                    numberOfPages = i.numberOfPages.toString(),
-                                    fileSize = i.fileSize,
-                                    fileType = i.fileType,
-                                    isFeedComment = i.isFeedComment
-                                ) {
-
-                                }
-                                commentFilesViewModel.viewModelScope.launch {
-                                    val isDeleted = commentFilesViewModel.deleteCommentById(i.id)
-                                    if (isDeleted) {
-                                        // Deletion was successful, update UI or perform other actions
-                                        Log.d(TAG, "addImageComment deleted successfully.")
-                                    } else {
-                                        // Deletion was not successful, handle accordingly
-                                        Log.d(TAG, "Failed to delete follow.")
-                                    }
-                                }
-                            } else {
-                                Log.d(TAG, "File does not exist")
-                                commentFilesViewModel.viewModelScope.launch {
-                                    val isDeleted = commentFilesViewModel.deleteCommentById(i.id)
-                                    if (isDeleted) {
-                                        // Deletion was successful, update UI or perform other actions
-                                        Log.d(TAG, "Follow deleted successfully.")
-                                        recordedAudioFiles.clear()
-                                    } else {
-                                        // Deletion was not successful, handle accordingly
-                                        Log.d(TAG, "Failed to delete follow.")
-                                    }
-                                }
-                            }
-                        }
-
-                    }
-
-
-                } else {
-                    Log.d(TAG, "onSubmit: Room database has no comments")
-                }
-            }
-
-
-        } else {
-            Log.d(TAG, "addComment: no internet connection")
-        }
-
-    }
-    private fun observeCommentRepliesToRefresh() {
-        commentsReplyViewModel.getReplyCommentsLiveData().observe(this) { data ->
-            // Handle the response data here
-            for (i in listOfReplies) {
-
-                Log.d("observeCommentRepliesToRefresh", "list of replies id ${i.localUpdateId}")
-            }
-
-            Log.d("observeCommentRepliesToRefresh", "list of replies size ${listOfReplies.size}")
-            Log.d("observeCommentRepliesToRefresh", data.toString())
-        }
-
-    }
-
-    @SuppressLint("DefaultLocale")
-    private fun addVideoComment() {
-        val TAG = "addVideoComment"
-        Log.d("addVideoComment", "addVideoComment: is reply $isReply")
-
-        if (isInternetAvailable(this)) {
-
-            commentFilesViewModel.allCommentFiles.observe(this) {
-
-                Log.d(TAG, "Comments observed size:${it.size}")
-
-                if (it.isNotEmpty()) {
-
-                    for (i in it) {
-                        val file = File(i.url)
-
-                        if (i.localPath == "video") {
-                            Log.d("addVideoComment", "Local path is video duration ${i.duration}")
-
-                            Log.d(TAG, "url ${i.url} type ${i.localPath} file name: ${file.name}")
-
-                            val externalStorageDir = Environment.getExternalStorageDirectory()
-                            val fullPath = File(externalStorageDir, i.url)
-
-                            val (success, bitmapThumbnail) = extractThumbnailFromVideo(i.url)
-                            if (success) {
-                                // Thumbnail extraction successful, use the 'thumbnail' Bitmap
-                                Log.d("ThumbnailExtract", "ThumbnailExtract successful")
-                            } else {
-                                // Thumbnail extraction failed
-                                Log.d("ThumbnailExtract", "ThumbnailExtract failed")
-                            }
-                            val outputStream = ByteArrayOutputStream()
-                            // Compress the bitmap to a byte array
-                            bitmapThumbnail?.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
-                            // Convert the byte array to a RequestBody
-                            val requestBody = outputStream.toByteArray()
-                                .toRequestBody(
-                                    "image/*".toMediaTypeOrNull(),
-                                    0, outputStream.size()
-                                )
-
-                            val thumbnail = MultipartBody.Part.createFormData(
-                                "thumbnail",
-                                "thumbnail.png",
-                                requestBody
-                            )
-                            if (file.exists()) {
-                                val requestFile =
-                                    file.asRequestBody("multipart/form-data".toMediaTypeOrNull())
-
-                                val filePart =
-                                    MultipartBody.Part.createFormData(
-                                        "audio",
-                                        file.name,
-                                        requestFile
-                                    )
-                                val video =
-                                    MultipartBody.Part.createFormData(
-                                        "video",
-                                        file.name,
-                                        requestFile
-                                    )
-                                val image =
-                                    MultipartBody.Part.createFormData(
-                                        "image",
-                                        file.name,
-                                        requestFile
-                                    )
-                                val docs =
-                                    MultipartBody.Part.createFormData(
-                                        "docs",
-                                        file.name,
-                                        requestFile
-                                    )
-                                val gif =
-                                    MultipartBody.Part.createFormData("gif", file.name, requestFile)
-
-
-                                Log.d(TAG, "addVideoComment: comments in room count is ${it.size}")
-                                if (::postId.isInitialized) {
-                                    commentsViewModel.addComment(
-                                        postId,
-                                        "",
-                                        "video",
-                                        filePart,
-                                        video,
-                                        thumbnail,
-                                        "",
-                                        docs,
-                                        image,
-                                        i.localUpdateId,
-                                        duration = i.duration,
-                                        numberOfPages = "",
-                                        fileName = "",
-                                        fileType = "",
-                                        fileSize = "",
-                                        isFeedComment = i.isFeedComment
-                                    ) {
-                                        Log.d(" onSuccess()", " onSuccess(): upload successful")
-
-                                        val deleted = deleteFiled(i.url)
-                                        if (deleted) {
-                                            Log.d(
-                                                " onSuccess()",
-                                                " onSuccess(): deleted successful"
-                                            )
-                                        } else {
-                                            Log.d(" onSuccess()", " onSuccess(): failed to delete")
-                                        }
-                                    }
-                                }
-
-                                commentFilesViewModel.viewModelScope.launch {
-                                    val isDeleted = commentFilesViewModel.deleteCommentById(i.id)
-                                    if (isDeleted) {
-                                        // Deletion was successful, update UI or perform other actions
-                                        Log.d(TAG, "addVideoComment deleted successfully.")
-                                    } else {
-                                        // Deletion was not successful, handle accordingly
-                                        Log.d(TAG, "Failed to delete VideoComment.")
-                                    }
-                                }
-                            } else {
-                                Log.d(TAG, "File does not exist")
-                                commentFilesViewModel.viewModelScope.launch {
-                                    val isDeleted = commentFilesViewModel.deleteCommentById(i.id)
-                                    if (isDeleted) {
-                                        // Deletion was successful, update UI or perform other actions
-                                        Log.d(TAG, "addVideoComment deleted successfully.")
-                                        recordedAudioFiles.clear()
-                                    } else {
-                                        // Deletion was not successful, handle accordingly
-                                        Log.d(TAG, "Failed to delete addVideoComment.")
-                                    }
-                                }
-                            }
-                        }
-
-                    }
-
-
-                } else {
-                    Log.d(TAG, "addVideoComment: Room database has no comments")
-                }
-            }
-
-
-        } else {
-            Log.d(TAG, "addVideoComment: no internet connection")
-        }
-
-    }
-
-    private fun observeMainCommentToRefresh() {
-        commentsViewModel.commentsObserver().observe(this) { data ->
-            // Handle the response data here
-            for (mainComment in listOfReplies) {
-
-                Log.d(
-                    "UpdateReplyData",
-                    "list of replies id ${mainComment.localUpdateId} position ${mainComment._id}"
-                )
-                if (mainComment.localUpdateId == data.localUpdateId) {
-                    Log.d(
-                        "UpdateReplyData",
-                        "We have an equal to update on position ${mainComment._id}"
-                    )
-                    val position: Int = mainComment._id.toInt()
-                    mainComment._id = data._id
-                    updateAdapter(mainComment, position)
-                }
-            }
-
-        }
-
-    }
-
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    fun openUserProfileShortsPlayerFragment(event: ShortsLikeUnLike2) {
-        val TAG = "likeUnLikeShort"
-
-        Log.d(TAG, "openUserProfileShortsPlayerFragment: ")
-        lifecycleScope.launch {
-            try {
-                val response = retrofitInterface.apiService.likeUnLikeShort(event.userId)
-                if (response.isSuccessful) {
-                    val responseBody = response.body()
-                    Log.d(
-                        TAG, "likeUnLikeShort ${responseBody?.data!!.isLiked}"
-                    )
-                } else {
-                    Log.d(TAG, "Error: ${response.message()}")
-
-                }
-            } catch (e: HttpException) {
-                Log.d(TAG, "Http Exception ${e.message}")
-
-            } catch (e: IOException) {
-                Log.d(TAG, "IOException ${e.message}")
-
-            }
-        }
-    }
-
-    @OptIn(UnstableApi::class)
-    private fun getPageComment(commentId: String) {
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
-                val response = retrofitInterface.apiService.getPageComment(commentId)
-                if (response.isSuccessful) {
-                    val notifications = response.body()?.data
-                    Log.d("ApiService", "getCommentByPage: $notifications")
-                    withContext(Dispatchers.Main) {
-                        adapter = CommentsRecyclerViewAdapter(
-                            this@PostDetailsActivity2,
-                            this@PostDetailsActivity2
-                        )
-                        binding.recyclerView.layoutManager =
-                            LinearLayoutManager(
-                                this@PostDetailsActivity2,
-                                LinearLayoutManager.VERTICAL,
-                                false
-                            )
-                        binding.recyclerView.adapter = adapter
-                        binding.recyclerView.itemAnimator = null
-                        adapter?.setDefaultRecyclerView(
-                            this@PostDetailsActivity2,
-
-                            R.id.recyclerView
-
-                        )
-                        if (adapter?.itemCount == 0) {
-                            Log.d("GetPageCommentId", "adapter is empty")
-                        }
-                        toggleMotionLayoutVisibility()
-                        notifications?.let {
-                            val commentList =
-                                arrayListOf<Comment>()
-                            val comments = Comment(
-                                __v = it.comment.__v,
-                                _id = it.comment._id,
-                                author = it.comment.author,
-                                content = it.comment.content,
-                                createdAt = it.comment.createdAt,
-                                isLiked = it.comment.isLiked,
-                                likes = it.comment.likes,
-                                postId = it.comment.postId,
-                                updatedAt = it.comment.updatedAt,
-                                replyCount = it.comment.replyCount,
-                                replies = it.comment.replies.toMutableList(),
-                                images = it.comment.images,
-                                audios = it.comment.audios,
-                                docs = it.comment.docs,
-                                gifs = data?.gifs ?: "",
-                                thumbnail = it.comment.thumbnail,
-                                videos = it.comment.videos,
-                                contentType = it.comment.contentType,
-                                localUpdateId = "",
-                                duration = "00:00",
-                                fileName = "unknown",
-                                fileSize = "unknown",
-                                fileType = "unknown",
-                                numberOfPages = "0"
-                            )
-                            it.comments.map { commentX ->
-                                Log.d("ApiService", "getCommentByPage: $commentX")
-                                val comment = Comment(
-                                    __v = commentX.__v,
-                                    _id = commentX._id,
-                                    author = commentX.author,
-                                    content = commentX.content,
-                                    createdAt = commentX.createdAt,
-                                    isLiked = commentX.isLiked,
-                                    likes = commentX.likes,
-                                    postId = commentX.postId,
-                                    updatedAt = commentX.updatedAt,
-                                    replyCount = commentX.replyCount,
-                                    replies = commentX.replies.toMutableList(),
-                                    images = commentX.images,
-                                    audios = commentX.audios,
-                                    docs = commentX.docs,
-                                    gifs = data?.gifs ?: "",
-                                    thumbnail = commentX.thumbnail,
-                                    videos = commentX.videos,
-                                    contentType = commentX.contentType,
-                                    localUpdateId = "",
-                                    duration = "00:00",
-                                    fileName = "unknown",
-                                    fileSize = "unknown",
-                                    fileType = "unknown",
-                                    numberOfPages = "0"
-                                )
-                                commentList.add(comment)
-                            }
-                            adapter!!.submitItems(commentList)
-                                /**this is the code used mainly */
-                                val highlightedIndex = commentList.indexOfLast { it._id == commentId }
-                                if (highlightedIndex != -1) {
-                                Log.d("HighLight", "(1)highlight $highlightedIndex currentlyHighlightedIndex $currentlyHighlightedIndex")
-                                /**Check if the index is different from the currently highlighted index*/
-                                if (highlightedIndex != currentlyHighlightedIndex) {
-                                    /**Update the currently highlighted index*/
-                                    Log.d("HighLight", "(2)highlight $highlightedIndex currentlyHighlightedIndex $currentlyHighlightedIndex")
-
-                                    currentlyHighlightedIndex = highlightedIndex
-
-                                    commentsRecyclerView.post {
-                                        var viewHolder =
-                                        commentsRecyclerView.findViewHolderForAdapterPosition(
-                                                currentlyHighlightedIndex
-                                            )
-                                        viewHolder?.itemView?.setBackgroundResource(
-                                            R.color.white
-                                        )
-                                    clearPreviousHighlights()
-
-                                        commentsRecyclerView.scrollToPosition(highlightedIndex)
-
-                                        /**Highlight the comment after a short delay*/
-                                        commentsRecyclerView.postDelayed({
-                                            Log.d("HighLight", "getPageComment: inside highlight 1")
-                                            viewHolder =
-                                                commentsRecyclerView.findViewHolderForAdapterPosition(
-                                                    highlightedIndex
-                                                )
-                                            viewHolder?.itemView?.setBackgroundColor(
-                                                ContextCompat.getColor(
-                                                    this@PostDetailsActivity2,
-                                                    R.color.bluejeans
-                                                )
-                                            )
-                                            /**Optional: Revert the color after a few seconds*/
-                                            viewHolder?.itemView?.postDelayed({
-                                                Log.d(
-                                                    "HighLight",
-                                                    "getPageComment: inside highlight 2"
-                                                )
-                                                viewHolder!!.itemView.setBackgroundColor(
-                                                    ContextCompat.getColor(
-                                                        this@PostDetailsActivity2,
-                                                        R.color.white
-                                                    )
-                                                )
-                                                currentlyHighlightedIndex = -1
-                                            }, 5000)
-                                        }, 200)
-                                    }
-                                } else {
-                                    val viewHolder = commentsRecyclerView.findViewHolderForAdapterPosition(
-                                            highlightedIndex
-                                        )
-                                    Log.d("HighLight", "highlightedIndex is +1")
-                                    viewHolder!!.itemView.setBackgroundColor(
-                                        ContextCompat.getColor(
-                                            this@PostDetailsActivity2,
-                                            R.color.white
-                                        )
-                                    )
-                                }
-                            } else {
-                                Log.d("HighLight", "comment not found")
-                            }
-                        }
-                    }
-                }
-            } catch (e: Exception) {
-                Log.d("ApiService", "getCommentByPage: ${e.message}")
-            }
-        }
-    }
-
-
-    private fun clearPreviousHighlights() {
-        // Loop through the visible items and reset their background color
-        Log.d("HighLight", "clearPreviousHighlights")
-        val layoutManager = binding.recyclerView.layoutManager as? LinearLayoutManager
-        val firstVisiblePosition = layoutManager?.findFirstVisibleItemPosition() ?: 0
-        val lastVisiblePosition = layoutManager?.findLastVisibleItemPosition() ?: 0
-
-        for (i in firstVisiblePosition..lastVisiblePosition) {
-            Log.d("HighLight", "clearPreviousHighlights $i")
-            val viewHolder = binding.recyclerView.findViewHolderForAdapterPosition(i)
-            viewHolder?.itemView?.setBackgroundColor(
-                ContextCompat.getColor(
-                    this@PostDetailsActivity2,
-                    R.color.white
-                )
-            )
-        }
-    }
-    private fun fetchPostDetails(postId: String) {
-        coroutineScope.launch {
-            Log.d("PostDetails", "Fetching details for postId: $postId")
-            withContext(Dispatchers.IO) {
-                try {
-                    Log.d("PostDetails", "Making network request for postId: $postId")
-                    val response = retrofitInterface.apiService.getPostById(postId)
-                    if (response.isSuccessful) {
-                        Log.d("PostDetails", "Network request successful for postId: $postId")
-
-                        Log.d("PostDetails", "Fetched post post: ${response.body()!!.data}")
-                        response.body()?.let { post ->
-                            Log.d("PostDetails", "Post details retrieved: $response")
-                            val commentNotificationResponse =
-                                response                            /* Obtain this from response or adapt your response model */
-                            withContext(Dispatchers.Main) {
-                                updateNotification(post)
-                                commentIdToNavigate?.let {
-                                    Log.d(
-                                        "CommentNavigation",
-                                        "Successfully navigated to commentId: $commentId"
-                                    )
-
-                                }
-                            }
-                        } ?: Log.d("PostDetails", "Response body is null for postId: $postId")
-                    } else {
-                        Log.e("PostDetails", "Error fetching post: ${response.errorBody()}")
-                    }
-                } catch (e: Exception) {
-                    Log.e("PostDetails", "Failure fetching post", e)
-                }
-            }
-        }
-    }
-
-    @SuppressLint("NotifyDataSetChanged")
-
-    private fun scrollToComment(commentId: String) {
-        // This method will not throw an exception now, since commentsRecyclerView is initialized
-
-        Log.d("ScrollToComment", "scrollToComment called with commentId: $commentId")
-
-        if (position != null) {
-            Log.d("ScrollToComment", "Position found: $position")
-
-            (commentsRecyclerView.layoutManager as LinearLayoutManager)
-                .scrollToPositionWithOffset(position, 0)
-        }else{
-            Log.d("ScrollToComment", "Position found: $position")
-
-        }
-    }
-    private fun observeComments() {
-        val TAG = "observeComments"
-        commentsViewModel.commentsLiveData.observe(this) { it ->
-            Log.d(TAG, "observeComments comments size: ${it.size}")
-
-            val commentsWithReplies = it.filter { it.replyCount > 0 }
-            Log.d(TAG, "observeComments comments with replies size: ${commentsWithReplies.size}")
-
-        }
-    }
-
-    fun showProgressBar() {
-        binding.progressBar.visibility = View.VISIBLE
-    }
-
-    fun showShimmer() {
-        binding.shimmerLayout.startShimmerAnimation()
-        binding.shimmerLayout.visibility = View.VISIBLE
-    }
-
-    fun hideShimmer() {
-        binding.shimmerLayout.stopShimmerAnimation()
-        binding.shimmerLayout.visibility = View.GONE
-    }
-
-    private fun hideProgressBar() {
-        binding.progressBar.visibility = View.GONE
-    }
-
-    private var vnList = ArrayList<String>()
-    private fun startPreLoadingService() {
-        Log.d("VNCache", "Preloading called")
-        val preloadingServiceIntent =
-            Intent(this, VideoPreLoadingService::class.java)
-        preloadingServiceIntent.putStringArrayListExtra(Constants.VIDEO_LIST, vnList)
-        startService(preloadingServiceIntent)
-    }
-
-    private suspend fun commentReplyLikeUnLike(commentReplyId: String): Boolean {
-        val TAG = "commentReplyLikeUnLike"
-        try {
-            val response = retrofitInterface.apiService.likeUnLikeCommentReply(commentReplyId)
-            return if (response.isSuccessful) {
-                val responseBody = response.body()
-                val isLiked = responseBody?.data?.isLiked ?: false
-                Log.d(TAG, "commentReplyLikeUnLike $isLiked")
-                isLiked
-            } else {
-                Log.d(TAG, " commentReplyLikeUnLike Error: ${response.message()}")
-                Log.d(TAG, " commentReplyLikeUnLike Error: ${response.body()}")
-                Log.d(TAG, " commentReplyLikeUnLike Error: ${response.errorBody()}")
-                Log.d(TAG, " commentReplyLikeUnLike Error: ${response.code()}")
-                false
-            }
-        } catch (e: HttpException) {
-            Log.d(TAG, "Http Exception ${e.message}")
-            withContext(Dispatchers.Main) {
-
-            }
-            return false
-        } catch (e: IOException) {
-            Log.d(TAG, "IOException ${e.message}")
-            return false
-        }
-    }
-
-    override fun onStart() {
-        super.onStart()
-        EventBus.getDefault().register(this)
-    }
-
-
-    override fun onStop() {
-        super.onStop()
-        EventBus.getDefault().unregister(this)
-    }
-
-    private fun handleDocumentUri(uri: Uri) {
-        // Handle the selected document URI here
-        // For example, you can retrieve the file name
-        contentResolver.query(uri, null, null, null, null)?.use { cursor ->
-            val nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
-            val sizeIndex = cursor.getColumnIndex(OpenableColumns.SIZE)
-            cursor.moveToFirst()
-            val fileName = cursor.getString(nameIndex)
-            val fileSize = cursor.getLong(sizeIndex)
-
-            var numberOfPages = 0
-            val formattedFileSize = formatFileSize(fileSize)
-
-            val fileSizes = isFileSizeGreaterThan2MB(fileSize)
-            val documentType = fileType(fileName)
-            Log.d("handleDocumentUri", ": $fileName")
-            Log.d("handleDocumentUri", "uri $uri")
-            Log.d("handleDocumentUri", "formattedFileSize $formattedFileSize")
-
-            numberOfPages = when (documentType) {
-                "doc" -> {
-                    getNumberOfPagesFromUriForDoc(uri)
-                }
-
-                "docx", "xlsx", "pptx" -> {
-                    getNumberOfPagesFromUriForDocx(uri)
-                }
-
-                else -> {
-                    getNumberOfPagesFromUriForPDF(this, uri)
-                }
-            }
-            if (fileSizes) {
-                if (!isReply) {
-                    Log.d("handleDocumentUri", "handleDocumentUri for main document")
-                    uploadDocumentComment(
-                        uri.toString(),
-                        numberOfPages,
-                        formattedFileSize,
-                        documentType,
-                        fileName, placeholder = true
-                    )
-                } else {
-                    Log.d("handleDocumentUri", "This is for document reply")
-                    uploadReplyDocumentComment(
-                        uri.toString(),
-                        numberOfPages,
-                        formattedFileSize,
-                        documentType,
-                        fileName, placeholder = true
-                    )
-                }
-
-                toCompressUris.add(uri)
-
-                compressShorts(
-                    "",
-                    fileType = "doc",
-                    fileName = fileName,
-                    numberOfPages = numberOfPages,
-                    documentType = documentType,
-                    formattedFileSize = formattedFileSize
-                )
-            } else {
-
-                if (!isReply) {
-                    Log.d("handleDocumentUri", "handleDocumentUri for main document")
-                    uploadDocumentComment(
-                        uri.toString(),
-                        numberOfPages,
-                        formattedFileSize,
-                        documentType,
-                        fileName
-                    )
-                } else {
-                    Log.d("handleDocumentUri", "This is for document reply")
-                    uploadReplyDocumentComment(
-                        uri.toString(),
-                        numberOfPages,
-                        formattedFileSize,
-                        documentType,
-                        fileName
-                    )
-                }
-            }
-
-        }
-    }
-
-    private fun getNumberOfPagesFromUriForPDF(context: Context, uri: Uri): Int {
-        var inputStream: InputStream? = null
-        var numberOfPages = 0
-        try {
-            inputStream = context.contentResolver.openInputStream(uri)
-            if (inputStream != null) {
-                val document = PDDocument.load(inputStream)
-                numberOfPages = document.numberOfPages
-                document.close()
-            }
-        } catch (e: Exception) {
-            // Handle exceptions
-            Log.e("getNumberOfPagesFromUri", "getNumberOfPagesFromUri ex $e")
-            e.printStackTrace()
-        } finally {
-            inputStream?.close()
-        }
-        return numberOfPages
-    }
-
-    private fun getNumberOfPagesFromUriForDoc(uri: Uri): Int {
-        var numberOfPages = 0
-        val inputStream: InputStream = contentResolver.openInputStream(uri) ?: return 0
-        val hwpfDocument = HWPFDocument(inputStream)
-        val range = hwpfDocument.range
-
-        // Count the paragraphs within the range
-        val paragraphs = Range(range.startOffset, range.endOffset, hwpfDocument).numParagraphs()
-        numberOfPages = paragraphs
-
-        hwpfDocument.close()
-        inputStream.close()
-
-        return numberOfPages
-
-    }
-
-    private fun getNumberOfPagesFromUriForDocx(uri: Uri): Int {
-        var numberOfPages = 0
-        val inputStream: InputStream = contentResolver.openInputStream(uri) ?: return 0
-        val xwpfDocument = XWPFDocument(inputStream)
-
-        // Count the paragraphs or sections in the document
-        numberOfPages = xwpfDocument.paragraphs.size
-
-        xwpfDocument.close()
-        inputStream.close()
-
-        return numberOfPages
-
-    }
-
-    @RequiresApi(Build.VERSION_CODES.O)
-    private fun uploadDocumentComment(
-        documentFilePathToUpload: String,
-        numberOfPages: Int,
-        fileSize: String,
-        fileType: String,
-        fileName: String, placeholder: Boolean = false, update: Boolean = false
-    ) {
-        Log.d("uploadDocumentComment", "uploadDocumentComment: $documentFilePathToUpload")
-        Log.d(
-            "uploadDocumentComment",
-            "uploadDocumentComment to uri: ${documentFilePathToUpload.toUri()}"
-        )
-        Log.d("uploadDocumentComment", "uploadDocumentComment: isReply is $isReply")
-
-        val mongoDbTimeStamp = generateMongoDBTimestamp()
-
-        val file = File(documentFilePathToUpload)
-
-        val localUpdateId = generateRandomId()
-        if (isFileExists(this, documentFilePathToUpload.toUri())) {
-            Log.d("uploadDocumentComment", "File exists, creating comment.......")
-            val profilePic2 = settings.getString("profile_pic", "").toString()
-            val avatar = Avatar("", "", url = profilePic2)
-            val account =
-                Account(_id = "", avatar = avatar, "", LocalStorage.getInstance(this).getUsername())
-            val author = Author(
-                _id = "12", account = account, firstName = "", lastName = "",
-                avatar = TODO()
-            )
-            val documentFile = CommentFiles(
-                _id = "124",
-                url = documentFilePathToUpload,
-                localPath = documentFilePathToUpload
-            )
-            val comment = Comment(
-                __v = 1,
-                _id = adapter!!.itemCount.toString(),
-                author = author,
-                content = "",
-                createdAt = mongoDbTimeStamp,
-                isLiked = false,
-                likes = 0,
-                postId = postId,
-                updatedAt = mongoDbTimeStamp,
-                replyCount = 0,
-                images = mutableListOf(),
-                audios = mutableListOf(),
-                docs = mutableListOf(documentFile),
-                gifs = "",
-                thumbnail = mutableListOf(),
-                videos = mutableListOf(),
-                contentType = "docs",
-                isPlaying = data?.isPlaying ?: false,
-                progress = data?.progress ?: 0f,
-                localUpdateId = localUpdateId,
-                numberOfPages = numberOfPages.toString(),
-                fileSize = fileSize,
-                fileType = fileType,
-                fileName = fileName
-            )
-
-
-            if (!placeholder) {
-                val newCommentEntity =
-                    CommentsFilesEntity(
-                        postId,
-                        "docs",
-                        documentFilePathToUpload,
-                        isReply = 0,
-                        localUpdateId,
-                        numberOfPages = numberOfPages,
-                        fileSize = fileSize,
-                        fileType = fileType,
-                        fileName = fileName
-                    )
-                commentFilesViewModel.insertCommentFile(newCommentEntity)
-                Log.d(
-                    "uploadDocumentComment",
-                    "uploadDocumentComment: inserted comment $newCommentEntity"
-                )
-            }
-
-            if (update) {
-                Log.d("uploadVideoComment", "updatePosition: $updatePosition")
-                updateAdapter(comment, updatePosition)
-                updatePosition = -1
-            }
-
-            Log.d("uploadDocumentComment", "uploadDocumentComment: comment $comment")
-
-
-            recordedAudioFiles.clear()
-            if (!update) {
-                listOfReplies.add(comment)
-
-                adapter!!.submitItem(comment, adapter!!.itemCount)
-
-                shortToComment = shortsViewModel.mutableShortsList.find { it._id == postId }
-                Log.d(
-                    "uploadDocumentComment",
-                    "uploadDocumentComment: count before ${shortToComment!!.comments}"
-                )
-
-                if (shortToComment != null) {
-                    shortToComment!!.comments += 1
-
-                    // Update the count in the mutableShortsList
-                    // Update the count in the mutableShortsList
-                    shortsViewModel.mutableShortsList.forEach { short ->
-                        if (short._id == postId) {
-                            short.comments = shortToComment!!.comments
-                        }
-                    }
-                    val newShortToComment =
-                        shortsViewModel.mutableShortsList.find { it._id == postId }
-                    Log.d(
-                        "uploadDocumentComment",
-                        "onSubmit: count after ${newShortToComment!!.comments}"
-                    )
-
-                    EventBus.getDefault().post(ShortAdapterNotifyDatasetChanged())
-                }
-            }
-
-        } else {
-            Log.e(TAG, "File does not exist")
-        }
-
-
-    }
-
-    @RequiresApi(Build.VERSION_CODES.O)
-    @SuppressLint("SetTextI18n")
-    private fun uploadReplyDocumentComment(
-        documentFilePathToUpload: String,
-        numberOfPages: Int,
-        fileSize: String,
-        fileType: String,
-        fileName: String, placeholder: Boolean = false, update: Boolean = false
-    ) {
-        Log.d("uploadReplyDocumentComment", "uploadReplyDocumentComment: $documentFilePathToUpload")
-        Log.d("uploadReplyDocumentComment", "uploadReplyDocumentComment: isReply is $isReply")
-
-
-        val localUpdateId = generateRandomId()
-        val profilePic2 = settings.getString("profile_pic", "").toString()
-        val avatar = com.uyscuti.social.network.api.response.commentreply.allreplies.Avatar(
-            "", "", url = profilePic2
-        )
-        val account = com.uyscuti.social.network.api.response.commentreply.allreplies.Account(
-            _id = "", avatar = avatar, "", LocalStorage.getInstance(this).getUsername()
-        )
-
-
-        val commentReplyAuthor = com.uyscuti.social.network.api.response.commentreply.allreplies.Author(
-            _id = "21", account = account, firstName = "", lastName = ""
-        )
-
-        Log.d("uploadReplyDocumentComment", "uploadReplyDocumentComment: handle reply to a comment")
-
-
-        if (!placeholder) {
-            val newCommentReplyEntity =
-                CommentsFilesEntity(
-                    postId,
-                    "docs",
-                    documentFilePathToUpload,
-                    isReply = 1,
-                    localUpdateId,
-                    fileSize = fileSize,
-                    fileName = fileName,
-                    numberOfPages = numberOfPages,
-                    fileType = fileType,
-                    content = binding.input.inputEditText.text.toString()
-                )
-            commentFilesViewModel.insertCommentFile(newCommentReplyEntity)
-
-            Log.d(
-                "uploadReplyDocumentComment",
-                "uploadReplyDocumentComment: inserted comment $newCommentReplyEntity"
-            )
-        }
-
-
-        val mongoDbTimeStamp = generateMongoDBTimestamp()
-        val documentReplyFile =
-            CommentFiles(_id = "", url = documentFilePathToUpload, localPath = "docs")
-
-        val newReply = com.uyscuti.social.network.api.response.commentreply.allreplies.Comment(
-            __v = data!!.__v,
-            _id = "commentId",
-            author = commentReplyAuthor,
-            content = binding.input.inputEditText.text.toString(),
-            createdAt = mongoDbTimeStamp,
-            isLiked = false,
-            likes = 0,
-            commentId = commentId,
-            updatedAt = mongoDbTimeStamp,
-            docs = mutableListOf(documentReplyFile),
-
-            contentType = "docs",
-            fileName = fileName,
-            fileSize = fileSize,
-            fileType = fileType,
-            numberOfPages = numberOfPages.toString()
-        )
-
-        val replyCount = data!!.replyCount + 1
-        val commentWithReplies = Comment(
-            __v = data!!.__v,
-            _id = data!!._id,
-            author = data!!.author,
-            content = data!!.content,
-            createdAt = data!!.createdAt,
-            isLiked = data!!.isLiked,
-            likes = data!!.likes,
-            postId = data!!.postId,
-            updatedAt = data!!.updatedAt,
-            replyCount = replyCount,
-
-            replies = data?.replies?.toMutableList()?.apply {
-                // Assuming newReply is the new reply you want to add
-                add(0, newReply)
-            } ?: mutableListOf(),
-            isRepliesVisible = true,
-            images = mutableListOf(),
-            audios = mutableListOf(),
-            docs = data?.docs ?: mutableListOf(),
-            gifs = data?.gifs ?: "",
-            thumbnail = mutableListOf(),
-            videos = mutableListOf(),
-            contentType = data?.contentType ?: "docs",
-            isPlaying = data?.isPlaying ?: false,
-            localUpdateId = localUpdateId,
-            replyCountVisible = false,
-            numberOfPages = data?.numberOfPages ?: "",
-            fileType = data?.fileType ?: "",
-            fileName = data?.fileName ?: "",
-            fileSize = data?.fileSize ?: "",
-            duration = data?.duration ?: "00:00",
-            isReplyPlaying = data?.isReplyPlaying ?: false,
-            progress = data?.progress ?: 0f,
-        )
-
-        updateReplyPosition = position
-        if (update) {
-            isReply = false
-            Log.d("uploadVideoComment", "updatePosition: $updatePosition")
-            updateAdapter(commentWithReplies, updateReplyPosition)
-            updateReplyPosition = -1
-        }
-        if (!update) {
-            listOfReplies.add(commentWithReplies)
-            Log.d(
-                "uploadReplyDocumentComment",
-                "uploadReplyDocumentComment: comment id = data is? $commentId = ${data!!._id} on position $position"
-            )
-            Log.d(
-                "uploadReplyDocumentComment",
-                "uploadReplyDocumentComment: comment id = data is? $commentId = ${data!!._id} on position $position"
-            )
-            updateAdapter(commentWithReplies, position)
-        }
-
-        binding.input.inputEditText.setText("")
-        binding.replyToLayout.visibility = View.GONE
-    }
-
-    private val toCompressUris = mutableListOf<Uri>()
-
-    @SuppressLint("SetTextI18n")
-    private fun compressShorts(
-        durationString: String,
-        fileName: String = "",
-        audioType: String = "",
-        fileType: String,
-        numberOfPages: Int = 0,
-        formattedFileSize: String = "",
-        documentType: String = ""
-
-    ) {
-
-        val uniqueId = UniqueIdGenerator.generateUniqueId()
-        Log.d("progress id", uniqueId)
-
-        lifecycleScope.launch {
-            VideoCompressor.start(
-                context = applicationContext,
-                toCompressUris,
-                isStreamable = true,
-                sharedStorageConfiguration = SharedStorageConfiguration(
-                    saveAt = SaveLocation.movies,
-                    subFolderName = "flash_comments_compresses"
-                ),
-
-                configureWith = Configuration(
-                    quality = VideoQuality.MEDIUM,
-
-                    videoNames = toCompressUris.map { uri -> uri.pathSegments.last() },
-
-                    isMinBitrateCheckEnabled = false,
-                ),
-
-                listener = object : CompressionListener {
-                    override fun onProgress(index: Int, percent: Float) {
-
-                        //Update UI
-                        if (percent <= 100) {
-                            Log.d("Compress", "Progress: $percent")
-
-
-                        }
-                    }
-
-                    override fun onStart(index: Int) {
-
-
-                    }
-
-                    override fun onSuccess(index: Int, size: Long, path: String?) {
-
-                        Log.d("Compress", "comment compress successful is reply $isReply")
-                        Log.d("Compress", "comment file size: ${getFileSize(size)}")
-                        Log.d("Compress", "comment path: $path")
-                        if (path != null) {
-                            runOnUiThread {
-                                if (fileType == "video") {
-                                    if (!isReply) {
-                                        uploadVideoComment(path, durationString, update = true)
-                                    } else {
-                                        uploadReplyVideoComment(path, durationString, update = true)
-                                    }
-                                }
-
-                            }
-
-                        } else {
-                            Log.d("", "compress path is null")
-                        }
-
-                    }
-
-                    override fun onFailure(index: Int, failureMessage: String) {
-                        Log.wtf("Compress", failureMessage)
-                    }
-
-                    override fun onCancelled(index: Int) {
-                        Log.wtf("Compress", "compression has been cancelled")
-                        // make UI changes, cleanup, etc
-                    }
-
-                },
-
-                )
-        }
-    }
-
-    private fun uploadVideoComment(
-        videoFilePathToUpload: String, durationString: String,
-        placeholder: Boolean = false, update: Boolean = false
-    ) {
-        Log.d("uploadVideoComment", "uploadVideoComment: $videoFilePathToUpload")
-        Log.d(
-            "uploadVideoComment",
-            "uploadVideoComment: isReply is $isReply duration string $durationString"
-        )
-
-        val mongoDbTimeStamp = generateMongoDBTimestamp()
-
-        val file = File(videoFilePathToUpload)
-
-        val localUpdateId = generateRandomId()
-        if (file.exists()) {
-            Log.d("uploadVideoComment", "File exists, creating comment.......")
-            val profilePic2 = settings.getString("profile_pic", "").toString()
-            val avatar = Avatar("", "", url = profilePic2)
-            val account =
-                Account(_id = "", avatar = avatar, "", LocalStorage.getInstance(this).getUsername())
-            val author = Author(
-                _id = "12", account = account, firstName = "", lastName = "",
-                avatar = TODO()
-            )
-            val videoFile = CommentFiles(
-                _id = localUpdateId,
-                url = videoFilePathToUpload,
-                localPath = videoFilePathToUpload
-            )
-            val comment = Comment(
-                __v = 1,
-                _id = adapter!!.itemCount.toString(),
-                author = author,
-                content = "",
-                createdAt = mongoDbTimeStamp,
-                isLiked = false,
-                likes = 0,
-                postId = postId,
-                updatedAt = mongoDbTimeStamp,
-                replyCount = 0,
-                images = mutableListOf(),
-                audios = mutableListOf(),
-                docs = mutableListOf(),
-                gifs = "",
-                thumbnail = mutableListOf(),
-                videos = mutableListOf(videoFile),
-                contentType = "video",
-                isPlaying = data?.isPlaying ?: false,
-                progress = data?.progress ?: 0f,
-                localUpdateId = localUpdateId,
-                duration = durationString
-            )
-
-            if (!placeholder) {
-                val newCommentEntity =
-                    CommentsFilesEntity(
-                        postId,
-                        "video",
-                        videoFilePathToUpload,
-                        isReply = 0,
-                        localUpdateId,
-                        duration = durationString
-                    )
-                commentFilesViewModel.insertCommentFile(newCommentEntity)
-                Log.d(
-                    "uploadVideoComment",
-                    "uploadVideoComment: inserted comment $newCommentEntity"
-                )
-
-            }
-
-            if (update) {
-                Log.d("uploadVideoComment", "updatePosition: $updatePosition")
-                updateAdapter(comment, updatePosition)
-                updatePosition = -1
-            }
-
-            Log.d("uploadVideoComment", "uploadVideoComment: comment $comment")
-
-            recordedAudioFiles.clear()
-            if (!update) {
-                listOfReplies.add(comment)
-
-                runOnUiThread {
-                    updatePosition = adapter!!.itemCount
-                    adapter!!.submitItem(comment, adapter!!.itemCount)
-                }
-
-                //            addCommentVN()
-                shortToComment = shortsViewModel.mutableShortsList.find { it._id == postId }
-
-
-                if (shortToComment != null) {
-                    Log.d(
-                        "uploadVideoComment",
-                        "uploadVideoComment: count before ${shortToComment!!.comments}"
-                    )
-                    shortToComment!!.comments += 1
-
-                    shortsViewModel.mutableShortsList.forEach { short ->
-                        if (short._id == postId) {
-                            short.comments = shortToComment!!.comments
-                        }
-                    }
-                    val newShortToComment =
-                        shortsViewModel.mutableShortsList.find { it._id == postId }
-                    Log.d(
-                        "uploadVideoComment",
-                        "onSubmit: count after ${newShortToComment!!.comments}"
-                    )
-
-                    EventBus.getDefault().post(ShortAdapterNotifyDatasetChanged())
-                }
-            }
-        } else {
-            Log.e(TAG, "File does not exist")
-        }
-    }
-
-    @RequiresApi(Build.VERSION_CODES.O)
-    @SuppressLint("SetTextI18n")
-    private fun uploadReplyVideoComment(
-        videoToUpload: String, durationString: String,
-        placeholder: Boolean = false, update: Boolean = false
-    ) {
-        Log.d("uploadReplyImageComment", "uploadReplyImageComment: $videoToUpload")
-        Log.d("uploadReplyImageComment", "uploadReplyImageComment: isReply is $isReply")
-        val localUpdateId = generateRandomId()
-        val profilePic2 = settings.getString("profile_pic", "").toString()
-        val avatar = com.uyscuti.social.network.api.response.commentreply.allreplies.Avatar(
-            "", "", url = profilePic2
-        )
-        val account = com.uyscuti.social.network.api.response.commentreply.allreplies.Account(
-            _id = "", avatar = avatar, "", LocalStorage.getInstance(this).getUsername()
-        )
-        val commentReplyAuthor = com.uyscuti.social.network.api.response.commentreply.allreplies.Author(
-            _id = "21", account = account, firstName = "", lastName = ""
-        )
-        Log.d("uploadReplyImageComment", "uploadReplyImageComment: handle reply to a comment")
-        //if it clash on upload un comment the line below//
-        if (!placeholder) {
-            val newCommentReplyEntity =
-                CommentsFilesEntity(
-                    postId,
-                    "video",
-                    videoToUpload,
-                    isReply = 1,
-                    localUpdateId,
-                    duration = durationString,
-                    content = binding.input.inputEditText.text.toString()
-                )
-            commentFilesViewModel.insertCommentFile(newCommentReplyEntity)
-
-            Log.d(
-                "uploadReplyImageComment",
-                "uploadReplyImageComment: inserted comment $newCommentReplyEntity"
-            )
-        }
-
-        lifecycleScope.launch {
-
-        }
-        val mongoDbTimeStamp = generateMongoDBTimestamp()
-        val videoFile = CommentFiles(_id = "", url = videoToUpload, localPath = "video")
-
-        val newReply = com.uyscuti.social.network.api.response.commentreply.allreplies.Comment(
-            __v = data!!.__v,
-            _id = "commentId",
-            author = commentReplyAuthor,
-            content = binding.input.inputEditText.text.toString(),
-            createdAt = mongoDbTimeStamp,
-            isLiked = false,
-            likes = 0,
-            commentId = commentId,
-            updatedAt = mongoDbTimeStamp,
-            videos = mutableListOf(videoFile),
-            contentType = "video",
-            duration = durationString
-        )
-
-        val replyCount = data!!.replyCount + 1
-        val commentWithReplies = Comment(
-            __v = data!!.__v,
-            _id = data!!._id,
-            author = data!!.author,
-            content = data!!.content,
-            createdAt = data!!.createdAt,
-            isLiked = data!!.isLiked,
-            likes = data!!.likes,
-            postId = data!!.postId,
-            updatedAt = data!!.updatedAt,
-            replyCount = replyCount,
-
-            replies = data?.replies?.toMutableList()?.apply {
-                // Assuming newReply is the new reply you want to add
-                add(0, newReply)
-            } ?: mutableListOf(),
-            isRepliesVisible = true,
-            images = mutableListOf(),
-            audios = mutableListOf(),
-            docs = mutableListOf(),
-            gifs = data?.gifs ?: "",
-            thumbnail = mutableListOf(),
-            videos = data?.videos ?: mutableListOf(),
-            contentType = data?.contentType ?: "video",
-            isPlaying = data?.isPlaying ?: false,
-            localUpdateId = localUpdateId,
-            replyCountVisible = false,
-            duration = data?.duration ?: "00: 00",
-            numberOfPages = data?.numberOfPages ?: "",
-            fileSize = data?.fileSize ?: "",
-            fileName = data?.fileName ?: "",
-            fileType = data?.fileType ?: "",
-            isReplyPlaying = data?.isReplyPlaying ?: false,
-            progress = data?.progress ?: 0f
-        )
-
-
-        updateReplyPosition = position
-        if (update) {
-            isReply = false
-            Log.d("uploadVideoComment", "updatePosition: $updatePosition")
-            updateAdapter(commentWithReplies, updateReplyPosition)
-            updateReplyPosition = -1
-        }
-        if (!update) {
-
-            updateAdapter(commentWithReplies, position)
-            listOfReplies.add(commentWithReplies)
-            Log.d(
-                "uploadReplyImageComment",
-                "uploadReplyImageComment: comment id = data is? $commentId = ${data!!._id} on position $position"
-            )
-            Log.d(
-                "uploadReplyImageComment",
-                "uploadReplyImageComment: comment id = data is? $commentId = ${data!!._id} on position $position"
-            )
-        }
-        binding.input.inputEditText.setText("")
-        binding.replyToLayout.visibility = View.GONE
-    }
-
-
-    private fun likeCommentReplyFromViewsActivity(event: LikeCommentReply) {
-
-        val TAG = "likeCommentReplyFromViewsActivity"
-
-        Log.d(
-            "likeCommentReplyFromViewsActivity",
-            "likeCommentReplyFromViewsActivity: is liked count is ${event.commentReply.isLiked}"
-        )
-
-        val itemToUpdate = event.comment.replies.find { it._id == event.commentReply._id }
-        itemToUpdate!!.isLiked = event.commentReply.isLiked
-        if (event.commentReply.isLiked) {
-            itemToUpdate.likes += 1
-
-        } else {
-            itemToUpdate.likes -= 1
-        }
-
-        if (event.commentReply._id == itemToUpdate._id) {
-            Log.d(TAG, "likeCommentReplyFromViewsActivity: ids are equal")
-        } else {
-            Log.d(TAG, "likeCommentReplyFromViewsActivity: ids not equal")
-        }
-
-
-        Log.d(
-            "likeCommentReplyFromViewsActivity",
-            "likeCommentReplyFromViewsActivity: is liked count is ${event.commentReply}"
-        )
-        adapter?.updateItem(event.position, event.comment)
-
-        if (isInternetAvailable(this)) {
-            Log.d(
-                TAG,
-                "likeCommentReplyFromViewsActivity: item to update id ${itemToUpdate._id} and comment reply id ${event.commentReply._id}"
-            )
-            lifecycleScope.launch {
-                val result = commentReplyLikeUnLike(itemToUpdate._id)
-                Log.d(TAG, "likeCommentReplyFromViewsActivity server result: $result")
-
-            }
-        } else {
-            Log.d(TAG, "likeCommentReplyFromViewsActivity: cant like offline")
-        }
-    }
-
-
-    private fun allShortComments(page: Int) {
-        val TAG = "allShortComments"
-        lifecycleScope.launch(Dispatchers.IO) {
-            withContext(Dispatchers.Main) {
-                if (page == 1) {
-                    showShimmer()
-                } else {
-                    showProgressBar()
-                }
-            }
-            try {
-                val commentsWithReplies = commentViewModel.fetchShortComments(postId, page)
-                Log.d("commentsWithReplies", "allShortComments: size ${commentsWithReplies.size}")
-                withContext(Dispatchers.Main) {
-
-                    if (page == 1) {
-                        hideShimmer()
-                    } else {
-                        hideProgressBar()
-                    }
-
-                    commentsWithReplies
-                        .filter { commentAudioCache ->
-                            commentAudioCache.audios.isNotEmpty() // Filter out comments without any audios
-                        }
-                        .map { commentAudioCache ->
-                            vnList.add(commentAudioCache.audios[0].url)
-                        }
-
-
-                    commentsWithReplies
-                        .flatMap { commentReplies ->
-                            commentReplies.replies.filter { commentRepliesCache ->
-                                commentRepliesCache.audios.isNotEmpty() // Filter out replies without any audios
-                            }.map { commentRepliesCache ->
-                                commentRepliesCache.audios[0].url
-                            }
-                        }
-                        .forEach { url ->
-                            vnList.add(url)
-                        }
-
-                    startPreLoadingService()
-                    adapter!!.submitItems(commentsWithReplies)
-                }
-
-            } catch (e: Exception) {
-                Log.e("UserProfileShortsViewModel", "Exception: ${e.message}")
-                lifecycleScope.launch {
-
-                    if (page == 1) {
-                        hideShimmer()
-                    } else {
-                        hideProgressBar()
-                    }
-                }
-                e.printStackTrace()
-            }
-        }
-    }
-
-    private fun generateSampleData(count: Int): List<Comment> {
-        val itemList = mutableListOf<Comment>()
-        for (i in 1..count) {
-            //itemList.add(Comment("Item $i"))
-        }
-        return itemList
-    }
-
-    @kotlin.OptIn(DelicateCoroutinesApi::class)
-    private fun download(
-        mUrl: String,
-        fileLocation: String,
-    ) {
-        Log.d("Download", "directory path - $fileLocation")
-
-        if (mUrl.startsWith("/storage/") || mUrl.startsWith("/storage/")) {
-
-            Log.d("Download", "Cannot download a local file")
-            return
-        }
-        //STORAGE_FOLDER += fileLocation
-        val STORAGE_FOLDER = "/Download/Flash/$fileLocation"
-
-        val fileName = generateUniqueFileName(mUrl)
-        val storageDirectory =
-            Environment.getExternalStorageDirectory().toString() + STORAGE_FOLDER + "/$fileName"
-        Log.d("Download", "directory path - $storageDirectory")
-        val file = File(Environment.getExternalStorageDirectory().toString() + STORAGE_FOLDER)
-        if (!file.exists()) {
-            file.mkdirs()
-        }
-        GlobalScope.launch(Dispatchers.IO) {
-            val url = URL(mUrl)
-            val connection = url.openConnection() as HttpURLConnection
-            connection.requestMethod = "GET"
-            connection.setRequestProperty("Accept-Encoding", "identity")
-            connection.connect()
-            try {
-                if (connection.responseCode in 200..299) {
-                    val fileSize = connection.contentLength
-                    val inputStream = connection.inputStream
-                    val outputStream = FileOutputStream(storageDirectory)
-                    var bytesCopied: Long = 0
-                    val buffer = ByteArray(1024)
-                    var bytes = inputStream.read(buffer)
-                    while (bytes >= 0) {
-                        bytesCopied += bytes
-                        val downloadProgress =
-                            (bytesCopied.toFloat() / fileSize.toFloat() * 100).toInt()
-                        runOnUiThread {
-
-                            binding.downloadProgressBarLayout.visibility = View.VISIBLE
-
-                            wifiAnimation =
-                                shortsDownloadImageView.background as AnimationDrawable
-                            wifiAnimation!!.start()
-                            Log.d("Download", "Progress $downloadProgress")
-                            binding.shortsDownloadProgressBar.progress = downloadProgress
-                        }
-                        outputStream.write(buffer, 0, bytes)
-                        bytes = inputStream.read(buffer)
-                    }
-
-                    runOnUiThread {
-                        // Update the UI components here
-
-
-                        Log.d("Download", "File Downloaded : $storageDirectory")
-                        binding.downloadProgressBarLayout.visibility = View.GONE
-
-                        wifiAnimation!!.stop()
-
-                        // Show notification
-                        showNotification(
-                            this@PostDetailsActivity2,
-                            "Download Complete",
-                            "File downloaded successfully.",
-                            generateRandomNotificationId(),
-                            storageDirectory
-                        )
-                        File(storageDirectory)
-
-
-
-
-                    }
-
-                    outputStream.close()
-                    inputStream.close()
-                } else {
-                    runOnUiThread {
-                        Toast.makeText(
-                            this@PostDetailsActivity2,
-                            "Not successful",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    }
-                }
-            } catch (e: Exception) {
-                Log.e("DownloadFailed", e.message.toString())
-
-                e.printStackTrace()
-                runOnUiThread {
-
-                    binding.downloadProgressBarLayout.visibility = View.GONE
-                }
-            }
-        }
-    }
-
-    private fun generateRandomNotificationId(): Int {
-        val randomUUID = UUID.randomUUID()
-        return abs(randomUUID.hashCode())
-    }
-
-    private fun showNotification(
-        context: Context,
-        title: String,
-        message: String,
-        notificationId: Int,
-        fileLocation: String
-    ) {
-        val notificationManager =
-            context.getSystemService(NOTIFICATION_SERVICE) as NotificationManager
-        // Create a Notification Channel for Android Oreo and above
-        val channelId = "channel_id"
-        val channel = NotificationChannel(
-            channelId,
-            "Channel Name",
-            NotificationManager.IMPORTANCE_DEFAULT
-        )
-        channel.description = "Channel Description"
-        channel.enableLights(true)
-        channel.lightColor = android.graphics.Color.BLUE
-        notificationManager.createNotificationChannel(channel)
-        // Create an Intent to view the video file
-        val fileUri = Uri.parse(fileLocation)
-        val intent = Intent(Intent.ACTION_VIEW, fileUri)
-        intent.setDataAndType(fileUri, "video/*") // Set the MIME type for videos
-
-        // Create a PendingIntent to be triggered when the notification is clicked
-        val pendingIntent = PendingIntent.getActivity(
-            context,
-            notificationId,
-            intent,
-            PendingIntent.FLAG_UPDATE_CURRENT
-        )
-
-        // Create the notification
-        val builder = NotificationCompat.Builder(context, "channel_id")
-            .setSmallIcon(R.drawable.flash21) // Set your notification icon
-            .setContentTitle(title)
-            .setContentText(message)
-            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-            .setAutoCancel(true)
-            .setContentIntent(pendingIntent) // Set the PendingIntent
-
-        // Show the notification with a unique ID
-        notificationManager.notify(notificationId, builder.build())
-    }
-
-    private fun generateUniqueFileName(originalUrl: String): String {
-        val timestamp =
-            SimpleDateFormat("yyyy_MM_dd_HHmmss", Locale.getDefault()).format(Date())
-        val originalFileName = originalUrl.split("/").last()
-        val fileExtension = MimeTypeMap.getFileExtensionFromUrl(originalFileName)
-        val randomString = UUID.randomUUID().toString().substring(0, 8)
-        return "$timestamp-$randomString.$fileExtension"
-    }
-
-
-    private fun onCommentsClick(postId: String) {
-        val TAG = "allShortComments"
-        this.postId = postId
-        commentCount = 0
-        Log.d("showBottomSheet", "showBottomSheet: inside show bottom sheet")
-        val items = generateSampleData(50)
-        Log.d("showBottomSheet", "showBottomSheet: postId $postId")
-        adapter = CommentsRecyclerViewAdapter(this, this@PostDetailsActivity2)
-        binding.recyclerView.layoutManager =
-            LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false)
-        binding.recyclerView.adapter = adapter
-        binding.recyclerView.itemAnimator = null
-        adapter?.setDefaultRecyclerView(this, R.id.recyclerView)
-
-        if (adapter?.itemCount == 0) {
-
-        }
-        toggleMotionLayoutVisibility()
-        adapter!!.setOnPaginationListener(object : AdPaginatedAdapter.OnPaginationListener {
-            override fun onCurrentPage(page: Int) {
-
-                Log.d(TAG, "currentPage: page number $page")
-
-            }
-
-            override fun onNextPage(page: Int) {
-                lifecycleScope.launch(Dispatchers.Main) {
-
-                    Log.d(TAG, "onNextPage: page number $page")
-                    allShortComments(page)
-                }
-            }
-
-            override fun onFinish() {
-
-                Log.d(TAG, "finished: page number")
-
-
-            }
-        })
-
-        lifecycleScope.launch(Dispatchers.Main) {
-            allShortComments(adapter!!.startPage)
-
-        }
-        observeComments()
-    }
-
-    @SuppressLint("SetTextI18n")
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    fun toggleReplyToTextView(event: ToggleReplyToTextView) {
-
-        val TAG = "toggleReplyToTextView"
-        isReply = true
-        commentId = event.comment._id
-        data = event.comment
-        position = event.position
-        Log.d(
-            TAG,
-            "toggleReplyToTextView: comment id $commentId data comment id ${data!!._id} comment position $position"
-        )
-        Log.d(TAG, "toggleReplyToTextView: data ${event.comment}")
-        var username = event.comment.author!!.account.username
-
-        binding.replyToLayout.visibility = View.VISIBLE
-        binding.replyToTextView.text = "Replying to $username"
-        binding.exitReply.setOnClickListener {
-            binding.replyToLayout.visibility = View.GONE
-            binding.input.inputEditText.setText("")
-            isReply = false
-        }
-        binding.input.inputEditText.setText("@$username")
-        binding.input.inputEditText.setSelection(binding.input.inputEditText.text!!.length)
-    }
-
-
-    @SuppressLint("SetTextI18n")
-    private fun toggleReplyFromViewsActivity(
-        data: Comment,
-        pos: Int
-    ) {
-        val TAG = "toggleReplyToTextView"
-        isReply = true
-        commentId = data._id
-        this.data = data
-        position = pos
-        Log.d(
-            TAG,
-            "toggleReplyToTextView: comment id $commentId data comment id ${data._id} comment position $position"
-        )
-
-        val username = data.author!!.account.username
-
-        binding.replyToLayout.visibility = View.VISIBLE
-
-        binding.replyToTextView.text = "Replying to $username"
-        binding.exitReply.setOnClickListener {
-            binding.replyToLayout.visibility = View.GONE
-            binding.input.inputEditText.setText("")
-            isReply = false
-        }
-
-        binding.input.inputEditText.setText("@$username ")
-        binding.input.inputEditText.setSelection(binding.input.inputEditText.text!!.length)
-    }
-
-    @Deprecated("Deprecated in Java")
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == R_CODE && resultCode == RESULT_OK && data != null) {
-            // Handle the result from the adapter
-            // You can extract data from the Intent if needed
-            val modifiedData =
-                data.getSerializableExtra("data") as Comment
-            val currentReplyData =
-                data.getSerializableExtra("currentReplyComment") as com.uyscuti.social.network.api.response.commentreply.allreplies.Comment?
-
-            val position = data.getIntExtra("position", 0)
-            val reply = data.getBooleanExtra("reply", false)
-            val updateReplyLikes = data.getBooleanExtra("updateReplyLikes", false)
-            val updateLike = data.getBooleanExtra("updateLike", false)
-
-
-            if (reply) {
-                toggleReplyFromViewsActivity(modifiedData, position)
-            }
-            if (updateLike) {
-                likeUnLikeCommentFromViewsActivity(position, modifiedData)
-            }
-
-            if (updateReplyLikes) {
-                val likeCommentReply = LikeCommentReply(currentReplyData!!, modifiedData, position)
-                likeCommentReplyFromViewsActivity(likeCommentReply)
-            }
-
-
-
-        } else if (requestCode == COMMENT_VIDEO_CODE && resultCode == RESULT_OK && data != null) {
-            // Handle the result from the adapter
-            // You can extract data from the Intent if needed
-            val modifiedData =
-                data.getSerializableExtra("data") as Comment
-            val currentReplyData =
-                data.getSerializableExtra("currentReplyComment") as com.uyscuti.social.network.api.response.commentreply.allreplies.Comment?
-
-            val position = data.getIntExtra("position", 0)
-            val reply = data.getBooleanExtra("reply", false)
-            val updateReplyLikes = data.getBooleanExtra("updateReplyLikes", false)
-            val updateLike = data.getBooleanExtra("updateLike", false)
-
-            if (reply) {
-                toggleReplyFromViewsActivity(modifiedData, position)
-            }
-            if (updateLike) {
-                likeUnLikeCommentFromViewsActivity(position, modifiedData)
-            }
-
-            if (updateReplyLikes) {
-                val likeCommentReply = LikeCommentReply(currentReplyData!!, modifiedData, position)
-                likeCommentReplyFromViewsActivity(likeCommentReply)
-            }
-
-
-        } else if (requestCode == GIF_CODE && resultCode == RESULT_OK && data != null) {
-
-            val gifUri = data.getStringExtra("gifUri")
-            Log.d("onActivityResult", "gifUri: ${gifUri.toString()}")
-            if (!isReply) {
-                uploadGifComment(gifUri.toString())
-            } else {
-                uploadGifReplyComment(gifUri.toString())
-            }
-
-
-        } else {
-            Log.d("onActivityResult", "onActivityResult failed")
-        }
-    }
-
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    fun likeCommentReply(event: LikeCommentReply) {
-
-        val TAG = "likeCommentReply"
-
-        Log.d("ReplyCommentAdapter", "likeCommentReply: inside like comment reply event bus ")
-        Log.d(
-            "ReplyCommentAdapter",
-            "likeCommentReply: inside like comment reply event bus data.replies.size ${event.comment.replies.size}"
-        )
-
-        val itemToUpdate = event.comment.replies.find { it._id == event.commentReply._id }
-
-        if (event.commentReply.isLiked) {
-            itemToUpdate!!.likes += 1
-        } else {
-            itemToUpdate!!.likes -= 1
-        }
-
-        if (event.commentReply._id == itemToUpdate?._id) {
-            Log.d(TAG, "likeCommentReply: ids are equal")
-        } else {
-            Log.d(TAG, "likeCommentReply: ids not equal")
-        }
-
-        Log.d(
-            "CommentsRecyclerViewAdapter",
-            "likeCommentReply: likes count is ${event.commentReply.likes}"
-        )
-        adapter?.updateItem(event.position, event.comment)
-
-        if (isInternetAvailable(this)) {
-
-            Log.d(
-                TAG,
-                "likeUnLikeComment: item to update id ${itemToUpdate?._id} and comment reply id ${event.commentReply._id}"
-            )
-
-            lifecycleScope.launch {
-                val result = commentReplyLikeUnLike(itemToUpdate!!._id)
-                Log.d(TAG, "likeUnLikeComment server result: $result")
-
-                if (result) {
-                }
-            }
-        } else {
-            Log.d(TAG, "likeUnLikeComment: cant like offline")
-        }
-    }
-
-    @RequiresApi(Build.VERSION_CODES.O)
-    private fun uploadGifComment(gifFilePathToUpload: String) {
-        Log.d("uploadGifComment", "uploadGifComment: $gifFilePathToUpload")
-        Log.d("uploadGifComment", "uploadGifComment: isReply is $isReply")
-
-        val mongoDbTimeStamp = generateMongoDBTimestamp()
-
-        val file = File(gifFilePathToUpload)
-
-        val localUpdateId = generateRandomId()
-        if (gifFilePathToUpload.isNotEmpty()) {
-            Log.d("uploadGifComment", "File exists, creating comment.......")
-            val profilePic2 = settings.getString("profile_pic", "").toString()
-            val avatar = Avatar("", "", url = profilePic2)
-            val account =
-                Account(_id = "", avatar = avatar, "", LocalStorage.getInstance(this).getUsername())
-            val author = Author(
-                _id = "12", account = account, firstName = "", lastName = "",
-                avatar = TODO()
-            )
-
-            val comment = Comment(
-                __v = 1,
-                _id = adapter!!.itemCount.toString(),
-                author = author,
-                content = "",
-                createdAt = mongoDbTimeStamp,
-                isLiked = false,
-                likes = 0,
-                postId = postId,
-                updatedAt = mongoDbTimeStamp,
-                replyCount = 0,
-                images = mutableListOf(),
-                audios = mutableListOf(),
-                docs = mutableListOf(),
-                gifs = gifFilePathToUpload,
-                thumbnail = mutableListOf(),
-                videos = mutableListOf(),
-                contentType = "gif",
-                isPlaying = data?.isPlaying ?: false,
-                progress = data?.progress ?: 0f,
-                localUpdateId = localUpdateId
-            )
-            val newCommentEntity =
-                CommentsFilesEntity(
-                    postId,
-                    "gif",
-                    gifFilePathToUpload,
-                    isReply = 0,
-                    localUpdateId,
-                )
-            commentFilesViewModel.insertCommentFile(newCommentEntity)
-            Log.d("uploadGifComment", "uploadGifComment: inserted comment $newCommentEntity")
-
-            Log.d("uploadGifComment", "uploadGifComment: comment $comment")
-            listOfReplies.add(comment)
-
-            adapter!!.submitItem(comment, adapter!!.itemCount)
-            shortToComment = shortsViewModel.mutableShortsList.find { it._id == postId }
-            if (shortToComment != null) {
-                shortToComment!!.comments += 1
-                Log.d(
-                    "uploadGifComment",
-                    "uploadGifComment: count before ${shortToComment!!.comments}"
-                )
-                shortsViewModel.mutableShortsList.forEach { short ->
-                    if (short._id == postId) {
-                        short.comments = shortToComment!!.comments
-                    }
-                }
-                val newShortToComment = shortsViewModel.mutableShortsList.find { it._id == postId }
-                Log.d("uploadGifComment", "onSubmit: count after ${newShortToComment!!.comments}")
-
-                EventBus.getDefault().post(ShortAdapterNotifyDatasetChanged())
-            }
-        } else {
-
-        }
-    }
-
-    @RequiresApi(Build.VERSION_CODES.O)
-    @SuppressLint("SetTextI18n")
-    private fun uploadGifReplyComment(gifToUpload: String) {
-        Log.d("uploadGifImageComment", "uploadGifImageComment: $gifToUpload")
-        Log.d("uploadGifImageComment", "uploadGifImageComment: isReply is $isReply")
-
-
-        val localUpdateId = generateRandomId()
-        val profilePic2 = settings.getString("profile_pic", "").toString()
-        val avatar = com.uyscuti.social.network.api.response.commentreply.allreplies.Avatar(
-            "", "", url = profilePic2
-        )
-        val account = com.uyscuti.social.network.api.response.commentreply.allreplies.Account(
-            _id = "", avatar = avatar, "", LocalStorage.getInstance(this).getUsername()
-        )
-
-
-        val commentReplyAuthor = com.uyscuti.social.network.api.response.commentreply.allreplies.Author(
-            _id = "21", account = account, firstName = "", lastName = ""
-        )
-
-        Log.d("uploadGifImageComment", "uploadGifImageComment: handle reply to a comment")
-        isReply = false
-
-        val newCommentReplyEntity =
-            CommentsFilesEntity(
-                postId,
-                "gif",
-                gifToUpload,
-                isReply = 1,
-                localUpdateId,
-                content = binding.input.inputEditText.text.toString()
-            )
-        commentFilesViewModel.insertCommentFile(newCommentReplyEntity)
-
-        Log.d(
-            "uploadGifImageComment",
-            "uploadGifImageComment: inserted comment $newCommentReplyEntity"
-        )
-        lifecycleScope.launch {
-
-        }
-        val mongoDbTimeStamp = generateMongoDBTimestamp()
-        val gifFile = CommentFiles(_id = "", url = gifToUpload, localPath = "gif")
-
-        val newReply = com.uyscuti.social.network.api.response.commentreply.allreplies.Comment(
-            __v = data!!.__v,
-            _id = "commentId",
-            author = commentReplyAuthor,
-            content = binding.input.inputEditText.text.toString(),
-            createdAt = mongoDbTimeStamp,
-            isLiked = false,
-            likes = 0,
-            commentId = commentId,
-            updatedAt = mongoDbTimeStamp,
-            gifs = gifToUpload,
-
-            contentType = "gif"
-        )
-
-        val replyCount = data!!.replyCount + 1
-        val commentWithReplies = Comment(
-            __v = data!!.__v,
-            _id = data!!._id,
-            author = data!!.author,
-            content = data!!.content,
-            createdAt = data!!.createdAt,
-            isLiked = data!!.isLiked,
-            likes = data!!.likes,
-            postId = data!!.postId,
-            updatedAt = data!!.updatedAt,
-            replyCount = replyCount,
-
-            replies = data?.replies?.toMutableList()?.apply {
-                // Assuming newReply is the new reply you want to add
-                add(0, newReply)
-            } ?: mutableListOf(),
-            isRepliesVisible = true,
-            images = data?.images ?: mutableListOf(),
-            audios = data?.audios ?: mutableListOf(),
-            docs = data?.docs ?: mutableListOf(),
-            gifs = data?.gifs ?: "",
-            thumbnail = data?.thumbnail ?: mutableListOf(),
-            videos = data?.videos ?: mutableListOf(),
-            contentType = data?.contentType ?: "gif",
-            isPlaying = data?.isPlaying ?: false,
-            localUpdateId = localUpdateId,
-            replyCountVisible = false,
-            progress = data?.progress ?: 0f,
-            isReplyPlaying = data?.isReplyPlaying ?: false,
-            duration = data?.duration ?: "00:00",
-            fileType = data?.fileType ?: "",
-            fileName = data?.fileName ?: "",
-            fileSize = data?.fileSize ?: "",
-            numberOfPages = data?.numberOfPages ?: ""
-        )
-
-        listOfReplies.add(commentWithReplies)
-        Log.d(
-            "uploadGifImageComment",
-            "uploadGifImageComment: comment id = data is? $commentId = ${data!!._id} on position $position"
-        )
-        Log.d(
-            "uploadGifImageComment",
-            "uploadGifImageComment: comment id = data is? $commentId = ${data!!._id} on position $position"
-        )
-        updateAdapter(commentWithReplies, position)
-        binding.input.inputEditText.setText("")
-        binding.replyToLayout.visibility = View.GONE
-    }
-
-
-    private fun likeUnLikeCommentFromViewsActivity(
-        position: Int, data: Comment
-    ) {
-        val TAG = "likeUnLikeCommentFromViewsActivity"
-
-        Log.d(
-            "likeUnLikeCommentFromViewsActivity",
-            "likeUnLikeComment: data.isLiked ${data.isLiked} position $position"
-        )
-
-        val updatedComment = if (data.isLiked) {
-            data.copy(
-                likes = data.likes + 1,
-            )
-        } else {
-            data.copy(
-                likes = data.likes - 1,
-            )
-        }
-        Log.d(
-            "likeUnLikeCommentFromViewsActivity",
-            "likeUnLikeComment: likes count is ${data.likes}"
-        )
-        adapter?.updateItem(position, updatedComment)
-
-        if (isInternetAvailable(this)) {
-            Log.d(TAG, "likeUnLikeCommentFromViewsActivity: internet is available")
-
-            lifecycleScope.launch {
-                val result = commentLikeUnLike(data._id)
-                Log.d(TAG, "likeUnLikeCommentFromViewsActivity server result: $result")
-
-                if (result) {
-                }
-            }
-        } else {
-            Log.d(TAG, "likeUnLikeCommentFromViewsActivity: cant like offline")
-        }
-
-    }
-
-    private val selectGifLauncher =
-        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-            if (result.resultCode == RESULT_OK) {
-                val data: Intent? = result.data
-                data?.data?.let { uri ->
-                    val fileName = getFileName(uri)
-                    if (fileName?.endsWith(".gif") == true) {
-                        // Handle the selected GIF file here
-                        // For example, you can display it in an ImageView
-
-                        Log.d(
-                            "selectGifLauncher",
-                            "selectGifLauncher: is reply $isReply gifUrlType $gifUrlType "
-                        )
-
-                    } else {
-                        // Not a GIF file, handle error or inform the user
-                        Log.d("selectGifLauncher", "selectGifLauncher: Selected file is not GIF")
-
-                    }
-                }
-            }
-        }
-
-
-    private suspend fun allCommentRepliesOnce(
-        page: Int, commentId: String
-    )
-            : CommentReplyResults {
-        val TAG = "allCommentReplies"
-        try {
-            var hasNextPage: Boolean
-            val pageNumber = page + 1
-            val comments: MutableList<com.uyscuti.social.network.api.response.commentreply.allreplies.Comment> =
-                mutableListOf()
-            withContext(Dispatchers.IO) {
-                // Handle UI-related tasks if needed
-                val response =
-                    retrofitInterface.apiService.getCommentReplies(commentId, page.toString())
-                val responseBody = response.body()
-
-
-                responseBody?.data?.comments?.let { comments.addAll(it) }
-                hasNextPage = responseBody?.data?.hasNextPage ?: false
-
-                Log.d(TAG, "allCommentRepliesOnce: has next page $hasNextPage")
-                val uniqueCommentsList = comments.distinctBy { it._id }
-
-                val filteredNewItems = uniqueCommentsList.filter { newItem ->
-                    commentsReplyViewModel.commentsReplyMutableList.none { existingItem ->
-                        existingItem._id == newItem._id
-                    }
-                }
-
-                withContext(Dispatchers.Main) {
-                    if (page == 1) {
-                        commentsReplyViewModel.commentsReplyMutableList.clear()
-                    }
-                    commentsReplyViewModel.commentsReplyMutableList.addAll(filteredNewItems)
-
-                    Log.d(
-                        TAG, "allShortComments: total comments for this post: ${comments.size}"
-                    )
-                }
-                for (i in comments) {
-                    Log.d(TAG, "All comments images ${i.images}")
-                }
-
-            }
-            return CommentReplyResults(comments, hasNextPage, pageNumber)
-
-        } catch (e: Exception) {
-            Log.e("UserProfileShortsViewModel", "Exception: ${e.message}")
-            lifecycleScope.launch {
-                // Handle UI-related tasks if needed
-                Toast.makeText(
-                    this@PostDetailsActivity2, e.message, Toast.LENGTH_LONG
-                ).show()
-            }
-            e.printStackTrace()
-        }
-        return CommentReplyResults(Collections.emptyList(), false, page)
-    }
-
-
-    @SuppressLint("CheckResult", "SuspiciousIndentation")
-    private fun updateNotification(post: GetPostById) {
-        shortPlayer = ExoPlayer.Builder(this).build()
-        playerView.player = shortPlayer
-        shortSeekBar = binding.shortsSeekBar
-        videoUrl = post.data.images[0].url
-        val mediaItem = MediaItem.fromUri(videoUrl!!)
-        shortPlayer.setMediaItem(mediaItem)
-        shortPlayer.prepare()
-        Log.e("PostDetails", "Invalid video URL: $videoUrl")
-        shortPlayer.playWhenReady = true
-        shortPlayer.repeatMode = Player.REPEAT_MODE_ONE
-
-
-        shortPlayer.addListener(shortPlaybackStateListener)
-        exoPlayer.removeListener(playbackStateListener)
-
-        binding.shortUsername.text = post.data.author.account.username
-        binding.tvReadMoreLess.text = post.data.content
-        binding.likeCount.text = post.data.likes.toString()
-        binding.commentsCount.text = post.data.comments.toString()
-        binding.favoriteCounts.text = post.data.isBookmarked.toString()
-
-        val isFavorite = post.data.isBookmarked
-        if (isFavorite) {
-            totalFavorites += 1
-            // Set the liked drawable
-            YoYo.with(Techniques.Tada)
-                .duration(700)
-                .repeat(1)
-                .playOn(binding.favorite)
-            binding.favorite.setImageResource(R.drawable.filled_favorite)
-        } else {
-
-            totalFavorites -= 1
-            // Set the unliked drawable
-            YoYo.with(Techniques.Tada)
-                .duration(700)
-                .repeat(1)
-                .pivotX(2.6F)
-                .playOn(binding.favorite)
-            binding.favorite.setImageResource(R.drawable.favorite_svgrepo_com__1_)
-        }
-        val isLiked = post.data.isLiked
-        if (isLiked) {
-            totalLikes += 1
-
-            // Set the liked drawable
-            binding.btnLike.setImageResource(R.drawable.filled_favorite_like)
-            YoYo.with(Techniques.Tada)
-                .duration(700)
-                .repeat(1)
-                .pivotX(2.6F)
-                .playOn(binding.btnLike)
-        } else {
-            // Set the unliked drawable
-            totalLikes -= 1
-            data?.isLiked ?: false
-            binding.btnLike.setImageResource(R.drawable.favorite_svgrepo_com)
-            YoYo.with(Techniques.Tada)
-                .duration(700)
-                .repeat(1)
-                .playOn(binding.btnLike)
-        }
-        ////username also declared
-        binding.shortUsername.setOnClickListener {
-            val intent = Intent(this, MainActivity::class.java)
-            intent.putExtra("fragment", "profile")
-            startActivity(intent)
-        }
-        //username
-        val profileViewImage = binding.profileImageView
-        Glide.with(binding.profileImageView.context)
-            .load(post.data.author.account.avatar.url)
-            .apply(RequestOptions.bitmapTransform(CircleCrop()))
-            .apply(RequestOptions.placeholderOf(R.drawable.flash21))
-            .into(profileViewImage)
-
-        binding.profileImageView.setOnClickListener {
-            Log.d("profile", "clicked on image")
-            val intent = Intent(this, MainActivity::class.java)
-            intent.putExtra("fragment", "profile")
-            startActivity(intent)
-        }
-        binding.downloadBtn.setOnClickListener {
-            if (videoUrl == null) {
-                throw RuntimeException("video data is null")
-            }
-
-
-            Log.d("downloadBtn", "Download : $videoUrl")
-
-            shortsDownloadImageView.visibility = View.VISIBLE
-            shortsDownloadProgressBar.visibility = View.VISIBLE
-
-            onClickListeners.onDownloadClick(videoUrl!!, "flashShorts")
-            Log.d("downloadBtn", "Download is working")
-
-        }
-
-        binding.btnLike.setOnClickListener {
-            handleLikeClick(postId, binding.likeCount, binding.btnLike, post)
-            Log.d("btnLike", "clicked on like")
-            EventBus.getDefault().post(ShortsLikeUnLike(postId, isLiked))
-
-        }
-        binding.shareBtn.setOnClickListener {
-
-        }
-        binding.favorite.setOnClickListener {
-            handleFavoriteClick(postId, binding.favorite, post)
-        }
-
-    }
-
-    override fun onSeekBarChanged(progress: Int) {
-
-    }
-
-
-    override fun onDownloadClick(url: String, fileLocation: String) {
-        Log.d(
-            "Download",
-            "OnDownload $url  \nto path : $fileLocation"
-        )
-
-        val permissions = arrayOf(
-            Manifest.permission.WRITE_EXTERNAL_STORAGE,
-            Manifest.permission.READ_EXTERNAL_STORAGE
-        )
-
-        if (ContextCompat.checkSelfPermission(
-                this,
-                Manifest.permission.WRITE_EXTERNAL_STORAGE
-            )
-            != PackageManager.PERMISSION_GRANTED
-        ) {
-            ActivityCompat.requestPermissions(this, permissions, requestCode)
-        } else {
-            // You have permission, proceed with your file operations
-
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-
-                // Check if the permission is not granted
-                if (ContextCompat.checkSelfPermission(
-                        this,
-                        Manifest.permission.WRITE_EXTERNAL_STORAGE
-                    ) != PackageManager.PERMISSION_GRANTED
-                ) {
-                    // Request the permission
-                    ActivityCompat.requestPermissions(
-                        this,
-                        arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE),
-                        WRITE_EXTERNAL_STORAGE_REQUEST_CODE
-                    )
-                } else {
-
-                    download(url, fileLocation)
-                }
-
-            } else {
-                download(url, fileLocation)
-            }
-        }
-
-    }
-
-    override fun onShareClick(position: Int) {
-        TODO("Not yet implemented")
-    }
-
-    override fun onUploadCancelClick() {
-        TODO("Not yet implemented")
-    }
-
-    private fun handleLikeClick(
-        postId: String,
-        likeCount: TextView,
-        btnLike: ImageButton,
-        shortsEntity: GetPostById
-    ) {
-        Log.d("handleLikeClick", "handleLikeClick: before ${shortsViewModel.isLiked}")
-        shortsViewModel.isLiked = !shortsViewModel.isLiked
-        Log.d("handleLikeClick", "handleLikeClick: after ! ${shortsViewModel.isLiked}")
-        EventBus.getDefault().post(ShortsLikeUnLike2(postId))
-
-        if (!shortsEntity.data.isLiked) {
-
-
-            shortsEntity.data.likes += 1
-            likeCount.text = shortsEntity.data.likes.toString()
-
-            btnLike.setImageResource(R.drawable.filled_favorite_like)
-            YoYo.with(Techniques.Tada)
-                .duration(700)
-                .repeat(1)
-                .playOn(btnLike)
-
-            shortsEntity.data.isLiked = true
-            shortsEntity.data.likes += shortsViewModel.totalLikes
-
-            val myShorts = userProfileShortsViewModel.mutableShortsList.find { it._id == postId }
-            var myFavoriteShorts =
-                userProfileShortsViewModel.mutableFavoriteShortsList.find { it._id == postId }
-
-            if (myShorts != null) {
-                Log.d("handleLikeClick", "handleLikeClick: short found id: ${myShorts._id}")
-                myShorts.isLiked = true
-                myShorts.likes += 1
-            } else {
-                Log.d("handleLikeClick", "handleLikeClick: short not found")
-            }
-            if (myFavoriteShorts != null) {
-                Log.d("handleLikeClick", "handleLikeClick: short found id: ${myFavoriteShorts._id}")
-                myFavoriteShorts.isLiked = true
-                myFavoriteShorts.likes += 1
-            } else {
-                Log.d("handleLikeClick", "handleLikeClick: short not found")
-            }
-            shortsViewModel.isLiked = true
-        } else {
-            shortsEntity.data.likes -= 1
-            likeCount.text = shortsEntity.data.likes.toString()
-            var myShorts = userProfileShortsViewModel.mutableShortsList.find { it._id == postId }
-            var myFavoriteShorts =
-                userProfileShortsViewModel.mutableFavoriteShortsList.find { it._id == postId }
-
-            if (myShorts != null) {
-                Log.d("handleLikeClick", "handleLikeClick: short found id: ${myShorts._id}")
-                myShorts.isLiked = false
-                myShorts.likes -= 1
-            } else {
-                Log.d("handleLikeClick", "handleLikeClick: short not found")
-            }
-            if (myFavoriteShorts != null) {
-                Log.d("handleLikeClick", "handleLikeClick: short found id: ${myFavoriteShorts._id}")
-                myFavoriteShorts.isLiked = false
-                myFavoriteShorts.likes -= 1
-            } else {
-                Log.d("handleLikeClick", "handleLikeClick: short not found")
-            }
-            btnLike.setImageResource(R.drawable.favorite_svgrepo_com)
-            shortsEntity.data.isLiked = false
-            shortsEntity.data.likes += shortsViewModel.totalLikes
-            shortsViewModel.isLiked = false
-            YoYo.with(Techniques.Tada)
-                .duration(700)
-                .repeat(1)
-                .playOn(btnLike)
-        }
-    }
-
-    private fun handleFavoriteClick(postId: String, button: ImageView, shortsEntity: GetPostById) {
-
-        val TAG = "handleFavoriteClick"
-        shortsViewModel.isFavorite = !shortsViewModel.isFavorite
-        EventBus.getDefault().post(ShortsFavoriteUnFavorite(postId))
-
-        if (!shortsEntity.data.isBookmarked) {
-            button.setImageResource(R.drawable.filled_favorite)
-            YoYo.with(Techniques.Tada)
-                .duration(700)
-                .repeat(1)
-                .playOn(button)
-            shortsEntity.data.isBookmarked = true
-            shortsEntity.data.likes += shortsViewModel.totalLikes
-
-            shortsViewModel.isFavorite = true
-
-            var myShorts = userProfileShortsViewModel.mutableShortsList.find { it._id == postId }
-            var myFavoriteShorts =
-                userProfileShortsViewModel.mutableFavoriteShortsList.find { it._id == postId }
-
-            if (myShorts != null) {
-                Log.d("handleLikeClick", "handleLikeClick: short found id: ${myShorts._id}")
-                myShorts.isBookmarked = true
-            } else {
-                Log.d("handleLikeClick", "handleLikeClick: short not found")
-            }
-            if (myFavoriteShorts != null) {
-                myFavoriteShorts.isBookmarked = true
-            }
-
-        } else {
-            button.setImageResource(R.drawable.favorite_svgrepo_com__1_)
-            shortsEntity.data.isBookmarked = false
-            shortsEntity.data.likes += shortsViewModel.totalLikes
-            shortsViewModel.isFavorite = false
-
-            var myShorts = userProfileShortsViewModel.mutableShortsList.find { it._id == postId }
-            var myFavoriteShorts =
-                userProfileShortsViewModel.mutableFavoriteShortsList.find { it._id == postId }
-
-            if (myShorts != null) {
-                Log.d("handleLikeClick", "handleLikeClick: short found id: ${myShorts._id}")
-                myShorts.isBookmarked = false
-            } else {
-                Log.d("handleLikeClick", "handleLikeClick: short not found")
-            }
-
-            if (myFavoriteShorts != null) {
-                Log.d("handleLikeClick", "handleLikeClick: short found id: ${myFavoriteShorts._id}")
-                myFavoriteShorts.isBookmarked = false
-
-                Log.d(
-                    TAG,
-                    "handleFavoriteClick: mutableFavoriteShortsList size before ${userProfileShortsViewModel.mutableFavoriteShortsList.size}"
-                )
-
-                userProfileShortsViewModel.mutableFavoriteShortsList.removeIf { it._id == postId }
-
-                Log.d(
-                    TAG,
-                    "handleFavoriteClick: mutableFavoriteShortsList size after ${userProfileShortsViewModel.mutableFavoriteShortsList.size}"
-                )
-
-            } else {
-                Log.d("handleLikeClick", "handleLikeClick: short not found")
-            }
-
-            YoYo.with(Techniques.Tada)
-                .duration(700)
-                .repeat(1)
-                .playOn(button)
-        }
-    }
-
-    override fun onPause() {
-        super.onPause()
-        if (::exoPlayer.isInitialized) {
+            isRecording = false
+            isPaused = false
+
+            binding.timerTv.text = "00:00.00"
+            binding.recordVN.setImageResource(com.uyscuti.social.business.R.drawable.ic_mic_on)
+            binding.sendVN.setBackgroundResource(com.uyscuti.social.business.R.drawable.ic_ripple_disabled)
+            binding.sendVN.isClickable = false
+
+            amplitudes = binding.waveForm.clear()
+            amps = 0
+            timer.stop()
             if (player?.isPlaying == true) {
-                player?.pause()
+                stopPlayingVn()
             }
-            if (exoPlayer.isPlaying == true) {
-                exoPlayer.stop()
-            }
-        }
+            binding.VnLayout.visibility = View.GONE
 
-    }
+            // Add any UI changes or notifications indicating recording has stopped
+            binding.secondTimerTv.text = " 00:00"
+            binding.thirdTimerTv.text = "00:00"
+            binding.thirdTimerTv.visibility = View.GONE
+            binding.secondTimerTv.visibility = View.GONE
+            binding.replyToLayout.visibility = View.GONE
 
-    override fun onDestroy() {
-        super.onDestroy()
-        stopPlaying()
-        stopRecording()
-        commentAudioStop()
-        stopWaveRunnable()
-        stopRecordWaveRunnable()
-        MediaLoader.getInstance(this).destroy()
-        exoPlayer.removeListener(playbackStateListener)
-        shortPlayer.removeListener(shortPlaybackStateListener)
 
-        if (::shortPlayer.isInitialized) {
-            Log.d("DestroyDetails", "onDestroy: shortPlayer initialized")
-            if (shortPlayer.isPlaying) {
-                Log.d("DestroyDetails", "onDestroy: shortPlayer is playing, stopping now")
-                shortPlayer.stop()
+            if (!isReply) {
+
+                if (recordedAudioFiles.size != 1) {
+                    uploadAudioComment(outputVnFile, isReply1 = isReply, fileType = "vnAudio")
+                } else {
+                    uploadAudioComment(outputVnFile, isReply1 = isReply, fileType = "vnAudio")
+                }
             } else {
-                Log.d("DestroyDetails", "onDestroy: shortPlayer is not playing")
-            }
-            shortPlayer.release()
-            Log.d("DestroyDetails", "onDestroy: shortPlayer released")
-        } else {
-            Log.d("DestroyDetails", "onDestroy: shortPlayer not initialized")
-        }
-
-        Log.d("DestroyDetails", "onDestroy: player playing: ${shortPlayer.isPlaying}")
-        if (::exoPlayer.isInitialized) {
-            if (exoPlayer.isPlaying) {
-                exoPlayer.stop()
+                if (recordedAudioFiles.size != 1) {
+                    uploadAudioComment(outputVnFile, isReply1 = isReply, fileType = "vnAudio")
+                } else {
+                    uploadAudioComment(outputVnFile, isReply1 = isReply, fileType = "vnAudio")
+                }
             }
 
-            exoPlayer.release()
-        }
-        Log.d("DestroyDetails", "onDestroy: player playing: ${exoPlayer.isPlaying}")
-    }
 
-    private fun stopWaveRunnable() {
-        try {
-            waveHandler.removeCallbacks(waveRunnable)
-            isDurationOnPause = true
         } catch (e: Exception) {
             e.printStackTrace()
+            // Handle exceptions as needed
         }
     }
 
 
-    private lateinit var audioDurationTVCount: TextView
-    private val waveRunnable = object : Runnable {
-        override fun run() {
-            Log.d(
-                "isDurationOnPause",
-                " in comment audio runnable isDurationOnPause is $isDurationOnPause"
-            )
+    private fun commentAudioStartPlaying(
+        audio: String,
+        audioPlayPauseBtn: ImageView,
+        progress: Float,
+        position: Int
+    ) {
 
-            if (!isDurationOnPause) {
-                val currentPosition = exoPlayer.currentPosition?.toFloat()!!
+        EventBus.getDefault().post(PauseShort(true))
+        isDurationOnPause = false
 
-                waveProgress = currentPosition
-                if (isReplyVnPlaying) {
-                    adapter!!.updateReplyWaveProgress(currentPosition, audioFormWave)
-                } else {
-                    adapter!!.updateWaveProgress(currentPosition, wavePosition)
+        if (isVnAudioToPlay) {
+            startWaveRunnable()
+        }
 
+        audioPlayPauseBtn.setImageResource(com.uyscuti.social.business.R.drawable.baseline_pause_black)
+
+        try {
+            val file = File(audio)
+
+            if (file.exists()) {
+                // Local file playback
+                val fileUrl = Uri.fromFile(file)
+                exoPlayer = ExoPlayer.Builder(this).build()
+
+                Log.d("commentAudioStartPlaying", "commentAudioStartPlaying: Local file $fileUrl")
+
+                val localFileUri = Uri.parse(fileUrl.toString())
+                val mediaItem = MediaItem.fromUri(localFileUri)
+                exoPlayer!!.setMediaItem(mediaItem)
+            } else {
+                // Server file playback
+                Log.d("commentAudioStartPlaying", "commentAudioStartPlaying: server file $audio")
+
+                val audioUri = Uri.parse(audio)
+                Log.d("commentAudioStartPlaying", "audioUri $audioUri")
+                val mediaItem = MediaItem.fromUri(audioUri)
+
+                // Try playing with cache first
+                try {
+                    exoPlayer = buildExoPlayerWithCache(mediaItem)
+                    Log.d("commentAudioStartPlaying", "Using cached playback")
+                } catch (cacheException: Exception) {
+                    Log.e(
+                        "commentAudioStartPlaying",
+                        "Cache error, clearing and retrying",
+                        cacheException
+                    )
+
+                    // Clear corrupted cache
+                    clearExoPlayerCache()
+
+                    // Retry with fresh cache
+                    try {
+                        exoPlayer = buildExoPlayerWithCache(mediaItem)
+                        Log.d("commentAudioStartPlaying", "Cache cleared, using fresh cache")
+                    } catch (retryException: Exception) {
+                        Log.e(
+                            "commentAudioStartPlaying",
+                            "Cache still failing, playing directly from server",
+                            retryException
+                        )
+
+                        // Fallback to direct server playback without cache
+                        exoPlayer = buildExoPlayerWithoutCache(mediaItem)
+                        Log.d(
+                            "commentAudioStartPlaying",
+                            "Playing directly from server without cache"
+                        )
+                    }
                 }
-                audioDurationTVCount.text = String.format(
-                    "%s",
-                    TrimVideoUtils.stringForTime(currentPosition)
-                )
             }
-            waveHandler.postDelayed(this, 20)
+
+            exoPlayer!!.prepare()
+            exoPlayer!!.seekTo(progress.toLong())
+            exoPlayer!!.playWhenReady = true
+            exoPlayer!!.repeatMode = Player.REPEAT_MODE_OFF
+            exoPlayer!!.addListener(playbackStateListener())
+            exoPlayer!!.addListener(object : Player.Listener {
+                @Deprecated("Deprecated in Java")
+                override fun onPlayerStateChanged(
+                    playWhenReady: Boolean,
+                    playbackState: Int
+                ) {
+                    if (playbackState == Player.STATE_READY && exoPlayer!!.duration != C.TIME_UNSET) {
+                        // Player ready
+                    }
+                }
+
+                override fun onPlayerError(error: PlaybackException) {
+                    super.onPlayerError(error)
+                    error.printStackTrace()
+
+                    // Check if error is cache-related
+                    if (isCacheError(error)) {
+                        Log.e("commentAudioStartPlaying", "Cache error detected during playback")
+                        clearExoPlayerCache()
+
+                        // Retry without cache
+                        try {
+                            exoPlayer?.release()
+                            exoPlayer = buildExoPlayerWithoutCache(MediaItem.fromUri(audio))
+                            exoPlayer!!.prepare()
+                            exoPlayer!!.seekTo(progress.toLong())
+                            exoPlayer!!.playWhenReady = true
+                            exoPlayer!!.addListener(playbackStateListener())
+                            Log.d("commentAudioStartPlaying", "Retrying playback without cache")
+                        } catch (e: Exception) {
+                            showToast(this@PostDetailsActivity2, "Can't play this audio")
+                        }
+                    } else {
+                        showToast(this@PostDetailsActivity2, "Can't play this audio")
+                    }
+                }
+            })
+
+            if (isReplyVnPlaying) {
+                val handler = Handler()
+                handler.postDelayed({
+                    commentAdapter?.refreshMainComment(position)
+                }, 200)
+            }
+
+        } catch (e: Exception) {
+            Log.d("commentAudioStartPlaying", "commentAudioStartPlaying: error: ${e.message}")
+            e.printStackTrace()
+            showToast(this, "Error playing audio")
         }
     }
 
-    @SuppressLint("SuspiciousIndentation")
+    // Helper method to build ExoPlayer with cache
+    private fun buildExoPlayerWithCache(mediaItem: MediaItem): ExoPlayer {
+        httpDataSourceFactory = DefaultHttpDataSource.Factory()
+            .setAllowCrossProtocolRedirects(true)
+
+        defaultDataSourceFactory = DefaultDataSourceFactory(
+            this, httpDataSourceFactory
+        )
+
+        cacheDataSourceFactory = CacheDataSource.Factory()
+            .setCache(simpleCache!!)
+            .setUpstreamDataSourceFactory(httpDataSourceFactory)
+            .setFlags(CacheDataSource.FLAG_IGNORE_CACHE_ON_ERROR)
+
+        val mediaSourceFactory: MediaSource.Factory =
+            DefaultMediaSourceFactory(this)
+                .setDataSourceFactory(cacheDataSourceFactory)
+
+        val player = ExoPlayer.Builder(this)
+            .setMediaSourceFactory(mediaSourceFactory)
+            .build()
+
+        val mediaSource = ProgressiveMediaSource.Factory(cacheDataSourceFactory)
+            .createMediaSource(mediaItem)
+
+        player.setMediaSource(mediaSource)
+        return player
+    }
+
+    // Helper method to build ExoPlayer without cache (direct server playback)
+    private fun buildExoPlayerWithoutCache(mediaItem: MediaItem): ExoPlayer {
+        val directHttpDataSourceFactory = DefaultHttpDataSource.Factory()
+            .setAllowCrossProtocolRedirects(true)
+            .setConnectTimeoutMs(30000)
+            .setReadTimeoutMs(30000)
+
+        val player = ExoPlayer.Builder(this).build()
+
+        val mediaSource = ProgressiveMediaSource.Factory(directHttpDataSourceFactory)
+            .createMediaSource(mediaItem)
+
+        player.setMediaSource(mediaSource)
+        return player
+    }
+
+    // Helper method to check if error is cache-related
+    private fun isCacheError(error: PlaybackException): Boolean {
+        val cause = error.cause
+        return cause is IllegalStateException ||
+                cause?.cause is IllegalStateException ||
+                error.message?.contains("cache", ignoreCase = true) == true ||
+                cause?.message?.contains("SimpleCache", ignoreCase = true) == true
+    }
+
+    // Helper method to clear ExoPlayer cache
+    private fun clearExoPlayerCache() {
+        try {
+            simpleCache?.release()
+
+            val exoPlayerCacheDir = File(cacheDir, "exoplayer")
+            if (exoPlayerCacheDir.exists()) {
+                exoPlayerCacheDir.deleteRecursively()
+                Log.d("clearExoPlayerCache", "Cache cleared successfully")
+            }
+
+            // Reinitialize cache
+            val leastRecentlyUsedCacheEvictor =
+                LeastRecentlyUsedCacheEvictor(1024 * 1024 * 1024) // 1GB
+            val exoDatabaseProvider = ExoDatabaseProvider(this)
+            exoPlayerCacheDir.mkdirs()
+            simpleCache =
+                SimpleCache(exoPlayerCacheDir, leastRecentlyUsedCacheEvictor, exoDatabaseProvider)
+
+            Log.d("clearExoPlayerCache", "Cache reinitialized")
+        } catch (e: Exception) {
+            Log.e("clearExoPlayerCache", "Error clearing cache", e)
+        }
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    fun audioWave(event: AudioPlayerHandler) {
+
+        val TAG = "audioWave"
+
+        audioFormWave = event.audioWave
+//        event.audioWave.setSampleFrom(event.audioPath)
+        audioDurationTVCount = event.leftDuration
+        wavePosition = event.position
+        Log.d(TAG, "audioWave: position $wavePosition ")
+
+
+    }
+
     private fun commentAudioStop() {
         Log.d(
             "TAG",
             "commentAudioStop: Comment audio completed playing player is playing ${player?.isPlaying}"
         )
+
         Log.d("isDurationOnPause", " in comment audio stop isDurationOnPause is $isDurationOnPause")
 
         Log.d("commentAudioStop", "commentAudioStop: was reply playing $isReplyVnPlaying")
@@ -5311,274 +3163,61 @@ class PostDetailsActivity2 : AppCompatActivity(),
             if (::audioFormWave.isInitialized) {
                 audioFormWave.progress = 0f
             }
-            adapter?.setSecondWaveFormProgress(0f, currentCommentAudioPosition)
-            adapter?.setReplySecondWaveFormProgress(0f, currentCommentAudioPosition)
+            commentAdapter?.setSecondWaveFormProgress(0f, currentCommentAudioPosition)
+            commentAdapter?.setReplySecondWaveFormProgress(0f, currentCommentAudioPosition)
         } else {
-            adapter?.setSecondSeekBarProgress(0f, currentCommentAudioPosition)
-            adapter?.setReplySecondSeekBarProgress(0f, currentCommentAudioPosition)
+            commentAdapter?.setSecondSeekBarProgress(0f, currentCommentAudioPosition)
+            commentAdapter?.setReplySecondSeekBarProgress(0f, currentCommentAudioPosition)
         }
+
 
         currentCommentAudioPosition = RecyclerView.NO_POSITION
         currentCommentAudioPath = ""
-        adapter?.resetAudioPlay()
+        commentAdapter?.resetAudioPlay()
 
-        exoPlayer = ExoPlayer.Builder(this).build()
-
-        exoPlayer.prepare()
         exoPlayer?.let { exoPlayer ->
             if (exoPlayer.isPlaying) {
                 exoPlayer.stop()
             }
-            exoPlayer.release()
         }
     }
 
 
-    override fun onSubmit(input: CharSequence?): Boolean {
-        val TAG = "onSubmit"
-        hideKeyboard(binding.input.inputEditText)
-        val localUpdateId = generateRandomId()
-        if (!isReply) {
-            val mongoDbTimeStamp = generateMongoDBTimestamp()
-
-            val profilePic2 = settings.getString("profile_pic", "").toString()
-            val avatar = Avatar("", "", url = profilePic2)
-            val account =
-                Account(_id = "", avatar = avatar, "", LocalStorage.getInstance(this).getUsername())
-            val author = Author(
-                _id = "12", account = account, firstName = "", lastName = "",
-                avatar = TODO()
-            )
-            val comment = Comment(
-                __v = 1,
-                _id = adapter!!.itemCount.toString(),
-                author = author,
-                content = input.toString(),
-                createdAt = mongoDbTimeStamp,
-                isLiked = false,
-                likes = 0,
-                postId = postId,
-                updatedAt = mongoDbTimeStamp,
-                replyCount = 0,
-                images = mutableListOf(),
-                audios = mutableListOf(),
-                docs = mutableListOf(),
-                gifs = "",
-                thumbnail = mutableListOf(),
-                videos = mutableListOf(),
-                contentType = "text",
-                isPlaying = data?.isPlaying ?: false,
-                localUpdateId = localUpdateId
-            )
-
-            val newCommentEntity =
-                ShortCommentEntity(postId, input.toString(), localUpdateId = localUpdateId)
-            shortsCommentViewModel.insertComment(newCommentEntity)
-            Log.d(TAG, "onSubmit: inserted comment $newCommentEntity")
-
-            listOfReplies.add(comment)
-
-            Log.d(TAG, "onSubmit: comment $comment")
-
-            adapter!!.submitItem(comment, adapter!!.itemCount)
-            shortToComment = shortsViewModel.mutableShortsList.find { it._id == postId }
-
-            if (shortToComment != null) {
-                shortToComment!!.comments += 1
-                Log.d(TAG, "onSubmit: count before ${shortToComment!!.comments}")
-                // Update the count in the mutableShortsList
-                // Update the count in the mutableShortsList
-                shortsViewModel.mutableShortsList.forEach { short ->
-                    if (short._id == postId) {
-                        short.comments = shortToComment!!.comments
-                    }
-                }
-                val newShortToComment = shortsViewModel.mutableShortsList.find { it._id == postId }
-                Log.d(TAG, "onSubmit: count after ${newShortToComment!!.comments}")
-
-                EventBus.getDefault().post(ShortAdapterNotifyDatasetChanged())
-            }
-        } else {
-
-            val profilePic2 = settings.getString("profile_pic", "").toString()
-            val avatar = com.uyscuti.social.network.api.response.commentreply.allreplies.Avatar(
-                "", "", url = profilePic2
-            )
-            val account = com.uyscuti.social.network.api.response.commentreply.allreplies.Account(
-                _id = "", avatar = avatar, "", LocalStorage.getInstance(this).getUsername()
-            )
-
-
-            val commentReplyAuthor = com.uyscuti.social.network.api.response.commentreply.allreplies.Author(
-                _id = "21", account = account, firstName = "", lastName = ""
-            )
-
-            Log.d(TAG, "onSubmit: handle reply to a comment")
-            isReply = false
-            val newCommentReplyEntity =
-                ShortCommentReply(commentId, input.toString(), localUpdateId)
-            roomCommentReplyViewModel.insertCommentReply(newCommentReplyEntity)
-            Log.d(TAG, "onSubmit: inserted comment $newCommentReplyEntity")
-            lifecycleScope.launch {
-
-            }
-            val mongoDbTimeStamp = generateMongoDBTimestamp()
-            val newReply = com.uyscuti.social.network.api.response.commentreply.allreplies.Comment(
-                __v = data!!.__v,
-                _id = "commentId",
-                author = commentReplyAuthor,
-                content = input.toString(),
-                createdAt = mongoDbTimeStamp,
-                isLiked = false,
-                likes = 0,
-                commentId = commentId,
-                updatedAt = mongoDbTimeStamp,
-            )
-
-            val replyCount = data!!.replyCount + 1
-            val commentWithReplies =
-                Comment(
-                    __v = data!!.__v,
-                    _id = data!!._id,
-                    author = data!!.author,
-                    content = data!!.content,
-                    createdAt = data!!.createdAt,
-                    isLiked = data!!.isLiked,
-                    likes = data!!.likes,
-                    postId = data!!.postId,
-                    updatedAt = data!!.updatedAt,
-                    replyCount = replyCount,
-
-                    replies = data?.replies?.toMutableList()?.apply {
-                        // Assuming newReply is the new reply you want to add
-                        add(0, newReply)
-                    } ?: mutableListOf(),
-                    isRepliesVisible = true,
-                    images = data?.images ?: mutableListOf(),
-                    audios = data?.audios ?: mutableListOf(),
-                    docs = mutableListOf(),
-                    gifs = "",
-                    thumbnail = mutableListOf(),
-                    videos = data?.images ?: mutableListOf(),
-                    contentType = data?.contentType ?: "text",
-                    isPlaying = data?.isPlaying ?: false,
-                    localUpdateId = localUpdateId,
-                    replyCountVisible = false
-                )
-
-
-            listOfReplies.add(commentWithReplies)
-
-            Log.d(
-                TAG,
-                "onSubmit: comment id = data is? $commentId = ${data!!._id} on position $position"
-            )
-            Log.d(
-                TAG,
-                "onSubmit: comment id = data is? $commentId = ${data!!._id} on position $position"
-            )
-            updateAdapter(commentWithReplies, position)
-
-        }
-        binding.replyToLayout.visibility = View.GONE
-        return true
-    }
-
-    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-    override fun onAddVoiceNote() {
-        val TAG = "onAddVoiceNote1"
-        Log.d(TAG, "onAddVoiceNote: start VN clicked")
-        binding.VNLayout.visibility = View.VISIBLE
-        binding.playAudioLayout.visibility = View.GONE
-        binding.waveForm.visibility = View.VISIBLE
-        binding.timerTv.visibility = View.VISIBLE
-        startRecording()
-        EventBus.getDefault().post(PauseShort(true))
-    }
-
-    private fun stopPlaying() {
-        binding.playVnAudioBtn.setImageResource(R.drawable.play_svgrepo_com)
-        player?.release()
-        player = null
-        isAudioVNPlaying = false
-        vnRecordAudioPlaying = false
-        isOnRecordDurationOnPause = false
-        stopRecordWaveRunnable()
-        binding.wave.progress = 0F
-        vnRecordProgress = 0
-    }
-
-    private fun stopRecordWaveRunnable() {
-        try {
-            waveHandler.removeCallbacks(onRecordWaveRunnable)
-            isOnRecordDurationOnPause = true
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-    }
-
-    private val onRecordWaveRunnable = object : Runnable {
-        override fun run() {
-
-            try {
-                if (!isOnRecordDurationOnPause) {
-                    val currentPosition = player?.currentPosition?.toFloat()!!
-                    updateRecordWaveProgress(currentPosition)
-                }
-                waveHandler.postDelayed(this, 20)
-            } catch (e: Exception) {
-                e.printStackTrace()
-                Log.d("Exception", "run: ${e.message}")
-            }
-        }
-    }
-
-    private fun startWaveRunnable() {
-        try {
-            Log.d(
-                "isDurationOnPause",
-                " in comment audio start wave isDurationOnPause is $isDurationOnPause"
-            )
-            Log.d("StartWave", "Start waves")
-            waveHandler.removeCallbacks(waveRunnable)
-            waveHandler.post(waveRunnable)
-            isDurationOnPause = false
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-    }
-
-    private var currentHandler: Handler? = null
     private fun initializeSeekBar(exoPlayer: ExoPlayer) {
         audioSeekBar.max = exoPlayer.duration.toInt()
-       // Remove callbacks from the current handler, if any
+// Remove callbacks from the current handler, if any
         currentHandler?.removeCallbacksAndMessages(currentHandler)
         val handler = Handler(Looper.getMainLooper())
         handler.postDelayed(object : Runnable {
             override fun run() {
                 try {
-
+                    Log.d(
+                        "initializeSeekBar",
+                        "Position $currentCommentAudioPosition is reply $isReplyVnPlaying"
+                    )
                     if (!isVnAudioToPlay && exoPlayer.isPlaying) {
-                        Log.d(
-                            "initializeSeekBar",
-                            "Position $currentCommentAudioPosition is reply $isReplyVnPlaying"
-                        )
+
                         exoPlayer.let {
                             if (isReplyVnPlaying) {
-                                adapter!!.updateReplySeekBarProgress(
+                                commentAdapter!!.updateReplySeekBarProgress(
                                     it.currentPosition.toFloat(),
                                     audioSeekBar
                                 )
-
-
                             } else {
 
-                                audioSeekBar.progress = it.currentPosition.toInt()
-                                seekBarProgress = it.currentPosition.toFloat()
-                                audioDurationTVCount.text = String.format(
-                                    "%s",
-                                    TrimVideoUtils.stringForTime(it.currentPosition.toFloat())
-                                )
+                                CoroutineScope(Dispatchers.Main).launch {
+                                    audioSeekBar.progress = it.currentPosition.toInt()
+                                    seekBarProgress = it.currentPosition.toFloat()
+                                    commentAdapter!!.setSecondSeekBarProgress(
+                                        seekBarProgress,
+                                        currentCommentAudioPosition
+                                    )
+                                    audioDurationTVCount.text = String.format(
+                                        "%s",
+                                        TrimVideoUtils.stringForTime(it.currentPosition.toFloat())
+                                    )
+                                }
+
                             }
 
                             handler.postDelayed(this, 1000)
@@ -5595,116 +3234,32 @@ class PostDetailsActivity2 : AppCompatActivity(),
         currentHandler = handler
     }
 
-    private fun initializeShortSeekBar(shortPlayer: ExoPlayer) {
 
-        Log.d("ShortSeekBar", "Short SeekBar initialized")
-
-        currentHandler?.removeCallbacksAndMessages(currentHandler)
-        val handler = Handler(Looper.getMainLooper())
-        handler.postDelayed(object : Runnable {
-            override fun run() {
-                try {
-                  //  updating shortseekbar is added here
-                    if (shortPlayer.isPlaying) {
-                        val currentPosition = shortPlayer.currentPosition.toFloat()
-                        Log.d("ShortSeekBar", "Position $currentPosition")
-                        shortSeekBar.max = shortPlayer.duration.toInt()
-                        shortSeekBar.progress = currentPosition.toInt()
-                        Log.d(
-                            "initializeSeekBar",
-                            "Position $currentCommentAudioPosition is reply $isReplyVnPlaying"
-                        )
-                        shortPlayer.let {
-                            handler.postDelayed(this, 1000)
-                        }
-                    }
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                }
-            }
-        }, 0)
-        // Set the new handler as the current handler
-        currentHandler = handler
+    private fun stopWaveRunnable() {
+        try {
+            waveHandler.removeCallbacks(waveRunnable)
+            isDurationOnPause = true
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
-    var maxDuration = 0L
+    private fun commentAudioPause(audioPlayPauseBtn: ImageView, isReply: Boolean) {
+        Log.d("TAG", "commentAudioPause: is Reply $isReply")
+        isDurationOnPause = true
 
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    fun commentAudioSeekBar(event: CommentAudioPlayerHandler) {
-        val TAG = "commentAudioSeekBar"
-        audioSeekBar = event.audioSeekBar
+        Log.d(
+            "isDurationOnPause",
+            " in comment audio pause isDurationOnPause is $isDurationOnPause"
+        )
 
-        audioDurationTVCount = event.leftDuration
-        seekPosition = event.position
-        maxDuration = event.maxDuration
-        Log.d(TAG, "commentAudioSeekBar: position $wavePosition ")
-    }
-
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    fun audioWave(event: AudioPlayerHandler) {
-        val TAG = "audioWave"
-        audioFormWave = event.audioWave
-
-        audioDurationTVCount = event.leftDuration
-        wavePosition = event.position
-        Log.d(TAG, "audioWave: position $wavePosition ")
-    }
-
-    private fun shortPlaybackStateListener() = object : Player.Listener {
-        @SuppressLint("SetTextI18n")
-        override fun onPlaybackStateChanged(state: Int) {
-            when (state) {
-                ExoPlayer.STATE_ENDED -> {
-                    // The video playback ended. Move to the next video if available.
-                    Log.d(
-                        "playbackStateListener",
-                        "commentAudioStartPlaying: comment audio completed"
-                    )
-
-                }
-                // Add other cases if needed
-                Player.STATE_BUFFERING -> {
-                }
-
-                Player.STATE_IDLE -> {
-                }
-
-                Player.STATE_READY -> {
-                    Log.d("TAG", "STATE_READY_VIDEO")
-                  //  have added the code that initialises shortseekbar
-                    shortPlayer.let {
-                        initializeShortSeekBar(it)
-                    }
-                    Log.d("TAG", "STATE_READY_VIDEO")
-
-                }
-
-                else -> {
-                    Log.d("TAG", "STOP SEEK BAR_VIDEO")
-                    // Stop updating seek bar in other states
-                    stopUpdatingShortSeekBar()
-                }
-            }
-        }
-
-        override fun onIsPlayingChanged(isVideoPlaying: Boolean) {
-
-
-        }
-
-        override fun onEvents(player: Player, events: Player.Events) {
-
-            if (events.contains(Player.EVENT_PLAYBACK_STATE_CHANGED) ||
-                events.contains(Player.EVENT_IS_PLAYING_CHANGED)
-            ) {
-
-            }
-
-            if (events.contains(Player.EVENT_MEDIA_ITEM_TRANSITION)
-            ) {
-
-            }
-        }
+        audioPlayPauseBtn.setImageResource(com.uyscuti.social.business.R.drawable.play_svgrepo_com)
+        commentAdapter!!.updatePlaybackButton(
+            currentCommentAudioPosition,
+            isReply,
+            audioPlayPauseBtn
+        )
+        exoPlayer?.pause()
     }
 
     private fun playbackStateListener() = object : Player.Listener {
@@ -5712,22 +3267,22 @@ class PostDetailsActivity2 : AppCompatActivity(),
         override fun onPlaybackStateChanged(state: Int) {
             when (state) {
                 ExoPlayer.STATE_ENDED -> {
-                   //  The video playback ended. Move to the next video if available.
+//                     The video playback ended. Move to the next video if available.
                     Log.d(
                         "playbackStateListener",
                         "commentAudioStartPlaying: comment audio completed"
                     )
-
+//                    audioPlayPauseBtn.setImageResource(R.drawable.play_svgrepo_com)
                     if (isVnAudioToPlay) {
                         if (::audioDurationTVCount.isInitialized) {
                             audioDurationTVCount.text = "00:00"
-                            adapter?.updateReplyWaveProgress(0f, audioFormWave)
+                            commentAdapter?.updateReplyWaveProgress(0f, audioFormWave)
                             if (isReplyVnPlaying) {
                                 Log.d("isReplyVnPlaying", "isReplyVnPlaying $isReplyVnPlaying")
                                 val handler = Handler()
 
                                 handler.postDelayed({
-                                    adapter?.refreshMainComment(position)
+                                    commentAdapter?.refreshMainComment(position)
                                 }, 200)
                             } else {
                                 Log.d("isReplyVnPlaying", "isReplyVnPlaying $isReplyVnPlaying")
@@ -5741,17 +3296,22 @@ class PostDetailsActivity2 : AppCompatActivity(),
                         if (::audioDurationTVCount.isInitialized) {
                             audioDurationTVCount.text = "00:00"
                         }
+                        audioSeekBar.progress = 0
+                        commentAdapter?.refreshAudioComment(currentCommentAudioPosition)
                     }
+
                     Log.d(
                         "audioSeekBar",
                         "currentCommentAudioPosition $currentCommentAudioPosition"
                     )
 
-                    adapter?.refreshMainComment(position)
-                    adapter?.changePlayingStatus()
-
+                    commentAdapter?.refreshMainComment(position)
+                    commentAdapter?.changePlayingStatus()
+//                    adapter?.resetWaveForm()
+//                    adapter?.notifyDataSetChanged()
                     if (isVnAudioToPlay) {
                         stopWaveRunnable()
+
                     }
                     commentAudioStop()
                 }
@@ -5765,65 +3325,52 @@ class PostDetailsActivity2 : AppCompatActivity(),
 
                 Player.STATE_READY -> {
                     if (!isVnAudioToPlay) {
-                        Log.d("TAG", "STATE_READY")
-                        exoPlayer.let {
-                            initializeSeekBar(it)
-                        }
+                        exoPlayer?.let { initializeSeekBar(it) }
                     }
                     Log.d("TAG", "STATE_READY")
-                    startUpdatingSeekBar()
+//                    startUpdatingSeekBar()
+//                    shortsAdapter.setSeekBarProgress(exoPlayer!!.currentPosition.toInt())
 
                 }
 
                 else -> {
                     Log.d("TAG", "STOP SEEK BAR")
                     // Stop updating seek bar in other states
-                    stopUpdatingSeekBar()
+//                    stopUpdatingSeekBar()
                 }
             }
         }
 
         override fun onIsPlayingChanged(isVideoPlaying: Boolean) {
+//        super.onIsPlayingChanged(isPlaying)
 
         }
 
         override fun onEvents(player: Player, events: Player.Events) {
-
+//        super.onEvents(player, events)
             if (events.contains(Player.EVENT_PLAYBACK_STATE_CHANGED) ||
                 events.contains(Player.EVENT_IS_PLAYING_CHANGED)
             ) {
 
+//                progressBar.visibility = View.GONE
             }
 
             if (events.contains(Player.EVENT_MEDIA_ITEM_TRANSITION)
             ) {
-
+//                player.seekTo(5000L)
             }
         }
     }
 
-    private var updateSeekBarJob: Job? = null
-
-    private fun startUpdatingSeekBar() {
-        updateSeekBarJob = CoroutineScope(Dispatchers.Main).launch {
-            while (true) {
-                // Update seek bar based on current playback position
-                exoPlayer.let { player ->
-                    // Update seek bar based on current playback position
-
-                }
-                updateSeekBar()
-                delay(50) // Update seek bar every second (adjust as needed)
-            }
-        }
-    }
-
-    private fun stopUpdatingSeekBar() {
-        updateSeekBarJob?.cancel()
-    }
-
-    private fun stopUpdatingShortSeekBar() {
-        updateSeekBarJob?.cancel()
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    fun commentAudioSeekBar(event: CommentAudioPlayerHandler) {
+        val TAG = "commentAudioSeekBar"
+        audioSeekBar = event.audioSeekBar
+//        event.audioWave.setSampleFrom(event.audioPath)
+        audioDurationTVCount = event.leftDuration
+        seekPosition = event.position
+        maxDuration = event.maxDuration
+        Log.d(TAG, "commentAudioSeekBar: position $wavePosition ")
     }
 
     override fun onViewRepliesClick(
@@ -5831,10 +3378,9 @@ class PostDetailsActivity2 : AppCompatActivity(),
         repliesRecyclerView: RecyclerView,
         position: Int
     ) {
-        val TAG = "onViewRepliesClick"
+
     }
 
-    @SuppressLint("SetTextI18n")
     override fun onViewRepliesClick(
         data: Comment,
         position: Int,
@@ -5844,374 +3390,28 @@ class PostDetailsActivity2 : AppCompatActivity(),
         isRepliesVisible: Boolean,
         page: Int
     ) {
-        val TAG = "onViewRepliesClick"
         lifecycleScope.launch {
 
-            Log.d(TAG, "onViewRepliesClick:  page number $page")
             if (data.hasNextPage) {
-                commentRepliesTV.text = "Loading..."
+
+                withContext(Dispatchers.Main) {
+                    commentRepliesTV.text = "Loading..."
+                }
+
 
                 if (commentRepliesTV.text.equals("Loading...")) {
-                    Log.d(TAG, "onViewRepliesClick: contains loading...")
+
                     withContext(Dispatchers.Main) {
                         hideCommentReplies.visibility = View.GONE
                     }
-                }
-                val commentReplies = allCommentRepliesOnce(page, data._id)
-                val commentWithReplies = Comment(
-                    __v = data.__v,
-                    _id = data._id,
-                    author = data.author,
-                    content = data.content,
-                    createdAt = data.createdAt,
-                    isLiked = data.isLiked,
-                    likes = data.likes,
-                    postId = data.postId,
-                    updatedAt = data.updatedAt,
-                    replyCount = data.replyCount,
-                    replies = mutableListOf(),
-                    hasNextPage = data.hasNextPage,
-                    images = data.images,
-                    audios = data.audios,
-                    docs = data.docs,
-                    gifs = data.gifs,
-                    thumbnail = data.thumbnail,
-                    videos = data.videos,
-                    contentType = data.contentType,
-                    isPlaying = data.isPlaying,
-                    localUpdateId = data.localUpdateId,
-                    duration = data.duration,
-                    fileName = data.fileName,
-                    fileSize = data.fileSize,
-                    fileType = data.fileType,
-                    numberOfPages = data.numberOfPages
 
-                )
-
-
-                Log.d(
-                    TAG,
-                    "onViewRepliesClick: has next page ${commentReplies.hasNextPage} page number ${commentReplies.pageNumber}"
-                )
-                val updatedComment = commentWithReplies.copy(
-
-                    replies = data.replies.toMutableList().apply {
-                        // Assuming newReply is the new reply you want to add
-                        addAll(commentReplies.comments)
-                    },
-                    isRepliesVisible = isRepliesVisible,
-                    hasNextPage = commentReplies.hasNextPage,
-                    pageNumber = commentReplies.pageNumber
-                )
-
-                withContext(Dispatchers.Main) {
-                    adapter?.updateItem(position, updatedComment)
-
-                    hideCommentReplies.visibility = View.VISIBLE
-                }
-            }
-        }
-    }
-
-
-    override fun onReplyButtonClick(
-        position: Int,
-        data: Comment
-    ) {
-        binding.replyToLayout.visibility = View.VISIBLE
-    }
-
-    override fun likeUnLikeComment(
-        position: Int,
-        data: Comment
-    ) {
-        val TAG = "likeUnLikeComment"
-
-        Log.d("CommentsRecyclerViewAdapter", "likeUnLikeComment: data.isLiked ${data.isLiked}")
-
-        val updatedComment = if (data.isLiked) {
-            data.copy(
-                likes = data.likes + 1,
-            )
-        } else {
-            data.copy(
-                likes = data.likes - 1,
-            )
-        }
-        Log.d("CommentsRecyclerViewAdapter", "likeUnLikeComment: likes count is ${data.likes}")
-        adapter?.updateItem(position, updatedComment)
-
-        if (isInternetAvailable(this)) {
-            Log.d(TAG, "likeUnLikeComment: internet is available")
-
-            lifecycleScope.launch {
-                val result = commentLikeUnLike(data._id)
-                Log.d(TAG, "likeUnLikeComment server result: $result")
-
-                if (result) {
-                }
-            }
-        } else {
-            Log.d(TAG, "likeUnLikeComment: cant like offline")
-        }
-
-    }
-
-    override fun likeUnlikeCommentReply(
-        replyPosition: Int,
-        replyData: com.uyscuti.social.network.api.response.commentreply.allreplies.Comment,
-        mainCommentPosition: Int,
-        mainComment: Comment
-    ) {
-
-    }
-
-
-    fun isInternetAvailable(context: Context): Boolean {
-        val connectivityManager =
-            context.getSystemService(CONNECTIVITY_SERVICE) as ConnectivityManager
-
-        val network = connectivityManager.activeNetwork
-        val capabilities = connectivityManager.getNetworkCapabilities(network)
-        return capabilities != null && (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) || capabilities.hasTransport(
-            NetworkCapabilities.TRANSPORT_CELLULAR
-        ))
-    }
-
-    private fun hideKeyboard(view: View) {
-        val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
-        imm.hideSoftInputFromWindow(view.windowToken, 0)
-    }
-
-    fun generateMongoDBTimestamp(): String {
-        val timestamp = OffsetDateTime.now()
-        val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSXXX")
-
-        return timestamp.format(formatter)
-    }
-
-    private fun addComment() {
-        val TAG = "addComment"
-        Log.d("addCommentReply", "addComment: is reply $isReply")
-        if (isInternetAvailable(this)) {
-
-            shortsCommentViewModel.allComments.observe(this) {
-
-                if (it.isNotEmpty()) {
-                    Log.d(
-                        TAG,
-                        "addComment: comments in room count is ${it.size}, localUpdateId ${it[0].localUpdateId}"
-                    )
-                    commentsViewModel.comment(
-                        it[0].postId,
-                        it[0].content,
-                        "text",
-                        it[0].localUpdateId,
-                        it[0].isFeedComment
-                    )
-                    shortsCommentViewModel.viewModelScope.launch {
-                        val isDeleted = shortsCommentViewModel.deleteCommentById(it[0].postId)
-                        if (isDeleted) {
-                            // Deletion was successful, update UI or perform other actions
-                            Log.d(TAG, "comment deleted successfully.")
-                        } else {
-                            // Deletion was not successful, handle accordingly
-                            Log.d(TAG, "Failed to delete comment.")
-                        }
+                    withContext(Dispatchers.Main) {
+                        commentRepliesTV.visibility = View.GONE
+                        hideCommentReplies.visibility = View.VISIBLE
                     }
-
-                } else {
-                    Log.d(TAG, "onSubmit: Room database has no comments")
-                }
-            }
-
-
-        } else {
-            Log.d(TAG, "addComment: no internet connection")
-        }
-
-    }
-
-    private fun updateAdapter(
-        data: Comment, position: Int
-    )
-    {
-        val TAG = "updateAdapter"
-        Log.d("updateItem", "updated main item images" + data.images)
-        Log.d("UpdateItem", "reply count visible ${data.replyCountVisible}")
-
-
-        adapter?.updateItem(position, data)
-    }
-
-    private suspend fun commentLikeUnLike(commentId: String): Boolean {
-        val TAG = "commentLikeUnLike"
-        try {
-            val response = retrofitInterface.apiService.likeUnLikeComment(commentId)
-            return if (response.isSuccessful) {
-                val responseBody = response.body()
-                val isLiked = responseBody?.data?.isLiked ?: false
-                Log.d(TAG, "likeUnLikeComment $isLiked")
-                isLiked
-            } else {
-                Log.d(TAG, " likeUnLikeComment Error: ${response.message()}")
-                false
-            }
-        } catch (e: HttpException) {
-            Log.d(TAG, "Http Exception ${e.message}")
-            withContext(Dispatchers.Main) {
-
-            }
-            return false
-        } catch (e: IOException) {
-            Log.d(TAG, "IOException ${e.message}")
-            return false
-        }
-    }
-
-    override fun onRequestPermissionsResult(
-        requestCode: Int, permissions: Array<out String>, grantResults: IntArray
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-
-
-        if (requestCode == REQUEST_CODE) {
-            permissionGranted = grantResults[0] == PackageManager.PERMISSION_GRANTED
-        }
-        if (requestCode == READ_EXTERNAL_STORAGE_REQUEST_CODE) {
-            permissionGranted2 = grantResults[0] == PackageManager.PERMISSION_GRANTED
-        }
-    }
-
-    private fun initializeCommentsBottomSheet() {
-        val rootView = binding.motionLayout
-        emojiPopup = EmojiPopup(rootView, binding.input.inputEditText)
-        inputMethodManager = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
-        val input = binding.input
-        input.setInputListener(this)
-        input.setAttachmentsListener(this)
-        input.setVoiceListener(this)
-        input.setEmojiListener(this)
-        input.setGifListener(this)
-        val toolbar = binding.toolbar
-        binding.motionLayout.setTransitionListener(object : MotionLayout.TransitionListener {
-            override fun onTransitionTrigger(p0: MotionLayout?, p1: Int, p2: Boolean, p3: Float) {}
-
-            override fun onTransitionStarted(p0: MotionLayout?, p1: Int, p2: Int) {
-                toolbar.visibility = View.GONE
-            }
-            override fun onTransitionChange(p0: MotionLayout?, p1: Int, p2: Int, p3: Float) {}
-
-            override fun onTransitionCompleted(p0: MotionLayout?, currentId: Int) {
-                // Check if MotionLayout is in the certain state
-                if (currentId == R.id.end) {
-                    // Bring other views to the front
-                    toolbar.visibility = View.VISIBLE
-                    binding.motionLayout.visibility = View.VISIBLE
-
-                }
-            }
-        })
-        binding.click.setOnClickListener {
-            Log.d("ClickListener", "click is working")
-            toggleMotionLayoutVisibility()
-        }
-    }
-    private fun handleNotificationClick(notificationType: String) {
-        when (notificationType) {
-            "postLiked" -> {
-                binding.motionLayout.visibility = View.GONE
-            }
-            else -> {
-                // Toggle MotionLayout visibility for other types
-                if (binding.motionLayout.visibility == View.VISIBLE) {
-                    binding.motionLayout.transitionToEnd()
-                } else {
-                    binding.motionLayout.visibility = View.VISIBLE
-                    binding.motionLayout.transitionToStart()
                 }
             }
         }
-
-    }
-
-    @OptIn(UnstableApi::class)
-    private fun toggleMotionLayoutVisibility() {
-        val currentVisibility = binding.motionLayout.visibility
-
-        val TAG = "allShortComments"
-
-        if (currentVisibility == View.VISIBLE) {
-
-            // If currently visible, make it gone
-            binding.motionLayout.visibility = View.GONE
-            binding.VNLayout.visibility = View.GONE
-            binding.replyToLayout.visibility = View.GONE
-            binding.input.inputEditText.setText("")
-            isReply = false
-            commentsViewModel.resetLiveData()
-
-            hideKeyboard(binding.input.inputEditText)
-            deleteRecording()
-            stopPlaying()
-            commentAudioStop()
-            stopWaveRunnable()
-            stopRecordWaveRunnable()
-            exoPlayer.release()
-
-            // Stop any ongoing audio or recording
-            if (mediaRecorder != null) {
-                mediaRecorder!!.release()
-                mediaRecorder = null
-            }
-
-            // Release exoPlayer if initialized
-            if (::exoPlayer.isInitialized) {
-                if (exoPlayer.isPlaying) {
-                    exoPlayer.stop()
-                }
-            } else {
-                exoPlayer.release()
-            }
-        } else {
-            var currentState = binding.motionLayout.currentState
-
-            // If currently gone, make it visible and set the transition to start
-            binding.motionLayout.visibility = View.VISIBLE
-            binding.motionLayout.transitionToEnd()
-        }
-    }
-
-    override fun onAddEmoji() {
-        initView()
-    }
-
-    private fun initView() {
-        Thread {
-            runOnUiThread {
-                emojiShowing = if (emojiPopup.isShowing && emojiShowing) {
-                    // Close the emoji keyboard
-                    emojiPopup.dismiss() // Dismisses the Popup.
-                    inputMethodManager.showSoftInput(
-                        binding.input.inputEditText, InputMethodManager.SHOW_IMPLICIT
-                    )
-                    false
-                } else {
-                    // Open the emoji keyboard
-                    inputMethodManager.hideSoftInputFromWindow(
-                        binding.input.inputEditText.windowToken, 0
-                    )
-                    emojiPopup.toggle() // Toggles visibility of the Popup.
-                    true
-                }
-            }
-        }.start()
-    }
-
-    override fun onCommentsClick(position: Int, data: UserShortsEntity, isFeedComment: Boolean) {
-        Log.d("showBottomSheet", "showBottomSheet: inside show bottom sheet")
-        adapter = CommentsRecyclerViewAdapter(this, this@PostDetailsActivity2)
-        toggleMotionLayoutVisibility()
     }
 
     override fun toggleAudioPlayer(
@@ -6227,339 +3427,202 @@ class PostDetailsActivity2 : AppCompatActivity(),
         isReplyVnPlaying = isReply
         isVnAudioToPlay = isVnAudio
 
-        Log.d(
-            "toggleAudioPlayer",
-            "progress received from adapter $progress is reply $isReply    is seeking $isSeeking is vn audio $isVnAudio"
-        )
+        wavePosition = position
+        currentCommentAudioPosition = position
 
         if (currentCommentAudioPath == audioToPlayPath) {
+
             if (seekTo) {
                 Log.d("SeekTo", "Seek to $progress")
                 EventBus.getDefault().post(PauseShort(true))
                 isDurationOnPause = false
-
-                exoPlayer.seekTo(progress.toLong())
-                exoPlayer.play()
+                exoPlayer?.seekTo(progress.toLong())
+                exoPlayer?.play()
             } else if (isSeeking) {
                 Log.d("toggleAudioPlayer", "user is seeking so i paused the audio")
-                exoPlayer.pause()
-            } else if (exoPlayer.isPlaying == true) {
+                exoPlayer?.pause()
+            } else if (exoPlayer?.isPlaying == true) {
                 Log.d(
                     "toggleAudioPlayer",
                     "toggleAudioPlayer: current player is playing then pause"
                 )
 
-
                 if (isVnAudio) {
                     Log.d("waveProgress", "toggleAudioPlayer: $waveProgress")
 
-                    adapter?.setReplySecondWaveFormProgress(waveProgress, position)
-                    adapter?.setSecondWaveFormProgress(waveProgress, position)
+                    commentAdapter?.setReplySecondWaveFormProgress(waveProgress, position)
+                    commentAdapter?.setSecondWaveFormProgress(waveProgress, position)
                 } else {
                     //for seek bar
-                    adapter?.setSecondSeekBarProgress(seekBarProgress, position)
-                    adapter?.setReplySecondSeekBarProgress(seekBarProgress, position)
+                    commentAdapter?.setSecondSeekBarProgress(seekBarProgress, position)
+                    commentAdapter?.setReplySecondSeekBarProgress(seekBarProgress, position)
                 }
-
-
-                exoPlayer.pause()
+                exoPlayer?.pause()
                 isDurationOnPause = true
-
 
             } else {
                 Log.d(
                     "toggleAudioPlayer",
                     "toggleAudioPlayer: current player is not playing then play"
                 )
-
                 EventBus.getDefault().post(PauseShort(true))
                 isDurationOnPause = false
-
-                exoPlayer.seekTo(progress.toLong())
-                exoPlayer.play()
+                exoPlayer?.seekTo(progress.toLong())
+                exoPlayer?.play()
             }
         } else {
 
-
-            // If a new item is clicked, stop the currently playing item (if any)
-            if (exoPlayer.isPlaying == true) {
+            if (exoPlayer?.isPlaying == true) {
                 Log.d("toggleAudioPlayer", "toggleAudioPlayer: in else player is playing")
                 commentAudioPause(audioPlayPauseBtn, isReply)
             }
 
-            if (isReply) {
-                Log.d("IsReply", "is reply position $position")
-
-            }
-            // Start playing the new audio
-
             commentAudioStartPlaying(audioToPlayPath, audioPlayPauseBtn, progress, position)
-            currentCommentAudioPosition = position
             currentCommentAudioPath = audioToPlayPath
-            Log.d(
-                "toggleAudioPlayer",
-                "toggleAudioPlayer: position updated $currentCommentAudioPosition"
-            )
         }
     }
 
-    @OptIn(UnstableApi::class)
-    @SuppressLint("NotifyDataSetChanged")
-    private fun commentAudioStartPlaying(
-        vnAudio: String,
-        audioPlayPauseBtn: ImageView,
-        progress: Float, position: Int
+    @SuppressLint("SetTextI18n")
+    override fun onReplyButtonClick(
+        position: Int,
+        data: Comment,
+        isMainComment: Boolean
     ) {
-        val TAG = "commentAudioStartPlaying"
-        EventBus.getDefault().post(PauseShort(true))
-        isDurationOnPause = false
-        if (isVnAudioToPlay) {
-            startWaveRunnable()
+
+        commentToAddReplies = data
+        commentPosition = commentAdapter!!.findCommentPosition(data._id)
+        var username = ""
+        isReply = true
+
+        if (isMainComment) {
+            username = data.author!!.account.username
+            binding.replyToLayout.visibility = View.VISIBLE
+
+            binding.replyToTextView.text = "Replying to $username"
+            commentId = data._id
+        } else {
+
+            username = data.replies[position].author!!.account.username
+
+            binding.replyToLayout.visibility = View.VISIBLE
+
+            binding.replyToTextView.text = "Replying to $username"
+            commentId = data.replies[position]._id
         }
 
-        audioPlayPauseBtn.setImageResource(R.drawable.baseline_pause_black)
+        binding.input.inputEditText.setText("@$username")
+        binding.input.inputEditText.setSelection(binding.input.inputEditText.text!!.length)
 
-        try {
-            val file = File(vnAudio)
-            if (file.exists()) {
-                val fileUrl = Uri.fromFile(file)
+        binding.exitReply.setOnClickListener {
+            binding.replyToLayout.visibility = View.GONE
+            binding.input.inputEditText.setText("")
+            isReply = false
+        }
+    }
 
-                exoPlayer = ExoPlayer.Builder(this)
-                    .build()
-                Log.d("commentAudioStartPlaying", "commentAudioStartPlaying: Local file $fileUrl")
-
-                val localFileUri =
-                    Uri.parse(fileUrl.toString()) // Replace with the path to your local file
-                val mediaItem = MediaItem.fromUri(localFileUri)
-                exoPlayer!!.setMediaItem(mediaItem)
-            } else {
-                Log.d("commentAudioStartPlaying", "commentAudioStartPlaying: server file")
-                val videoUri = Uri.parse(vnAudio)
-                val mediaItem = MediaItem.fromUri(videoUri)
-                httpDataSourceFactory = DefaultHttpDataSource.Factory()
-                    .setAllowCrossProtocolRedirects(true)
-                defaultDataSourceFactory = DefaultDataSourceFactory(
-                    this, httpDataSourceFactory
+    override fun likeUnLikeComment(
+        position: Int,
+        data: Comment
+    ) {
+        if (com.uyscuti.sharedmodule.utils.NetworkUtil.isConnected(this)) {
+            val updatedComment = if (data.isLiked) {
+                data.copy(
+                    likes = data.likes + 1,
                 )
-                cacheDataSourceFactory = CacheDataSource.Factory()
-                    .setCache(simpleCache)
-                    .setUpstreamDataSourceFactory(httpDataSourceFactory)
-                    .setFlags(CacheDataSource.FLAG_IGNORE_CACHE_ON_ERROR)
-                val mediaSourceFactory: MediaSource.Factory =
-                    DefaultMediaSourceFactory(this)
-                        .setDataSourceFactory(cacheDataSourceFactory)
-                exoPlayer = ExoPlayer.Builder(this)
-                    .setMediaSourceFactory(mediaSourceFactory)
-                    .build()
-                // Create media source
-                val mediaSource = ProgressiveMediaSource.Factory(cacheDataSourceFactory)
-                    .createMediaSource(mediaItem)
-                exoPlayer.setMediaSource(mediaSource)
-            }
-            exoPlayer.prepare()
-            exoPlayer.seekTo(progress.toLong())
-            exoPlayer.playWhenReady = true
-//            exoPlayer.play()
-            exoPlayer.repeatMode = Player.REPEAT_MODE_OFF
-            exoPlayer.addListener(playbackStateListener)
-
-
-            exoPlayer.addListener(object : Player.Listener {
-                @Deprecated("Deprecated in Java")
-                override fun onPlayerStateChanged(
-                    playWhenReady: Boolean,
-                    playbackState: Int
-                ) {
-                    if (playbackState == Player.STATE_READY && exoPlayer.duration != C.TIME_UNSET) {
-//
-                    }
-                }
-
-                override fun onPlayerError(error: PlaybackException) {
-                    super.onPlayerError(error)
-                    error.printStackTrace()
-                    Toast.makeText(
-                        this@PostDetailsActivity2,
-                        "Can't play this audio",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
-//
-//
-            })
-            shortPlayer.addListener(object : Player.Listener {
-                @Deprecated("Deprecated in Java")
-                override fun onPlayerStateChanged(
-                    playWhenReady: Boolean,
-                    playbackState: Int
-                ) {
-                    if (playbackState == Player.STATE_READY && shortPlayer.duration != C.TIME_UNSET) {
-//                                    shortsSeekBar.max = exoPlayer.duration.toInt()
-//                                    shortsAdapter.setSeekBarMax(exoPlayer!!.currentPosition.toInt())
-                        shortSeekBar.max = exoPlayer.duration.toInt()
-                    }
-                }
-//
-
-                @Deprecated("Deprecated in Java")
-                override fun onPositionDiscontinuity(reason: Int) {
-                    updateSeekBar()
-                }
-            })
-
-            if (isReplyVnPlaying) {
-//
-                val handler = Handler()
-
-                handler.postDelayed({
-                    adapter?.refreshMainComment(position)
-                }, 200)
             } else {
-//
+                data.copy(
+                    likes = data.likes - 1,
+                )
             }
-//
-
-        } catch (e: Exception) {
-            Log.d("commentAudioStartPlaying", "commentAudioStartPlaying: error: ${e.message}")
-            e.printStackTrace()
-        }
-
-    }
-
-    private fun commentAudioPause(audioPlayPauseBtn: ImageView, isReply: Boolean) {
-        Log.d("TAG", "commentAudioPause: is Reply $isReply")
-        isDurationOnPause = true
-
-        Log.d(
-            "isDurationOnPause",
-            " in comment audio pause isDurationOnPause is $isDurationOnPause"
-        )
-
-        audioPlayPauseBtn.setImageResource(R.drawable.play_svgrepo_com)
-        adapter!!.updatePlaybackButton(currentCommentAudioPosition, isReply, audioPlayPauseBtn)
-//
-        exoPlayer.pause()
-    }
-
-    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-    private fun startRecording() {
-        if (!permissionGranted) {
-            ActivityCompat.requestPermissions(this, permissions, REQUEST_CODE)
-            return
-        }
-        try {
-
-            if (player?.isPlaying == true) {
-                stopPlaying()
-            }
-            binding.playerTimerTv.visibility = View.GONE
-            outputFile = getOutputFilePath("rec")
-            outputVnFile = getOutputFilePath("mix")
-            wasPaused = false
-//            firstTimeSendVn = false
-            mediaRecorder = MediaRecorder().apply {
-                setAudioSource(MediaRecorder.AudioSource.MIC)
-                setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
-                setOutputFile(outputFile)
-                setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
-                prepare()
-                start()
-            }
-            isRecording = true
-            isPaused = false
-            isVnResuming = false
-            binding.recordVN.setImageResource(R.drawable.baseline_pause_white_24)
-            binding.sendVN.setBackgroundResource(R.drawable.ic_ripple)
-            binding.deleteVN.setBackgroundResource(R.drawable.ic_ripple)
-            timer.start()
-
-            binding.deleteVN.isClickable = true
-            binding.sendVN.isClickable = true
-//            mediaRecorder.
-            recordedAudioFiles.add(outputFile)
-
-//            mediaRecorder.logSessionId
-
-            Log.d("VNFile", outputFile)
-            // Add any UI changes or notifications indicating recording has started
-        } catch (e: Exception) {
-            Log.d("VNFile", "Failed to record audio properly")
-            e.printStackTrace()
-            // Handle exceptions as needed
-        }
-    }
-
-    ///ended here
-    val count = 0
-
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    fun pausePlayEvent(event: PausePlayEvent) {
-        Log.d("pausePlayEvent", "pausePlayEvent ${count + 1}")
-        if (shortPlayer.isPlaying == true) {
-            pauseVideo()
+            commentAdapter?.updateItem(position, updatedComment)
+            shotPostViewModel.likeUnlikeShotComment(data._id)
         } else {
-            playVideo()
+            showToast(this, "Like failed. No internet access.")
         }
     }
 
-    private fun playVideo() {
-        shortPlayer.playWhenReady = true
-        isPlaying = true
-    }
+    override fun likeUnlikeCommentReply(
+        replyPosition: Int,
+        replyData: com.uyscuti.social.network.api.response.commentreply.allreplies.Comment,
+        mainCommentPosition: Int,
+        mainComment: Comment
+    ) {
+        if (com.uyscuti.sharedmodule.utils.NetworkUtil.isConnected(this)) {
+            if (replyData.isLiked) {
+                replyData.copy(
+                    likes = replyData.likes + 1
+                )
+            } else {
+                replyData.copy(
+                    likes = replyData.likes - 1
+                )
+            }
+            mainComment.replies[replyPosition] = replyData
 
-    private fun pauseVideo() {
-        shortPlayer.playWhenReady = false
-        isPlaying = false
-    }
+            commentAdapter?.updateItem(mainCommentPosition, mainComment)
+            shotPostViewModel.likeUnlikeShotCommentReplies(replyData._id)
 
-    private var isPlaying = false
-    private fun togglesPausePlay() {
-        Log.d("Pause", "togglePausePlay")
-        if (isPlaying) {
-            pauseVideo()
         } else {
-            playVideo()
+            showToast(this, "Like failed. No internet access.")
         }
+
     }
 
-    //ended here
-    @RequiresApi(Build.VERSION_CODES.O)
-    private fun selectGifFile() {
-        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
-            addCategory(Intent.CATEGORY_OPENABLE)
-            type = "image/gif"
+    override fun onSubmit(input: CharSequence?): Boolean {
+        hideKeyboard(binding.input.inputEditText)
+        val localUpdateId = generateRandomId()
+
+        if (!isReply) {
+            shotPostViewModel.addComment(
+                postId,
+                input.toString(),
+                "text",
+                localUpdateId
+            )
+
+        } else {
+            shotPostViewModel.addCommentReply(
+                commentId,
+                input.toString(),
+                "text",
+                localUpdateId,
+                isReply = isReply
+            )
+
+            isReply = false
         }
-        selectGifLauncher.launch(intent)
+
+
+        return true
+    }
+
+    override fun onAddEmoji() {
+        initEmojiView()
+    }
+
+    override fun onAddVoiceNote() {
+        binding.VnLayout.visibility = View.VISIBLE
+        binding.playAudioLayout.visibility = View.GONE
+        binding.waveForm.visibility = View.VISIBLE
+        binding.timerTv.visibility = View.VISIBLE
     }
 
     override fun onAddGif() {
-        Log.d("onAddGif", "onAddGif: Gif Button Clicked")
-
         val intent = Intent(this, GifActivity::class.java)
-        startActivityForResult(intent, GIF_CODE)
-
-
+        gifsPickerLauncher.launch(intent)
     }
 
-    private fun getFileName(uri: Uri): String? {
-        var fileName: String? = null
-        contentResolver.query(uri, null, null, null, null)?.use { cursor ->
-            val nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
-            cursor.moveToFirst()
-            fileName = cursor.getString(nameIndex)
-        }
-        return fileName
+    override fun onAddAttachments() {
+        showAttachmentDialog()
     }
 
     override fun onTimerTick(duration: String) {
         binding.timerTv.text = duration
-        if (mediaRecorder == null) {
-            Log.d("mediaRecording", "mediaRecording is null")
-        } else {
-            var amplitude = mediaRecorder!!.maxAmplitude.toFloat()
-            amplitude = if (amplitude > 0) amplitude else 130f
-            binding.waveForm.addAmplitude(amplitude)
-        }
+
+        var amplitude = mediaRecorder!!.maxAmplitude.toFloat()
+        amplitude = if (amplitude > 0) amplitude else 130f
+
+        binding.waveForm.addAmplitude(amplitude)
     }
 
 }
