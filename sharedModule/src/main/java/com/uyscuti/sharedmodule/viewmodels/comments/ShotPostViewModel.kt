@@ -163,3 +163,88 @@ class ShotPostViewModel@Inject constructor(
         }
 
     }
+
+    fun addComment(
+        postId: String,
+        content: String? = null,
+        contentType: String,
+        localUpdateId: String,
+        file: File? = null,
+        numberOfPages: Int? = null,
+        fileSize: String? = null,
+        fileType: String? = null,
+        fileName: String? = null,
+        gif: String? = null,
+        isReply: Boolean = false
+    ) {
+
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+
+                if (contentType == "text" ) {
+                    textComment(
+                        postId,
+                        content!!,
+                        contentType,
+                        localUpdateId,
+                        isReply
+                    )
+                } else if(contentType == "image") {
+                    imageComment(
+                        postId,
+                        content!!,
+                        file!!,
+                        contentType,
+                        localUpdateId,
+                        isReply
+                    )
+                } else if(contentType == "video") {
+                    videoComment(
+                        postId,
+                        content!!,
+                        file!!,
+                        contentType,
+                        localUpdateId
+                    )
+                } else if(contentType == "audio") {
+                    audioComment(
+                        postId,
+                        content!!,
+                        file!!,
+                        contentType,
+                        localUpdateId,
+                        isReply,
+                        fileType!!
+                    )
+                } else if (contentType == "docs") {
+                    documentComment(
+                        postId,
+                        content!!,
+                        file!!,
+                        contentType,
+                        localUpdateId,
+                        numberOfPages!!,
+                        fileSize!!,
+                        fileType!!,
+                        fileName!!,
+                        isReply
+                    )
+                } else if(contentType == "gif") {
+                    gifComment(
+                        postId,
+                        contentType,
+                        localUpdateId,
+                        gif!!,
+                        isReply
+                    )
+                }
+
+
+
+            } catch (e: JsonSyntaxException) {
+                e.printStackTrace()
+            }catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
