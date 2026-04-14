@@ -53,5 +53,59 @@ class VideoDownloadManager(private val context: Context) {
         }
     }
 
+    fun startDownload(
+        videoUrl: String,
+        postId: String,
+        videoTitle: String,
+        resumeFromByte: Long = 0L
+    ): UUID {
+        val downloadData = workDataOf(
+            VideoDownloadWorker.KEY_VIDEO_URL to videoUrl,
+            VideoDownloadWorker.KEY_POST_ID to postId,
+            VideoDownloadWorker.KEY_VIDEO_TITLE to videoTitle,
+            VideoDownloadWorker.KEY_RESUME_FROM_BYTE to resumeFromByte
+        )
 
+        val constraints = Constraints.Builder()
+            .setRequiredNetworkType(NetworkType.CONNECTED)
+            .setRequiresStorageNotLow(true)
+            .build()
+
+        val downloadWorkRequest = OneTimeWorkRequestBuilder<VideoDownloadWorker>()
+            .setInputData(downloadData)
+            .setConstraints(constraints)
+            .addTag("download_$postId")
+            .setBackoffCriteria(
+                BackoffPolicy.LINEAR,
+                10000L,
+                TimeUnit.MILLISECONDS
+            )
+            .build()
+
+        workManager.enqueueUniqueWork(
+            "download_$postId",
+            ExistingWorkPolicy.REPLACE,
+            downloadWorkRequest
+        )
+
+        return downloadWorkRequest.id
+    }
+
+    fun getDownloadProgress(workId: UUID): LiveData<WorkInfo?> {
+        return workManager.getWorkInfoByIdLiveData(workId)
+    }
+
+    fun cancelDownload(postId: String) {
+        workManager.cancelAllWorkByTag("download_$postId")
+    }
+
+    fun pauseDownload(postId: String) {
+        // Pause is handled by creating a pause file in BroadcastReceiver
+        // The worker checks for this file and pauses accordingly
+    }
+
+    fun isDownloading(postId: String): Boolean {
+        val workInfos = workManager.getWorkInfosByTag("download_$postId").get()
+        return workInfos.any { it.state == WorkInfo.State.RUNNING || it.state == WorkInfo.State.ENQUEUED }
+    }
 }
