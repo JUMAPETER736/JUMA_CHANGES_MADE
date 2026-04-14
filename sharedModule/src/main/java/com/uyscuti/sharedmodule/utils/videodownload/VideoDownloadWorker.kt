@@ -183,4 +183,79 @@ class VideoDownloadWorker(
         SUCCESS, PAUSED, FAILED
     }
 
+    private suspend fun downloadVideo(
+        url: String,
+        postId: String,
+        title: String,
+        resumeFromByte: Long
+    ): DownloadResult {
+        val client = OkHttpClient.Builder()
+            .connectTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
+            .readTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
+            .writeTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
+            .build()
+
+        // Add Range header for resume support
+        val requestBuilder = Request.Builder().url(url)
+        if (resumeFromByte > 0) {
+            requestBuilder.addHeader("Range", "bytes=$resumeFromByte-")
+        }
+        val request = requestBuilder.build()
+
+        val response = client.newCall(request).execute()
+
+        if (!response.isSuccessful && response.code != 206) {
+            return DownloadResult.FAILED
+        }
+
+        val body = response.body ?: return DownloadResult.FAILED
+
+        // Get total content length
+        val contentLength = if (response.code == 206) {
+            val contentRange = response.header("Content-Range")
+            contentRange?.substringAfter("/")?.toLongOrNull() ?: body.contentLength()
+        } else {
+            body.contentLength()
+        }
+
+        val inputStream = body.byteStream()
+
+        try {
+            // Check if we're resuming and have existing URI
+            val resumeInfo = getResumeInfo(postId)
+            val videoUri: Uri
+            val actualResumeFromByte: Long
+
+            if (resumeInfo != null && resumeFromByte > 0) {
+                // Resuming - use existing URI and byte position
+                videoUri = resumeInfo.uri
+                actualResumeFromByte = resumeInfo.bytesDownloaded
+            } else {
+                // New download - create new URI
+                val fileName = "Flash_${System.currentTimeMillis()}.mp4"
+                videoUri = createVideoUri(fileName, postId) ?: return DownloadResult.FAILED
+                actualResumeFromByte = 0L
+            }
+
+            // Open output stream in append mode if resuming
+            val outputStream = if (actualResumeFromByte > 0) {
+                applicationContext.contentResolver.openOutputStream(videoUri, "wa")
+            } else {
+                applicationContext.contentResolver.openOutputStream(videoUri, "w")
+            } ?: return DownloadResult.FAILED
+
+            return downloadToStream(
+                inputStream,
+                outputStream,
+                postId,
+                title,
+                actualResumeFromByte,
+                contentLength,
+                videoUri
+            )
+
+        } finally {
+            inputStream.close()
+        }
+    }
 }
