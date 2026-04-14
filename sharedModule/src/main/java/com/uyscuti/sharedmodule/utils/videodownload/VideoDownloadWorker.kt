@@ -258,4 +258,113 @@ class VideoDownloadWorker(
             inputStream.close()
         }
     }
+
+
+    private suspend fun downloadToStream(
+        inputStream: java.io.InputStream,
+        outputStream: OutputStream,
+        postId: String,
+        title: String,
+        initialBytes: Long,
+        contentLength: Long,
+        videoUri: Uri
+    ): DownloadResult {
+        try {
+            val buffer = ByteArray(8192)
+            var bytesRead: Int
+            var totalBytesRead = initialBytes
+            var lastProgress = 0
+            var lastNotificationProgress = 0 // NEW: Track last notified progress
+
+            android.util.Log.d("VideoDownload", "Starting download for $postId from byte $initialBytes")
+
+            while (inputStream.read(buffer).also { bytesRead = it } != -1) {
+                // Check for pause
+                if (checkIfPaused(postId)) {
+                    android.util.Log.d("VideoDownload", "Pause detected for $postId at $totalBytesRead bytes")
+                    isPaused = true
+                    outputStream.close()
+
+                    // Calculate final progress
+                    val progress = if (contentLength > 0) {
+                        ((totalBytesRead * 100) / contentLength).toInt()
+                    } else {
+                        lastProgress
+                    }
+
+                    // Save resume information including URI and progress
+                    saveResumeInfo(postId, videoUri.toString(), totalBytesRead, progress)
+
+                    // Save current progress
+                    setProgress(workDataOf(
+                        BYTES_DOWNLOADED to totalBytesRead,
+                        PROGRESS to progress
+                    ))
+
+                    return DownloadResult.PAUSED
+                }
+
+                // Check if work is stopped (cancelled)
+                if (isStopped) {
+                    android.util.Log.d("VideoDownload", "Download cancelled for $postId")
+                    outputStream.close()
+                    deleteVideoFromGallery(videoUri)
+                    return DownloadResult.FAILED
+                }
+
+                outputStream.write(buffer, 0, bytesRead)
+                totalBytesRead += bytesRead
+
+                // Update progress
+                if (contentLength > 0) {
+                    val progress = ((totalBytesRead * 100) / contentLength).toInt()
+                    if (progress != lastProgress) {
+                        lastProgress = progress
+
+                        // Only update WorkManager progress data (not notification) on every percent
+                        setProgress(workDataOf(
+                            PROGRESS to progress,
+                            BYTES_DOWNLOADED to totalBytesRead
+                        ))
+
+                        // Update global state for UI
+                        downloadStateManager.updateProgress(postId, progress)
+
+                        // THROTTLE: Only update notification every 5% to avoid rate limiting
+                        if (progress - lastNotificationProgress >= 5 || progress == 100) {
+                            lastNotificationProgress = progress
+                            setForeground(createForegroundInfo(progress, title, false))
+                        }
+                    }
+                }
+            }
+
+            outputStream.flush()
+            outputStream.close()
+
+            android.util.Log.d("VideoDownload", "Download completed for $postId")
+
+            // Notify media scanner to make video visible in gallery
+            notifyMediaScanner(videoUri)
+
+            // Delete resume info on success
+            deleteResumeInfo(postId)
+
+            return DownloadResult.SUCCESS
+
+        } catch (e: Exception) {
+            android.util.Log.e("VideoDownload", "Download error for $postId: ${e.message}", e)
+            outputStream.close()
+            deleteVideoFromGallery(videoUri)
+            return DownloadResult.FAILED
+        }
+    }
+
+    private fun saveResumeInfo(postId: String, videoUriString: String, bytesDownloaded: Long, progress: Int) {
+        val videoUrl = inputData.getString(KEY_VIDEO_URL) ?: ""
+        val videoTitle = inputData.getString(KEY_VIDEO_TITLE) ?: "Video"
+
+        val resumeFile = File(applicationContext.filesDir, "download_${postId}_resume")
+        resumeFile.writeText("$videoUriString\n$bytesDownloaded\n$videoUrl\n$videoTitle\n$progress")
+    }
 }
