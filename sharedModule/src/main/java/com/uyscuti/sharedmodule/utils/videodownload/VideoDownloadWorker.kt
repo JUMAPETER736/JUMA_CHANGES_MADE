@@ -555,4 +555,94 @@ class VideoDownloadWorker(
         }
     }
 
+
+    private fun showCompletionNotification(title: String, success: Boolean, message: String? = null) {
+        val notification = NotificationCompat.Builder(applicationContext, CHANNEL_ID)
+            .setContentTitle(if (success) "Download complete" else "Download failed")
+            .setContentText(message ?: if (success) "$title saved to $ALBUM_NAME" else "Failed to download $title")
+            .setSmallIcon(
+                if (success) android.R.drawable.stat_sys_download_done
+                else android.R.drawable.stat_notify_error
+            )
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setAutoCancel(true)
+            .build()
+
+        notificationManager.notify(notificationId + 1, notification)
+    }
+
+    private fun showPausedNotification(title: String, postId: String, progress: Int) {
+        android.util.Log.d("VideoDownload", "Showing paused notification for $postId with progress $progress%")
+
+        val pendingIntentFlags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        } else {
+            PendingIntent.FLAG_UPDATE_CURRENT
+        }
+
+        val resumeIntent = Intent(applicationContext, DownloadActionReceiver::class.java).apply {
+            action = ACTION_RESUME
+            putExtra(KEY_POST_ID, postId)
+        }
+
+        val resumePendingIntent = PendingIntent.getBroadcast(
+            applicationContext,
+            notificationId + 100,
+            resumeIntent,
+            pendingIntentFlags
+        )
+
+        val cancelIntent = Intent(applicationContext, DownloadActionReceiver::class.java).apply {
+            action = ACTION_CANCEL
+            putExtra(KEY_POST_ID, postId)
+        }
+
+        val cancelPendingIntent = PendingIntent.getBroadcast(
+            applicationContext,
+            notificationId + 101,
+            cancelIntent,
+            pendingIntentFlags
+        )
+
+        val notification = NotificationCompat.Builder(applicationContext, CHANNEL_ID)
+            .setContentTitle("Download paused")
+            .setContentText("$title")
+            .setSubText("$progress% complete")
+            .setSmallIcon(android.R.drawable.ic_media_pause)
+            .setProgress(100, progress, false) // Determinate progress bar
+            .setPriority(NotificationCompat.PRIORITY_HIGH) // Changed to HIGH
+            .setOngoing(true)
+            .setAutoCancel(false)
+            .setCategory(NotificationCompat.CATEGORY_PROGRESS)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .addAction(
+                android.R.drawable.ic_media_play,
+                "Resume",
+                resumePendingIntent
+            )
+            .addAction(
+                android.R.drawable.ic_delete,
+                "Cancel",
+                cancelPendingIntent
+            )
+            .build()
+
+        // Use DIFFERENT notification ID
+        val pausedNotificationId = notificationId + 1000
+
+        try {
+            notificationManager.notify(pausedNotificationId, notification)
+            android.util.Log.d("VideoDownload", "Paused notification posted with ID $pausedNotificationId")
+        } catch (e: Exception) {
+            android.util.Log.e("VideoDownload", "Failed to show paused notification", e)
+        }
+    }
 }
+
+data class ResumeInfo(
+    val uri: Uri,
+    val bytesDownloaded: Long,
+    val videoUrl: String,
+    val videoTitle: String,
+    val progress: Int
+)
