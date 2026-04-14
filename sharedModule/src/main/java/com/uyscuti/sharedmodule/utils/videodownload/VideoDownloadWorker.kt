@@ -83,4 +83,104 @@ class VideoDownloadWorker(
     }
 
 
+    override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
+        val videoUrl = inputData.getString(KEY_VIDEO_URL) ?: return@withContext Result.failure()
+        val postId = inputData.getString(KEY_POST_ID) ?: return@withContext Result.failure()
+        val videoTitle = inputData.getString(KEY_VIDEO_TITLE) ?: "Video"
+        val resumeFromByte = inputData.getLong(KEY_RESUME_FROM_BYTE, 0L)
+
+        createNotificationChannel()
+
+        // Clear pause file at start to prevent immediate pause
+        deletePauseCheckFile(postId)
+
+        try {
+            // Update global state
+            downloadStateManager.startDownload(postId, id)
+
+            // Set foreground to keep worker running
+            setForeground(createForegroundInfo(0, videoTitle, false))
+
+            val result = downloadVideo(videoUrl, postId, videoTitle, resumeFromByte)
+
+            when (result) {
+                DownloadResult.SUCCESS -> {
+                    downloadStateManager.setCompleted(postId)
+                    deletePauseCheckFile(postId)
+                    deleteResumeInfo(postId)
+                    showCompletionNotification(videoTitle, true)
+                    Result.success(
+                        workDataOf(
+                            DOWNLOAD_STATUS to STATUS_SUCCESS,
+                            KEY_POST_ID to postId
+                        )
+                    )
+                }
+
+                DownloadResult.PAUSED -> {
+                    // Get progress from resume info (more reliable)
+                    val resumeInfo = getResumeInfo(postId)
+                    val currentProgress = resumeInfo?.progress ?: 0
+
+                    downloadStateManager.setPaused(postId)
+
+                    // Show the paused notification BEFORE the worker ends
+                    showPausedNotification(videoTitle, postId, currentProgress)
+
+                    // Give the notification manager time to post the notification
+                    delay(1000) // Increased delay
+
+                    Result.failure(
+                        workDataOf(
+                            DOWNLOAD_STATUS to STATUS_PAUSED,
+                            KEY_POST_ID to postId
+                        )
+                    )
+                }
+
+                DownloadResult.FAILED -> {
+                    downloadStateManager.setFailed(postId)
+                    deletePauseCheckFile(postId)
+                    deleteResumeInfo(postId)
+                    showCompletionNotification(videoTitle, false)
+                    Result.failure(
+                        workDataOf(
+                            DOWNLOAD_STATUS to STATUS_FAILED,
+                            KEY_POST_ID to postId
+                        )
+                    )
+                }
+            }
+        } catch (e: Exception) {
+            if (isStopped) {
+                downloadStateManager.setCancelled(postId)
+                deletePauseCheckFile(postId)
+                deleteResumeInfo(postId)
+                deletePartialFile(postId)
+                showCompletionNotification(videoTitle, false, "Download cancelled")
+                Result.failure(
+                    workDataOf(
+                        DOWNLOAD_STATUS to STATUS_CANCELLED,
+                        KEY_POST_ID to postId
+                    )
+                )
+            } else {
+                downloadStateManager.setFailed(postId)
+                deletePauseCheckFile(postId)
+                deleteResumeInfo(postId)
+                showCompletionNotification(videoTitle, false, "Download failed: ${e.message}")
+                Result.failure(
+                    workDataOf(
+                        DOWNLOAD_STATUS to STATUS_FAILED,
+                        KEY_POST_ID to postId
+                    )
+                )
+            }
+        }
+    }
+
+    private enum class DownloadResult {
+        SUCCESS, PAUSED, FAILED
+    }
+
 }
