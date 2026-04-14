@@ -452,4 +452,107 @@ class VideoDownloadWorker(
         }
     }
 
+    private fun checkIfPaused(postId: String): Boolean {
+        val pauseFile = File(applicationContext.filesDir, "download_${postId}${PAUSE_CHECK_FILE_SUFFIX}")
+        return pauseFile.exists()
+    }
+
+    private fun deletePauseCheckFile(postId: String) {
+        val pauseFile = File(applicationContext.filesDir, "download_${postId}${PAUSE_CHECK_FILE_SUFFIX}")
+        if (pauseFile.exists()) {
+            pauseFile.delete()
+        }
+    }
+
+    private fun deletePartialFile(postId: String) {
+        // For gallery files, deletion is handled by deleteVideoFromGallery
+        // This method is kept for compatibility but does nothing
+    }
+
+    private fun createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                CHANNEL_ID,
+                CHANNEL_NAME,
+                NotificationManager.IMPORTANCE_DEFAULT // Changed from LOW to DEFAULT
+            ).apply {
+                description = "Shows video download progress"
+                setShowBadge(true) // Changed to true
+                lockscreenVisibility = NotificationCompat.VISIBILITY_PUBLIC
+            }
+            notificationManager.createNotificationChannel(channel)
+        }
+    }
+
+    private fun createForegroundInfo(progress: Int, title: String, isPaused: Boolean): ForegroundInfo {
+        val pendingIntentFlags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        } else {
+            PendingIntent.FLAG_UPDATE_CURRENT
+        }
+
+        val cancelIntent = Intent(applicationContext, DownloadActionReceiver::class.java).apply {
+            action = ACTION_CANCEL
+            putExtra("notification_id", notificationId)
+            putExtra(KEY_POST_ID, inputData.getString(KEY_POST_ID))
+        }
+
+        val cancelPendingIntent = PendingIntent.getBroadcast(
+            applicationContext,
+            notificationId,
+            cancelIntent,
+            pendingIntentFlags
+        )
+
+        val pauseResumeIntent = Intent(applicationContext, DownloadActionReceiver::class.java).apply {
+            action = if (isPaused) ACTION_RESUME else ACTION_PAUSE
+            putExtra("notification_id", notificationId)
+            putExtra(KEY_POST_ID, inputData.getString(KEY_POST_ID))
+        }
+
+        val pauseResumePendingIntent = PendingIntent.getBroadcast(
+            applicationContext,
+            notificationId + 1,
+            pauseResumeIntent,
+            pendingIntentFlags
+        )
+
+        val notification = NotificationCompat.Builder(applicationContext, CHANNEL_ID)
+            .setContentTitle(if (isPaused) "Download paused" else "Downloading $title")
+            .setSmallIcon(
+                if (isPaused) android.R.drawable.ic_media_pause
+                else android.R.drawable.stat_sys_download
+            )
+            .setProgress(100, progress, progress == 0 && !isPaused)
+            .setContentText(if (isPaused) "Tap Resume to continue" else if (progress > 0) "$progress%" else "Starting download...")
+            .setOngoing(false) // Changed from !isPaused to false - allows notification to persist
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setAutoCancel(false) // Don't auto-cancel on tap
+            .addAction(
+                if (isPaused) android.R.drawable.ic_media_play else android.R.drawable.ic_media_pause,
+                if (isPaused) "Resume" else "Pause",
+                pauseResumePendingIntent
+            )
+            .addAction(
+                android.R.drawable.ic_delete,
+                "Cancel",
+                cancelPendingIntent
+            )
+            .build()
+
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                ForegroundInfo(
+                    notificationId,
+                    notification,
+                    ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC
+                )
+            } else {
+                ForegroundInfo(notificationId, notification)
+            }
+        } else {
+            ForegroundInfo(notificationId, notification)
+        }
+    }
+
 }
