@@ -367,4 +367,89 @@ class VideoDownloadWorker(
         val resumeFile = File(applicationContext.filesDir, "download_${postId}_resume")
         resumeFile.writeText("$videoUriString\n$bytesDownloaded\n$videoUrl\n$videoTitle\n$progress")
     }
+
+    private fun getResumeInfo(postId: String): ResumeInfo? {
+        val resumeFile = File(applicationContext.filesDir, "download_${postId}_resume")
+        if (!resumeFile.exists()) return null
+
+        try {
+            val lines = resumeFile.readLines()
+            if (lines.size >= 5) {
+                val uri = Uri.parse(lines[0])
+                val bytes = lines[1].toLongOrNull() ?: 0L
+                val videoUrl = lines[2]
+                val videoTitle = lines[3]
+                val progress = lines[4].toIntOrNull() ?: 0
+                return ResumeInfo(uri, bytes, videoUrl, videoTitle, progress)
+            }
+        } catch (e: Exception) {
+            // Invalid resume file
+        }
+        return null
+    }
+
+    private fun deleteResumeInfo(postId: String) {
+        val resumeFile = File(applicationContext.filesDir, "download_${postId}_resume")
+        if (resumeFile.exists()) {
+            resumeFile.delete()
+        }
+    }
+
+    private fun createVideoUri(fileName: String, postId: String): Uri? {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            // Android 10+ - Use MediaStore
+            val contentValues = ContentValues().apply {
+                put(MediaStore.Video.Media.DISPLAY_NAME, fileName)
+                put(MediaStore.Video.Media.MIME_TYPE, "video/mp4")
+                put(MediaStore.Video.Media.RELATIVE_PATH, "${Environment.DIRECTORY_MOVIES}/$ALBUM_NAME")
+                put(MediaStore.Video.Media.IS_PENDING, 1)
+            }
+
+            val uri = applicationContext.contentResolver.insert(
+                MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
+                contentValues
+            )
+
+            uri
+        } else {
+            // Android 9 and below - Use File API
+            val moviesDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES)
+            val albumDir = File(moviesDir, ALBUM_NAME)
+
+            if (!albumDir.exists()) {
+                albumDir.mkdirs()
+            }
+
+            val file = File(albumDir, fileName)
+            Uri.fromFile(file)
+        }
+    }
+
+    private fun notifyMediaScanner(videoUri: Uri) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            // For Android 10+, update IS_PENDING to 0 to make it visible
+            val contentValues = ContentValues().apply {
+                put(MediaStore.Video.Media.IS_PENDING, 0)
+            }
+            applicationContext.contentResolver.update(videoUri, contentValues, null, null)
+        } else {
+            // For Android 9 and below, use MediaScannerConnection
+            val file = File(videoUri.path ?: return)
+            MediaScannerConnection.scanFile(
+                applicationContext,
+                arrayOf(file.absolutePath),
+                arrayOf("video/mp4"),
+                null
+            )
+        }
+    }
+
+    private fun deleteVideoFromGallery(videoUri: Uri) {
+        try {
+            applicationContext.contentResolver.delete(videoUri, null, null)
+        } catch (e: Exception) {
+            // Silently fail
+        }
+    }
+
 }
