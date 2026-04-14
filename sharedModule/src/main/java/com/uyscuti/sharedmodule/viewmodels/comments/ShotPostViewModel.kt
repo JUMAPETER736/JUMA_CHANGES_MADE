@@ -76,7 +76,6 @@ class ShotPostViewModel@Inject constructor(
     }
 
 
-
     fun addCommentReply(
         postId: String,
         content: String? = null,
@@ -164,6 +163,7 @@ class ShotPostViewModel@Inject constructor(
 
     }
 
+
     fun addComment(
         postId: String,
         content: String? = null,
@@ -247,4 +247,67 @@ class ShotPostViewModel@Inject constructor(
                 e.printStackTrace()
             }
         }
+    }
+
+
+
+    private suspend fun textComment(
+        postId: String,
+        content: String,
+        contentType: String,
+        localUpdateId: String,
+        isReply: Boolean = false
+    ) {
+
+        // Create RequestBody for required fields
+        val contentBody = content.toRequestBody("text/plain".toMediaTypeOrNull())
+        val contentTypeBody = contentType.toRequestBody("text/plain".toMediaTypeOrNull())
+        val localUpdateIdBody = localUpdateId.toRequestBody("text/plain".toMediaTypeOrNull())
+
+        val profilePic2 = settings.getString("profile_pic", "").toString()
+        val avatar = Avatar("", "", url = profilePic2)
+
+
+        val account =
+            Account(_id = "", avatar = avatar, "", localStorage.getUsername())
+        val author = Author(
+            _id = "", account = account, firstName = "", lastName = "",
+            avatar = null
+        )
+
+        val comment = Comment(
+            0,
+            "",
+            author,
+            content,
+            generateMongoDBTimestamp(),
+            false,
+            0,
+            postId,
+            generateMongoDBTimestamp(),
+            0,
+            mutableListOf(),
+            contentType = contentType,
+            localUpdateId = localUpdateId
+        )
+
+        _commentsMutableLiveData.postValue(CommentState(isReply, comment))
+
+        if(isReply) {
+            retrofitInstance.apiService.addShotReplyComment(
+                postId,
+                contentBody,
+                contentTypeBody,
+                localUpdateIdBody
+            )
+
+        } else {
+            retrofitInstance.apiService.addShotComment(
+                postId,
+                contentBody,
+                contentTypeBody,
+                localUpdateIdBody
+            )
+        }
+
     }
