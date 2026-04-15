@@ -112,6 +112,94 @@ class ConfirmGroupActivity : AppCompatActivity() {
         }
     }
 
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // MAIN: Create group chat
+    // ─────────────────────────────────────────────────────────────────────────
+
+    private fun createGroupChat(data: RequestGroupChat) {
+        showLoadingDialog()
+        participants.clear()
+        chatParticipant.clear()
+
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                Log.d("CreateGroup", "Sending: name=${data.name}, participants=${data.participants}")
+
+                val response = retrofitInterface.apiService.createGroupChat(data)
+
+                if (response.isSuccessful) {
+                    val rawString = gson.toJson(response.body())
+                    Log.d("CreateGroup", "Raw response: $rawString")
+
+                    val rootObj = gson.fromJson(rawString, JsonObject::class.java)
+                    val dataEl  = rootObj?.get("data")?.takeIf { !it.isJsonNull }
+                    val isEmpty = dataEl == null || !dataEl.isJsonObject
+                            || dataEl.asJsonObject.size() == 0
+
+                    if (isEmpty) {
+                        // Server returned data:{} due to serialization bug —
+                        // group WAS created (HTTP 201). Fetch the list silently.
+                        Log.w("CreateGroup", "data:{} received — using getAllGroupChats fallback")
+                        handleEmptyDataFallback(data.name)
+                        return@launch
+                    }
+
+                    // Happy path — parse and navigate
+                    val chat: GroupChatDetail = gson.fromJson(dataEl, GroupChatDetail::class.java)
+                    Log.d("CreateGroup", "Parsed: _id=${chat._id}  name=${chat.name}")
+                    saveAndNavigate(chat, data.name)
+
+                } else {
+                    // Real HTTP error — group was NOT created
+                    val errorCode = response.code()
+                    val errorBody = response.errorBody()?.string() ?: "No error body"
+                    Log.e("CreateGroup", "HTTP $errorCode – $errorBody")
+                    withContext(Dispatchers.Main) {
+                        dismissLoadingDialog()
+                        Toast.makeText(
+                            this@ConfirmGroupActivity,
+                            "Failed to create group ($errorCode). Please try again.",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+                }
+
+            } catch (e: HttpException) {
+                Log.e("CreateGroup", "HttpException: ${e.message}")
+                withContext(Dispatchers.Main) {
+                    dismissLoadingDialog()
+                    Toast.makeText(
+                        this@ConfirmGroupActivity,
+                        "Network error. Please check your connection and try again.",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+            } catch (e: IOException) {
+                Log.e("CreateGroup", "IOException: ${e.message}")
+                withContext(Dispatchers.Main) {
+                    dismissLoadingDialog()
+                    Toast.makeText(
+                        this@ConfirmGroupActivity,
+                        "Connection lost. Please check your internet and try again.",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+            } catch (e: Exception) {
+                Log.e("CreateGroup", "Unexpected: ${e.message}", e)
+                withContext(Dispatchers.Main) {
+                    dismissLoadingDialog()
+                    Toast.makeText(
+                        this@ConfirmGroupActivity,
+                        "Something went wrong. Please try again.",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+            }
+        }
+    }
+
+
     private fun convertIso8601ToUnixTimestamp(iso8601Date: String): Long {
         val sdf = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
         sdf.timeZone = TimeZone.getTimeZone("UTC")
