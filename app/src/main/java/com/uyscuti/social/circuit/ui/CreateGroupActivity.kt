@@ -23,8 +23,8 @@ import com.uyscuti.sharedmodule.presentation.DialogViewModel
 import com.uyscuti.sharedmodule.presentation.GroupDialogViewModel
 import com.uyscuti.sharedmodule.presentation.UsersViewModel
 import com.uyscuti.social.circuit.R
-import com.uyscuti.sharedmodule.data.model.Dialog
-import com.uyscuti.sharedmodule.data.model.User
+import com.uyscuti.social.core.models.data.Dialog
+import com.uyscuti.social.core.models.data.User
 import com.uyscuti.sharedmodule.MessagesActivity
 import com.uyscuti.social.circuit.databinding.ActivityCreateGroupBinding
 import com.uyscuti.social.core.common.data.room.entity.DialogEntity
@@ -109,7 +109,6 @@ class CreateGroupActivity : AppCompatActivity(), SearchView.OnQueryTextListener 
             }
         }
 
-//        initUserList()
     }
     private fun initUserList() {
         userListView = binding.userList
@@ -132,19 +131,14 @@ class CreateGroupActivity : AppCompatActivity(), SearchView.OnQueryTextListener 
             val participantsVisibility = if (participants.isNotEmpty()) View.VISIBLE else View.GONE
             animateVisibilityChange(binding.participantsView, participantsVisibility)
 
-            // Update the visibility of the participants layout
-//            binding.participants.visibility = if (participants.isNotEmpty()) {
-//                View.VISIBLE
-//            } else {
-//                View.GONE
-//            }
+
             binding.nextFab.visibility = if (participants.size > 0) {
                 View.VISIBLE
             } else {
                 View.GONE
             }
             // Update the adapter and scroll to the last item
-//            participantsAdapter.addUser(user)
+
             participantsList.scrollToPosition(participantsAdapter.itemCount - 1)
             participantsAdapter.notifyDataSetChanged()
         }
@@ -154,11 +148,7 @@ class CreateGroupActivity : AppCompatActivity(), SearchView.OnQueryTextListener 
 
             val participantsVisibility = if (participants.isNotEmpty()) View.VISIBLE else View.GONE
             animateVisibilityChange(binding.participantsView, participantsVisibility)
-//            binding.participants.visibility = if (participants.size > 0) {
-//                View.VISIBLE
-//            } else {
-//                View.GONE
-//            }
+
             binding.nextFab.visibility = if (participants.size > 1) {
                 View.VISIBLE
             } else {
@@ -176,8 +166,7 @@ class CreateGroupActivity : AppCompatActivity(), SearchView.OnQueryTextListener 
         userListView.layoutManager = LinearLayoutManager(this)
 
         // Get the random users and sort them alphabetically
-//        val randomUsers = DialogsFixtures.getRandomUsers(15)
-//        val sortedUsers = randomUsers.sortedBy { it.name }
+
 
         originalUserList = usersList.map { it.toUser() }.sortedBy { it.name }
 
@@ -195,8 +184,8 @@ class CreateGroupActivity : AppCompatActivity(), SearchView.OnQueryTextListener 
         binding.nextFab.setOnClickListener {
 
             // Convert DBUserList to Participant list
-//            val participantList = participants.map { it.toParticipant() }
-////
+
+
             val intent = Intent(this, ConfirmGroupActivity::class.java)
 
             intent.putParcelableArrayListExtra("participantList", ArrayList(participants))
@@ -243,14 +232,12 @@ class CreateGroupActivity : AppCompatActivity(), SearchView.OnQueryTextListener 
                 return@launch
             } finally {
                 // Ensure the progress bar is hidden in case of an error
-//                withContext(Dispatchers.Main) {
-//                    dismissLoadingDialog()
-//                }
+
             }
 
             if (response.isSuccessful) {
                 val responseBody = response.body()
-//                Log.d("AllUsers", "Users List ${responseBody?.data}")
+
 
                 if (responseBody?.data != null) {
 
@@ -270,7 +257,7 @@ class CreateGroupActivity : AppCompatActivity(), SearchView.OnQueryTextListener 
                     }
                     allUsers.forEach {
                         insertUser(it)
-//                        Log.d("Add users", "All users added successfully to room")
+
                     }
 
 
@@ -302,13 +289,13 @@ class CreateGroupActivity : AppCompatActivity(), SearchView.OnQueryTextListener 
                             "UserDialog",
                             "User chat created successfully: id ${response.body()!!.data._id}"
                         )
-//                        callBack?.onChatCreated()
+
                         val chatId = response.body()!!.data._id
                         val chatName = response.body()!!.data.name
 
                         val admin =
 
-                        participants.add(receiver)
+                            participants.add(receiver)
 
                         val dialog = Dialog(
                             chatId,
@@ -318,7 +305,7 @@ class CreateGroupActivity : AppCompatActivity(), SearchView.OnQueryTextListener 
                             null,
                             0
                         )
-//                        val allUsers = mutableListOf<DialogEntity>()
+
                         val chatResponse = response.body()!!.data
 
 
@@ -341,8 +328,6 @@ class CreateGroupActivity : AppCompatActivity(), SearchView.OnQueryTextListener 
                             createdAt = createdAt
                         )
 
-//                        allUsers.add(dialogEntity)
-//                        insertDialog(dialogEntity)
 
                         dismissLoadingDialog()
 
@@ -350,7 +335,7 @@ class CreateGroupActivity : AppCompatActivity(), SearchView.OnQueryTextListener 
                             this@CreateGroupActivity, "",
                             dialog, false,""
                         )
-//                        openChatActivity(chatId,chatName)
+
                         finish()
                     } else {
                         // Handle the error or show a message to the user
@@ -412,7 +397,7 @@ class CreateGroupActivity : AppCompatActivity(), SearchView.OnQueryTextListener 
         CoroutineScope(Dispatchers.IO).launch {
             dialogViewModel.insertDialog(dialog)
         }
-//        Log.d("OneToChat", "Added single chat to local -  $dialog")
+
 
     }
 
@@ -474,35 +459,10 @@ class CreateGroupActivity : AppCompatActivity(), SearchView.OnQueryTextListener 
         searchView.setOnQueryTextListener(this)
 
         // Tint the search icon with white color
-//        tintMenuIcon(searchItem, Color.WHITE)
+
         return true
     }
 
-//    private fun setupSearchView() {
-//        val searchView = findViewById<SearchView>(R.id.searchView)
-//
-//        // Customize the SearchView
-//        searchView.queryHint = "Search Users"
-//        val searchIcon = searchView.findViewById<ImageView>(androidx.appcompat.R.id.search_button)
-//        searchIcon.setColorFilter(Color.WHITE, PorterDuff.Mode.SRC_ATOP)
-//        val closeButton = searchView.findViewById<ImageView>(androidx.appcompat.R.id.search_close_btn)
-//        closeButton.setColorFilter(Color.WHITE, PorterDuff.Mode.SRC_ATOP)
-//
-//        searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
-//            override fun onQueryTextSubmit(query: String?): Boolean {
-//                return false
-//            }
-//
-//            override fun onQueryTextChange(newText: String?): Boolean {
-//                // Filter the user list based on the search query
-//                val filteredList = originalUserList.filter { user ->
-//                    user.name.contains(newText.orEmpty(), true)
-//                }
-//                userListAdapter.setUserList(filteredList)
-//                return true
-//            }
-//        })
-//    }
 
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
