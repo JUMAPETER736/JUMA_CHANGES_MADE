@@ -1,33 +1,37 @@
 package com.uyscuti.social.circuit.ui
 
-import androidx.appcompat.app.AppCompatActivity
+import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.view.inputmethod.InputMethodManager
 import android.widget.Toast
 import androidx.activity.viewModels
+import androidx.annotation.OptIn
+import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
+import androidx.media3.common.util.UnstableApi
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-
+import com.google.gson.Gson
+import com.google.gson.JsonObject
+import com.uyscuti.social.circuit.MainActivity
+import com.uyscuti.social.circuit.R
 import com.uyscuti.social.circuit.adapter.AddParticipantsAdapter
+import com.uyscuti.social.circuit.databinding.ActivityConfirmGroupBinding
 import com.uyscuti.sharedmodule.presentation.DialogViewModel
 import com.uyscuti.sharedmodule.presentation.GroupDialogViewModel
 import com.uyscuti.sharedmodule.presentation.UsersViewModel
-import com.uyscuti.social.circuit.R
-import com.uyscuti.sharedmodule.data.model.Dialog
-import com.uyscuti.sharedmodule.data.model.User
-import com.uyscuti.sharedmodule.MessagesActivity
-import com.uyscuti.social.circuit.databinding.ActivityConfirmGroupBinding
 import com.uyscuti.social.core.common.data.room.entity.GroupDialogEntity
 import com.uyscuti.social.core.common.data.room.entity.MessageEntity
 import com.uyscuti.social.core.common.data.room.entity.UserEntity
+import com.uyscuti.social.core.models.data.User
 import com.uyscuti.social.network.api.request.group.RequestGroupChat
 import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import retrofit2.HttpException
 import java.io.IOException
 import java.text.SimpleDateFormat
@@ -35,23 +39,26 @@ import java.util.Date
 import java.util.TimeZone
 import javax.inject.Inject
 
-
 @AndroidEntryPoint
 class ConfirmGroupActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityConfirmGroupBinding
     private lateinit var horizontalRecyclerView: RecyclerView
     private lateinit var selectedUsersAdapter: AddParticipantsAdapter
+
     @Inject
     lateinit var retrofitInterface: RetrofitInstance
-    private var participantsIds: ArrayList<String> = arrayListOf()
-    private var participants: ArrayList<User> = arrayListOf()
-    private var dialog: android.app.Dialog? = null
+
+    private var participantsIds: ArrayList<String>    = arrayListOf()
+    private var participants: ArrayList<User>          = arrayListOf()
+    private var loadingDialog: android.app.Dialog?     = null
     private var chatParticipant: ArrayList<UserEntity> = arrayListOf()
-    private val groupDialogViewModel: GroupDialogViewModel by viewModels()
 
+    private val usersViewModel:       UsersViewModel       by viewModels()
+    private val dialogViewModel:      DialogViewModel       by viewModels()
+    private val groupDialogViewModel: GroupDialogViewModel  by viewModels()
 
-
+    private val gson = Gson()
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
