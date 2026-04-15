@@ -66,34 +66,20 @@ class ConfirmGroupActivity : AppCompatActivity() {
         binding = ActivityConfirmGroupBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-
         horizontalRecyclerView = binding.horizontalRecyclerView
+        horizontalRecyclerView.layoutManager =
+            LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
 
-        val horizontalLayoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
-        horizontalRecyclerView.layoutManager = horizontalLayoutManager
-
-        selectedUsersAdapter = AddParticipantsAdapter(this){
-
-        }
-
+        selectedUsersAdapter = AddParticipantsAdapter(this) {}
 
         val receivedParticipants = intent.getParcelableArrayListExtra<User>("participantList")
 
-        Log.d("GroupChats", "Received Participant List: $receivedParticipants")
-
         binding.toolbar.setNavigationIcon(R.drawable.back_svgrepo_com)
-
-        binding.toolbar.setNavigationOnClickListener {
-            onBackPressed()
-        }
+        binding.toolbar.setNavigationOnClickListener { onBackPressed() }
 
         binding.groupNameET.requestFocus()
-
-
-        // Show the keyboard
         val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
         imm.toggleSoftInput(InputMethodManager.SHOW_FORCED, InputMethodManager.HIDE_IMPLICIT_ONLY)
-
 
         if (receivedParticipants != null) {
             for (selectedUser in receivedParticipants) {
@@ -101,33 +87,30 @@ class ConfirmGroupActivity : AppCompatActivity() {
             }
         }
 
-
         val lastPosition = selectedUsersAdapter.itemCount - 1
-
         horizontalRecyclerView.adapter = selectedUsersAdapter
         horizontalRecyclerView.smoothScrollToPosition(lastPosition)
         selectedUsersAdapter.notifyDataSetChanged()
 
+        val myUserId = getSharedPreferences("LocalSettings", 0).getString("_id", "") ?: ""
+
         if (receivedParticipants != null) {
-            for (participant in receivedParticipants){
-                val id = participant.id
-                participantsIds.add(id)
+            for (participant in receivedParticipants) {
+                if (participant.id != myUserId) {
+                    participantsIds.add(participant.id)
+                }
             }
         }
 
         binding.confirmFab.setOnClickListener {
-            val groupName = binding.groupNameET.text.toString()
-
-            val data = RequestGroupChat(
-                groupName,
-                participantsIds
-            )
-
-            createGroupChat(data)
+            val groupName = binding.groupNameET.text.toString().trim()
+            if (groupName.isEmpty()) {
+                binding.groupNameET.error = "Please enter a group name"
+                return@setOnClickListener
+            }
+            createGroupChat(RequestGroupChat(groupName, participantsIds))
         }
     }
-
-
 
     private fun convertIso8601ToUnixTimestamp(iso8601Date: String): Long {
         val sdf = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
