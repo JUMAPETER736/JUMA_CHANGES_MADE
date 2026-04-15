@@ -3,58 +3,66 @@ package com.uyscuti.sharedmodule.presentation
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import com.uyscuti.sharedmodule.data.model.User
+import androidx.lifecycle.viewModelScope
+import com.uyscuti.social.core.models.data.User
 import com.uyscuti.social.core.common.data.room.entity.RecentUser
 import com.uyscuti.social.core.common.data.room.repository.RecentUserRepository
-
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.launch
 import javax.inject.Inject
-import kotlin.collections.orEmpty
-
 
 @HiltViewModel
-class RecentUserViewModel @Inject constructor(private val recentUserRepository: RecentUserRepository) : ViewModel() {
+class RecentUserViewModel @Inject constructor(
+    private val recentUserRepository: RecentUserRepository
+) : ViewModel() {
 
-    private val _selectedUserList: MutableLiveData<List<User>> = MutableLiveData()
-
-    private val _users: LiveData<List<RecentUser>> = recentUserRepository.getRecentUsersLiveData()
-
-    // Expose the LiveData to the UI
-    val recentUsers: LiveData<List<RecentUser>>
-        get() = _users
-
-    // Getter for the LiveData (read-only access)
+    private val _selectedUserList = MutableLiveData<List<User>>()
     val selectedUserList: LiveData<List<User>> get() = _selectedUserList
 
-    // Setter for the MutableLiveData (write access)
-    private fun setSelectedUserList(users: List<User>) {
-        _selectedUserList.value = users
-    }
+    // Room delivers LiveData updates on Main automatically — no changes needed.
+    val recentUsers: LiveData<List<RecentUser>> =
+        recentUserRepository.getRecentUsersLiveData()
 
-    // Function to initialize selectedUserList with an empty list
+    // ─── Selected user list ───────────────────────────────────────────────────
+
     fun initializeSelectedUserList() {
-        setSelectedUserList(emptyList())
+        _selectedUserList.value = emptyList()
     }
 
-    // Function to add a user to the list
     fun addUser(user: User) {
-        val currentList = _selectedUserList.value.orEmpty().toMutableList()
-        currentList.add(user)
-        setSelectedUserList(currentList)
+        val current = _selectedUserList.value.orEmpty().toMutableList()
+        current.add(user)
+        _selectedUserList.value = current
     }
 
-    // Function to remove a user from the list
     fun removeUser(user: User) {
-        val currentList = _selectedUserList.value.orEmpty().toMutableList()
-        currentList.remove(user)
-        setSelectedUserList(currentList)
+        val current = _selectedUserList.value.orEmpty().toMutableList()
+        current.remove(user)
+        _selectedUserList.value = current
     }
 
-    suspend fun addRecentUser(user: RecentUser){
-        recentUserRepository.insertRecentUser(user)
+    // ─── Room operations ──────────────────────────────────────────────────────
+
+    // FIX: was a plain suspend fun called from the Activity with withContext(IO).
+    // The ViewModel should own the coroutine scope and threading — callers just
+    // call these functions normally from the Main thread.
+    //
+    // getRecentUsers() returns a value so we still need it as suspend so the
+    // caller can await the result. The IO dispatch is now inside the repository.
+    suspend fun getRecentUsers(): List<RecentUser> =
+        recentUserRepository.getRecentUsers()
+
+    // addRecentUser and deleteAll don't return values — fire-and-forget with
+    // viewModelScope so the Activity doesn't need a coroutine at all.
+    fun addRecentUser(user: RecentUser) {
+        viewModelScope.launch {
+            recentUserRepository.insertRecentUser(user)
+        }
     }
 
-    fun getRecentUsers(): List<RecentUser>{
-        return recentUserRepository.getRecentUsers()
+    fun deleteAllRecentUsers() {
+        viewModelScope.launch {
+            recentUserRepository.deleteAllRecentUsers()
+        }
     }
 }
