@@ -25,6 +25,8 @@ import com.uyscuti.social.core.common.data.room.entity.GroupDialogEntity
 import com.uyscuti.social.core.common.data.room.entity.MessageEntity
 import com.uyscuti.social.core.common.data.room.entity.UserEntity
 import com.uyscuti.social.core.models.data.User
+import com.uyscuti.social.network.api.request.group.GroupChatDetail
+import com.uyscuti.social.network.api.request.group.GroupMemberUser
 import com.uyscuti.social.network.api.request.group.RequestGroupChat
 import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
 import dagger.hilt.android.AndroidEntryPoint
@@ -359,5 +361,44 @@ class ConfirmGroupActivity : AppCompatActivity() {
         return 0L
     }
 
+    private fun createDefaultMessageEntity(date: String): MessageEntity {
+        val createdAt = convertIso8601ToUnixTimestamp(date)
+        val user = UserEntity(
+            id       = "Flash",
+            name     = "Flash",
+            avatar   = "",          // empty — not "Flash", avoids Glide crash
+            lastSeen = Date(createdAt),
+            online   = true
+        )
+        return MessageEntity(
+            id            = "FirstMessageId",
+            chatId        = "InitialMessage",
+            text          = "No messages yet. Be the first to send a message!",
+            userId        = "Flash",
+            userName      = "Flash",
+            user          = user,
+            createdAt     = createdAt,
+            imageUrl      = null,
+            voiceUrl      = null,
+            voiceDuration = 0,
+            status        = "Received",
+            videoUrl      = null,
+            audioUrl      = null,
+            docUrl        = null,
+            fileSize      = 0,
+            deleted       = false
+        )
+    }
 
+    private fun showLoadingDialog() {
+        loadingDialog = android.app.Dialog(this)
+        loadingDialog?.setContentView(R.layout.loading_dialog)
+        loadingDialog?.setCancelable(false)
+        loadingDialog?.show()
+    }
+
+    private fun dismissLoadingDialog() {
+        loadingDialog?.dismiss()
+        loadingDialog = null
+    }
 }
