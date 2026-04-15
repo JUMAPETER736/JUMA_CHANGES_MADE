@@ -13,12 +13,10 @@ import com.bumptech.glide.Glide
 import com.bumptech.glide.load.resource.bitmap.CircleCrop
 import com.bumptech.glide.request.RequestOptions
 import com.uyscuti.sharedmodule.R
-import com.uyscuti.sharedmodule.data.model.User
+import com.uyscuti.social.core.models.data.User
 
 class UserListAdapter(
-
-    private val context: Context,
-    private val listener: (User) -> Unit) :
+    private val context: Context, private val listener: (User) -> Unit) :
     RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     private var userList: MutableList<User> = mutableListOf()
@@ -29,6 +27,14 @@ class UserListAdapter(
         val inflater = LayoutInflater.from(context)
         val view = inflater.inflate(R.layout.user_list_item, parent, false)
         return UserViewHolder(view)
+    }
+
+    fun setIsSelected(isSelected: Boolean) {
+        this.isSelected = isSelected
+    }
+
+    fun getIsSelected() : Boolean {
+        return isSelected
     }
 
     override fun getItemCount(): Int {
@@ -51,6 +57,8 @@ class UserListAdapter(
         private val avatarImageView: ImageView = itemView.findViewById(R.id.avatar)
         private val userNameTextView: TextView = itemView.findViewById(R.id.name)
         private val selected: ImageView = itemView.findViewById(R.id.selected)
+
+        var userSelected = true
 
 
         init {
