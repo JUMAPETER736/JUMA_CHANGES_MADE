@@ -107,12 +107,15 @@ class CreateChatActivity : AppCompatActivity(), SearchView.OnQueryTextListener {
             usersViewModel.users.observe(this@CreateChatActivity) { users ->
                 usersList = users
                 runOnUiThread {
-
+//                    Log.d("UsersList", "$usersList")
                     initUserList()
                 }
             }
         }
 
+
+//        observeTempDialogs()
+//        initUserList()
     }
 
     private fun observeTempDialogs() {
@@ -122,7 +125,7 @@ class CreateChatActivity : AppCompatActivity(), SearchView.OnQueryTextListener {
                 Log.d("ChatOperations", "Temp Chats Found : $temps")
                 CoroutineScope(Dispatchers.IO).launch {
                     handleTempDialogs(temps, 0)
-
+//                    deleteTempDialogs(temps)
                 }
             })
         }
@@ -134,7 +137,9 @@ class CreateChatActivity : AppCompatActivity(), SearchView.OnQueryTextListener {
         // You can use dialogViewModel.deleteDialog(dialog) for each dialog
         val ids = temps.filter { it.id == it.dialogName }.map { it.id }
         dialogViewModel.deleteDialogs(ids)
-
+//        temps.forEach { dialog ->
+//            dialogViewModel.deleteDialog(dialog)
+//        }
     }
 
 
@@ -150,12 +155,12 @@ class CreateChatActivity : AppCompatActivity(), SearchView.OnQueryTextListener {
                 handleTempDialogs(tempDialogs, index + 1)
             } else {
                 // Handle the failure if needed
-
+//                deleteTempDialogs(tempDialogs)
             }
         } else {
             // All dialogs are successfully processed
             // You can perform any final actions here if needed
-
+//            deleteTempDialogs(tempDialogs)
         }
     }
 
@@ -169,7 +174,9 @@ class CreateChatActivity : AppCompatActivity(), SearchView.OnQueryTextListener {
             // Assuming you have access to receiverId and receiver data in your dialog
             val receiverId = dialog.users.first().id
             val receiver = dialog.users.first()
-
+//            val receiver = dialog.receiver
+            // Invoke createUserChat and check the result
+//            val result = createChat(receiverId, receiver)
 
             val result = createChat(receiverId, receiver)
 
@@ -190,17 +197,26 @@ class CreateChatActivity : AppCompatActivity(), SearchView.OnQueryTextListener {
                             // Your code inside withContext
                             Log.d("ChatOperation", "Before try block : $dialog")
                             try {
-
+//                            dialog.id = chatId
+//                            dialogViewModel.updateDialog(dialog)
+//                            updateDialog(dialog, chatId)
+//                            deleteTempDialogs(listOf(dialog))
                                 Log.d("ChatOperation", "After try block , : $dialog")
-
+//                            val updated = dialogViewModel.getDialog(chatId)
 
                                 val newDialog = dialog
                                 newDialog.id = chatId
-
+//
+//                                dialogViewModel.replaceDialog(dialog,newDialog)
+//
+//
                                 val updated = dialogViewModel.getDialog(chatId)
 
                                 Log.d("ChatOperation", "First Updated Dialog : $updated")
-
+//
+//                                cancel()
+//
+//                                return@withContext
 
                                 // Check for cancellation and respond appropriately
                                 if (!isActive) {
@@ -222,6 +238,8 @@ class CreateChatActivity : AppCompatActivity(), SearchView.OnQueryTextListener {
                     }
 
                 }
+
+
 
 
                 ChatOperationResult.SUCCESS
@@ -261,6 +279,10 @@ class CreateChatActivity : AppCompatActivity(), SearchView.OnQueryTextListener {
                 val chatId = response.body()!!.data._id
                 val chatName = response.body()!!.data.name
 
+
+
+//                participants.add(receiver)
+
                 val dialog = Dialog(
                     chatId,
                     receiver.name,
@@ -289,12 +311,20 @@ class CreateChatActivity : AppCompatActivity(), SearchView.OnQueryTextListener {
                 Log.d("Available", "Available Chat : $available")
 
                 if (available != null) {
+//                    dialogViewModel.replaceDialog(available,dialogEntity)
+
 
                     deleteTempDialogs(listOf(available))
                 }
 
                 insertDialog(dialogEntity)
 
+//                MessagesActivity.open(
+//                    this@CreateChatActivity, "",
+//                    dialog
+//                )
+//
+//                finish()
                 ChatOperationResult.Return(chatId)
             } else {
                 // Handle the error or show a message to the user
@@ -355,7 +385,7 @@ class CreateChatActivity : AppCompatActivity(), SearchView.OnQueryTextListener {
                             this@CreateChatActivity, "",
                             dialog, false, ""
                         )
-
+//                        openChatActivity(chatId,chatName)
                         finish()
                     } else {
                         // Dialog does not exist
@@ -367,10 +397,19 @@ class CreateChatActivity : AppCompatActivity(), SearchView.OnQueryTextListener {
                 }
             }
 
+//            if (chatExist(it.name)){
+//
+//            } else {
+//
+//            }
         }
 
         // Set LinearLayoutManager for a vertical list
         userListView.layoutManager = LinearLayoutManager(this)
+
+        // Get the random users and sort them alphabetically
+//        val randomUsers = DialogsFixtures.getRandomUsers(15)
+//        val sortedUsers = randomUsers.sortedBy { it.name }
 
         originalUserList = usersList.map { it.toUser() }.sortedBy { it.name }
 
@@ -384,7 +423,7 @@ class CreateChatActivity : AppCompatActivity(), SearchView.OnQueryTextListener {
 
     private fun doInBackGround(user: User) {
         val singleUserList = arrayListOf(user)
-
+//        singleUserList.size
 
         Log.d("UserList", "Single User List Size : ${singleUserList.size}")
 
@@ -397,6 +436,8 @@ class CreateChatActivity : AppCompatActivity(), SearchView.OnQueryTextListener {
             0
         )
 
+//        chatParticipant.add(receiver.toUserEntity())
+//        chatParticipant.add(user.toUserEntity())
 
         val dialogEntity = DialogEntity(
             id = tempDialog.dialogName,
@@ -409,6 +450,7 @@ class CreateChatActivity : AppCompatActivity(), SearchView.OnQueryTextListener {
 
         insertDialog(dialogEntity)
 
+//        createUserChat(user.id, user)
 
         openTempChat(tempDialog)
     }
@@ -431,7 +473,7 @@ class CreateChatActivity : AppCompatActivity(), SearchView.OnQueryTextListener {
 
         // Check if the text is "None" and imageUrl is not null
         val messageContent = if (imageUrl != null) {
-
+//                        user.id = "0"
             Message(
                 id,
                 user,
@@ -442,7 +484,7 @@ class CreateChatActivity : AppCompatActivity(), SearchView.OnQueryTextListener {
                 setStatus(status)
             }
         } else if (videoUrl != null) {
-
+//                        user.id = "0"
             Message(
                 id,
                 user,
@@ -453,7 +495,7 @@ class CreateChatActivity : AppCompatActivity(), SearchView.OnQueryTextListener {
                 setStatus(status)
             }
         } else if (audioUrl != null) {
-
+//                        user.id = "0"
             Message(
                 id,
                 user,
@@ -470,7 +512,7 @@ class CreateChatActivity : AppCompatActivity(), SearchView.OnQueryTextListener {
                 setStatus(status)
             }
         } else if (voiceUrl != null) {
-
+//                        user.id = "0"
             Message(
                 id,
                 user,
@@ -481,13 +523,14 @@ class CreateChatActivity : AppCompatActivity(), SearchView.OnQueryTextListener {
                 setStatus(status)
             }
         } else if (docUrl != null) {
-
+//                        user.id = "0"
             Message(
                 id,
                 user,
                 null,
                 date
             ).apply {
+
 
                 setStatus(status)
             }
@@ -542,14 +585,19 @@ class CreateChatActivity : AppCompatActivity(), SearchView.OnQueryTextListener {
                 }
                 return@launch
             } finally {
-
+                // Ensure the progress bar is hidden in case of an error
+//                withContext(Dispatchers.Main) {
+//                    dismissLoadingDialog()
+//                }
             }
 
             if (response.isSuccessful) {
                 val responseBody = response.body()
-
+//                Log.d("AllUsers", "Users List ${responseBody?.data}")
 
                 if (responseBody?.data != null) {
+
+//                    responseBody.data[0].
 
                     val allUsers = mutableListOf<UserEntity>()
 
@@ -586,6 +634,7 @@ class CreateChatActivity : AppCompatActivity(), SearchView.OnQueryTextListener {
     }
 
     private fun createUserChat(receiverId: String, receiver: User) {
+
 
         GlobalScope.launch {
             try {
@@ -627,17 +676,22 @@ class CreateChatActivity : AppCompatActivity(), SearchView.OnQueryTextListener {
                             unreadCount = 0
                         )
 
+
                         insertDialog(dialogEntity)
+
+
 
                         MessagesActivity.open(
                             this@CreateChatActivity, "",
                             dialog, true,""
                         )
+
                         finish()
                     } else {
                         // Handle the error or show a message to the user
                         val errorBody = response.errorBody()?.string()
                         Log.d("UserDialog", "Error creating user chat: $errorBody")
+
 
                     }
                 }
@@ -656,7 +710,7 @@ class CreateChatActivity : AppCompatActivity(), SearchView.OnQueryTextListener {
         CoroutineScope(Dispatchers.IO).launch {
             dialogViewModel.insertDialog(dialog)
         }
-
+//        Log.d("OneToChat", "Added single chat to local -  $dialog")
 
     }
 
@@ -718,7 +772,7 @@ class CreateChatActivity : AppCompatActivity(), SearchView.OnQueryTextListener {
         searchView.setOnQueryTextListener(this)
 
         // Tint the search icon with white color
-
+//        tintMenuIcon(searchItem, Color.WHITE)
         return true
     }
 
