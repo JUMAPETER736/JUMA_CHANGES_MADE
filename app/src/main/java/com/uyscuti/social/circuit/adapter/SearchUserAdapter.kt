@@ -13,10 +13,11 @@ import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.resource.bitmap.CircleCrop
 import com.bumptech.glide.request.RequestOptions
-import com.uyscuti.sharedmodule.data.model.User
+import com.uyscuti.social.core.models.data.User
 import com.uyscuti.social.circuit.R
 
-class SearchUserAdapter(private val context: Context, private val listener: (User) -> Unit) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+class SearchUserAdapter(
+    private val context: Context, private val listener: (User) -> Unit) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
     private var recentUserList: MutableList<User> = mutableListOf()
     private var searchUserList: MutableList<User> = mutableListOf()
     private var displayRecentUsers = true
@@ -223,7 +224,7 @@ class SearchUserAdapter(private val context: Context, private val listener: (Use
         private val shimmerView2: View = itemView.findViewById(R.id.shimmer_view2)
 
         init {
-           showLoading()
+            showLoading()
         }
 
         fun showLoading() {

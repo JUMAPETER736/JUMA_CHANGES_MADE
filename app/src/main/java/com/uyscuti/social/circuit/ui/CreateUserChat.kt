@@ -11,8 +11,6 @@ import androidx.core.widget.addTextChangedListener
 import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.uyscuti.sharedmodule.data.model.Dialog
-import com.uyscuti.sharedmodule.data.model.Message
 import com.uyscuti.sharedmodule.data.model.User
 import com.uyscuti.sharedmodule.presentation.DialogViewModel
 import com.uyscuti.sharedmodule.presentation.RecentUserViewModel
@@ -24,6 +22,8 @@ import com.uyscuti.social.core.common.data.room.entity.DialogEntity
 import com.uyscuti.social.core.common.data.room.entity.MessageEntity
 import com.uyscuti.social.core.common.data.room.entity.RecentUser
 import com.uyscuti.social.core.common.data.room.entity.UserEntity
+import com.uyscuti.social.core.models.data.Dialog
+import com.uyscuti.social.core.models.data.Message
 import com.uyscuti.social.network.api.request.search.SearchUsersRequest
 import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
 import com.uyscuti.social.network.utils.LocalStorage
@@ -97,18 +97,6 @@ class CreateUserChat : AppCompatActivity() {
 
 
 
-//        CoroutineScope(Dispatchers.Main).launch {
-//            recentUserViewModel.recentUsers.observe(this@CreateUserChat, Observer{ users ->
-//                Log.d("RecentUsers", "RecentUsers: $users")
-//                if (users.isNotEmpty()){
-//                    val recentLiveUsers = users.map { it.toUser() }
-////                    userListAdapter.setRecentUsers(recentLiveUsers)
-//                }
-//            })
-//        }
-
-//        observeTempDialogs()
-
     }
 
     private fun observeTempDialogs() {
@@ -143,10 +131,6 @@ class CreateUserChat : AppCompatActivity() {
             }
         }
 
-        // Or use addTextChangedListener to detect text changes in the EditText
-//        searchEditText.addTextChangedListener { text ->
-//            performSearch(text.toString())
-//        }
 
         searchEditText.addTextChangedListener(afterTextChanged = { editable ->
             // This will be called after the text in the EditText has changed
