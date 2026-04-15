@@ -312,164 +312,52 @@ class ConfirmGroupActivity : AppCompatActivity() {
     }
 
 
+    // ─────────────────────────────────────────────────────────────────────────
+    // NAVIGATE: Go back to MainActivity on the Groups tab.
+    // Uses FLAG_ACTIVITY_CLEAR_TOP so if MainActivity is already running,
+    // onNewIntent fires and switchToGroupsTab() handles it cleanly.
+    // Back button works correctly because the stack is just MainActivity.
+    // ─────────────────────────────────────────────────────────────────────────
+
+    @OptIn(UnstableApi::class)
+    private fun goToGroupsTab() {
+        val intent = Intent(this@ConfirmGroupActivity, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+            putExtra("openGroupsTab", true)
+        }
+        startActivity(intent)
+        finish()
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // HELPERS
+    // ─────────────────────────────────────────────────────────────────────────
+
+    private fun GroupMemberUser.toAppUser(): User = User(
+        _id,
+        fullName?.takeIf { it.isNotBlank() } ?: username ?: "",
+        avatar?.url ?: "",
+        false,
+        null
+    )
+
+    private fun User.toUserEntity(): UserEntity = UserEntity(id, name, avatar, Date(), true)
+
     private fun convertIso8601ToUnixTimestamp(iso8601Date: String): Long {
-        val sdf = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
-        sdf.timeZone = TimeZone.getTimeZone("UTC")
-
-
-        val date = sdf.parse(iso8601Date)
-        return date?.time ?: 0
-    }
-
-
-    private fun createDefaultMessageEntity(date: String): MessageEntity {
-        val createdAt = convertIso8601ToUnixTimestamp(date)
-        val lastseen = Date(createdAt)
-        val user = UserEntity(
-            id = "Flash",
-            name = "Flash",
-            avatar = "Flash",
-            online = true,
-            lastSeen = lastseen
+        if (iso8601Date.isBlank()) return 0L
+        val formats = listOf(
+            "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",
+            "yyyy-MM-dd'T'HH:mm:ss'Z'"
         )
-
-        return MessageEntity(
-            id = "FirstMessageId",
-            chatId = "InitialMessage",
-            text = "No messages yet for this group chat, be the first to send a message.",
-            userId = "Flash",
-            user = user,
-            createdAt = createdAt,
-            imageUrl = null,
-            voiceUrl = null,
-            voiceDuration = 0,
-            userName = "Flash",
-            status = "Received",
-            videoUrl = null,
-            audioUrl = null,
-            docUrl = null,
-            fileSize = 0
-        )
-    }
-
-
-    private fun createGroupChat(data: RequestGroupChat){
-        showLoadingDialog()
-
-        GlobalScope.launch {
-
-            val response = try {
-                retrofitInterface.apiService.createGroupChat(data)
-            }catch (e: HttpException) {
-
-                return@launch
-            }catch (e: IOException) {
-
-                return@launch
-            }
-
-            if (response.isSuccessful) {
-                // User chat created successfully, you can handle this as needed
-
-                val chatId = response.body()!!.data._id
-                val chatName = response.body()!!.data.name
-                val adminId = response.body()!!.data.admin
-
-                response.body()!!.data.participants.map {
-                    participants.add(it.toUser())
-                }
-
-                val admin = response.body()!!.data.participants.first { it._id == adminId }.toUser()
-
-
-                val dialog = Dialog(
-                    chatId,
-                    chatName,
-                    response.body()!!.data.participants[0].avatar.url,
-                    participants,
-                    null,
-                    0
-                )
-
-
-                participants.map {
-                    chatParticipant.add(it.toUserEntity())
-                }
-
-                val chatResponse = response.body()!!.data
-                val lastMessage = createDefaultMessageEntity(chatResponse.createdAt)
-                val createdAt = convertIso8601ToUnixTimestamp(chatResponse.createdAt)
-                val updatedAt = convertIso8601ToUnixTimestamp(chatResponse.updatedAt)
-
-                val dialogEntity = GroupDialogEntity(
-                    id = chatResponse._id,
-                    adminId = admin.id,
-                    adminName = admin.name,
-                    dialogPhoto = chatResponse.participants[0].avatar.url,
-                    dialogName = chatName,
-                    users = chatParticipant,
-                    lastMessage = lastMessage,
-                    unreadCount = 0,
-                    updatedAt = updatedAt,
-                    createdAt = createdAt
-                )
-
-                insertDialog(dialogEntity)
-
-                dismissLoadingDialog()
-
-                MessagesActivity.open(
-                    this@ConfirmGroupActivity, "",
-                    dialog, false, ""
-                )
-
-                finish()
-            }else{
-                Toast.makeText(this@ConfirmGroupActivity, "Failed To Create Group, Please Try again later", Toast.LENGTH_SHORT).show()
-            }
+        for (fmt in formats) {
+            try {
+                val sdf = SimpleDateFormat(fmt)
+                sdf.timeZone = TimeZone.getTimeZone("UTC")
+                return sdf.parse(iso8601Date)?.time ?: 0L
+            } catch (_: Exception) {}
         }
+        return 0L
     }
 
-    private fun insertDialog(dialog: GroupDialogEntity) {
-        CoroutineScope(Dispatchers.IO).launch {
-            groupDialogViewModel.insertGroupDialog(dialog)
-        }
-
-    }
-
-    private fun User.toUserEntity(): UserEntity {
-
-        val lastseen = Date()
-        return UserEntity(
-            id,
-            name,
-            avatar,
-            lastseen,
-            true
-        )
-    }
-    private fun com.uyscuti.social.network.api.models.User.toUser(): User {
-        return User(
-            _id,
-            username,
-            avatar.url,
-            false,
-            lastseen
-        )
-    }
-
-    private fun showLoadingDialog() {
-        // Create a dialog with the loading layout
-        dialog = android.app.Dialog(this)
-        dialog?.setContentView(R.layout.loading_dialog)
-        dialog?.setCancelable(false) // Prevent dismissing by tapping outside
-
-        // Show the dialog
-        dialog?.show()
-    }
-
-    private fun dismissLoadingDialog() {
-        dialog?.dismiss()
-    }
 
 }
