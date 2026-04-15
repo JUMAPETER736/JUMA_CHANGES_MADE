@@ -20,9 +20,9 @@ import com.uyscuti.social.chatsuit.dialogs.DialogsListAdapter
 import com.uyscuti.social.chatsuit.utils.DateFormatter
 import com.uyscuti.social.circuit.R
 import com.uyscuti.sharedmodule.data.fixtures.DialogsFixtures
-import com.uyscuti.sharedmodule.data.model.Dialog
-import com.uyscuti.sharedmodule.data.model.Message
-import com.uyscuti.sharedmodule.data.model.User
+import com.uyscuti.social.core.models.data.Dialog
+import com.uyscuti.social.core.models.data.Message
+import com.uyscuti.social.core.models.data.User
 import com.uyscuti.sharedmodule.MessagesActivity
 import com.uyscuti.social.core.common.data.room.entity.DialogEntity
 import com.uyscuti.social.core.common.data.room.entity.MessageEntity
@@ -321,5 +321,4 @@ class PersonalChats : MainDialogsFragment(), DateFormatter.Formatter, OnBackPres
     fun openPersonalChat() {
         Toast.makeText(requireActivity(),"From: Open chat", Toast.LENGTH_SHORT).show()
     }
-
 }

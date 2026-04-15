@@ -296,7 +296,6 @@ import kotlin.random.Random
 import androidx.core.content.edit
 import androidx.core.view.isVisible
 import com.uyscuti.sharedmodule.adapter.OnCommentsClickListener
-import com.uyscuti.sharedmodule.data.model.Dialog
 import com.uyscuti.sharedmodule.model.ShortsLikeUnLike
 import com.uyscuti.sharedmodule.shorts.OtherUserProfileShortsPlayerFragment
 import com.uyscuti.sharedmodule.shorts.OtherUserProfileShortsPlayerFragment.Companion.CLICKED_SHORT
@@ -317,6 +316,7 @@ import com.uyscuti.social.circuit.log_in_and_register.LoginActivity
 import com.uyscuti.social.circuit.settings.SettingsActivity
 import com.uyscuti.social.circuit.user_interface.UniversalSearchActivity
 import com.uyscuti.social.circuit.user_interface.userProfile.MyUserProfileAccount
+import com.uyscuti.social.core.models.data.Dialog
 import com.uyscuti.social.core.service.LocationService
 import com.uyscuti.social.core.util.LocationServiceUtil
 import com.uyscuti.social.core.util.NetworkUtil
