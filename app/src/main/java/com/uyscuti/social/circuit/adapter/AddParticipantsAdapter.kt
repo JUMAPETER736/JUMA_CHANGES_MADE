@@ -12,10 +12,13 @@ import com.bumptech.glide.Glide
 import com.bumptech.glide.load.resource.bitmap.CircleCrop
 import com.bumptech.glide.request.RequestOptions
 import com.uyscuti.social.circuit.R
+import com.uyscuti.social.core.models.data.User
 
-class AddParticipantsAdapter (private val context: Context, private val listener: (com.uyscuti.sharedmodule.data.model.User?) -> Unit) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+class AddParticipantsAdapter (
+    private val context: Context,
+    private val listener: (User?) -> Unit) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
-    private var userList: MutableList<com.uyscuti.sharedmodule.data.model.User?> = mutableListOf()
+    private var userList: MutableList<User?> = mutableListOf()
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
         val inflater = LayoutInflater.from(context)
@@ -33,12 +36,12 @@ class AddParticipantsAdapter (private val context: Context, private val listener
         }
     }
 
-    fun setUserList(userList: ArrayList<com.uyscuti.sharedmodule.data.model.User>) {
+    fun setUserList(userList: ArrayList<User>) {
         this.userList = userList.toMutableList()
         notifyDataSetChanged()
     }
 
-    fun addUser(user: com.uyscuti.sharedmodule.data.model.User?) {
+    fun addUser(user: User?) {
         this.userList.add(user)
         // Notify adapter about the new item
         notifyItemInserted(userList.size - 1)
@@ -46,7 +49,7 @@ class AddParticipantsAdapter (private val context: Context, private val listener
 
     }
 
-    fun removeUser(user: com.uyscuti.sharedmodule.data.model.User?) {
+    fun removeUser(user: User?) {
         val position = userList.indexOf(user)
         if (position != -1) {
             userList.removeAt(position)
@@ -65,7 +68,7 @@ class AddParticipantsAdapter (private val context: Context, private val listener
             itemView.setBackgroundResource(selectableItemBackground.resourceId)
         }
 
-        fun bind(user: com.uyscuti.sharedmodule.data.model.User?, listener: (com.uyscuti.sharedmodule.data.model.User?) -> Unit) {
+        fun bind(user: User?, listener: (User?) -> Unit) {
             // Bind data to the views
             // For example:
 
