@@ -200,6 +200,118 @@ class ConfirmGroupActivity : AppCompatActivity() {
     }
 
 
+    // ─────────────────────────────────────────────────────────────────────────
+    // FALLBACK: data:{} came back — fetch group list, open the newest group
+    // ─────────────────────────────────────────────────────────────────────────
+
+    private suspend fun handleEmptyDataFallback(groupName: String) {
+        try {
+            val groupsResp = retrofitInterface.apiService.getAllGroupChats()
+
+            if (groupsResp.isSuccessful) {
+                val groups = groupsResp.body()?.data
+                val newest = groups?.maxByOrNull { it.createdAt ?: "" }
+
+                if (newest != null) {
+                    Log.d("CreateGroup", "Fallback found: ${newest._id} – ${newest.name}")
+                    saveAndNavigate(newest, groupName)
+                    return
+                }
+            }
+
+            // If even the fallback failed, just go to the Groups tab
+            Log.e("CreateGroup", "Fallback fetch failed or returned empty list")
+            withContext(Dispatchers.Main) {
+                dismissLoadingDialog()
+                goToGroupsTab()
+            }
+
+        } catch (e: Exception) {
+            Log.e("CreateGroup", "Fallback exception: ${e.message}")
+            withContext(Dispatchers.Main) {
+                dismissLoadingDialog()
+                goToGroupsTab()
+            }
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // SAVE: persist to Room and generate invite link, then go to Groups tab.
+    // Does NOT open MessagesActivity — that caused the black screen.
+    // The user lands on the Groups tab and taps the group to open it naturally.
+    // ─────────────────────────────────────────────────────────────────────────
+
+    private suspend fun saveAndNavigate(chat: GroupChatDetail, fallbackName: String) {
+        val chatId   = chat._id
+        val chatName = chat.name?.takeIf { it.isNotBlank() } ?: fallbackName
+        val adminId  = chat.admin ?: ""
+
+        // Prefer role-aware members list; fall back to participants array
+        val memberUsers: List<GroupMemberUser> = when {
+            !chat.members.isNullOrEmpty()      -> chat.members.map { it.user }
+            !chat.participants.isNullOrEmpty() -> chat.participants
+            else                               -> emptyList()
+        }
+
+        val participantEntities = arrayListOf<UserEntity>()
+        memberUsers.forEach {
+            participantEntities.add(it.toAppUser().toUserEntity())
+        }
+
+        val adminMemberUser = memberUsers.firstOrNull { it._id == adminId }
+
+        val lastMessage = createDefaultMessageEntity(chat.createdAt ?: "")
+        val createdAt   = convertIso8601ToUnixTimestamp(chat.createdAt ?: "")
+        val updatedAt   = convertIso8601ToUnixTimestamp(chat.updatedAt ?: "")
+
+        val dialogEntity = GroupDialogEntity(
+            id          = chatId,
+            adminId     = adminMemberUser?._id ?: adminId,
+            adminName   = adminMemberUser?.fullName?.takeIf { it.isNotBlank() }
+                ?: adminMemberUser?.username ?: "",
+            dialogPhoto = "",       // no photo for new groups
+            dialogName  = chatName,
+            users       = participantEntities,
+            lastMessage = lastMessage,
+            unreadCount = 0,
+            updatedAt   = updatedAt,
+            createdAt   = createdAt
+        )
+
+        // Save to Room
+        CoroutineScope(Dispatchers.IO).launch {
+            groupDialogViewModel.insertGroupDialog(dialogEntity)
+        }
+
+        // Generate invite link — non-fatal
+        try {
+            val linkResp = retrofitInterface.apiService.generateGroupLink(chatId)
+            if (linkResp.isSuccessful) {
+                Log.d("CreateGroup", "Invite link: ${linkResp.body()?.data?.inviteLink}")
+            } else {
+                Log.w("CreateGroup",
+                    "Link gen failed ${linkResp.code()}: ${linkResp.errorBody()?.string()}")
+            }
+        } catch (e: Exception) {
+            Log.w("CreateGroup", "Link generation non-fatal: ${e.message}")
+        }
+
+        withContext(Dispatchers.Main) {
+            dismissLoadingDialog()
+            if (chatId.isNotBlank()) {
+                goToGroupsTab()
+            } else {
+                Toast.makeText(
+                    this@ConfirmGroupActivity,
+                    "Group created! Find it in your Groups tab.",
+                    Toast.LENGTH_SHORT
+                ).show()
+                goToGroupsTab()
+            }
+        }
+    }
+
+
     private fun convertIso8601ToUnixTimestamp(iso8601Date: String): Long {
         val sdf = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
         sdf.timeZone = TimeZone.getTimeZone("UTC")
