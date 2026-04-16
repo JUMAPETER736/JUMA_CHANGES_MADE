@@ -1,68 +1,46 @@
 package com.uyscuti.social.circuit.ui.fragments.chat
 
 import android.annotation.SuppressLint
-import android.content.Context
 import android.content.Intent
-import android.net.ConnectivityManager
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.LinearLayout
+import android.widget.Toast
 import androidx.annotation.OptIn
-import androidx.appcompat.view.ContextThemeWrapper
-import androidx.core.content.ContextCompat
+import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.activityViewModels
-import androidx.fragment.app.viewModels
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
-import androidx.media3.common.util.Log
 import androidx.media3.common.util.UnstableApi
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import androidx.room.Room
-import com.uyscuti.sharedmodule.adapter.notifications.NotificationDayAdapter
+import com.google.gson.Gson
 import com.uyscuti.sharedmodule.adapter.notifications.NotificationsAdapter
-import com.uyscuti.sharedmodule.data.model.shortsmodels.OtherUsersProfile
-import com.uyscuti.sharedmodule.model.ShortsFollowButtonClicked
-import com.uyscuti.sharedmodule.model.notificatioRead.NotificationRead
-import com.uyscuti.sharedmodule.model.notifications_data_class.CommentNotification
-import com.uyscuti.sharedmodule.model.notifications_data_class.FavoriteBookMarkNotification
-import com.uyscuti.sharedmodule.model.notifications_data_class.FollowNotification
-import com.uyscuti.sharedmodule.model.notifications_data_class.FriendSuggestionReq
-import com.uyscuti.sharedmodule.model.notifications_data_class.INotification
-import com.uyscuti.sharedmodule.model.notifications_data_class.LikeNotification
-import com.uyscuti.sharedmodule.model.notifications_data_class.Notification
-import com.uyscuti.sharedmodule.model.notifications_data_class.NotificationByDay
-import com.uyscuti.sharedmodule.model.notifications_data_class.ReplyCommentNotification
-import com.uyscuti.sharedmodule.model.notifications_data_class.UnfollowNotification
-import com.uyscuti.sharedmodule.viewmodels.FollowUnfollowViewModel
-import com.uyscuti.social.business.viewmodel.notificationViewModel.NotificationViewModel
-import com.uyscuti.social.chatsuit.utils.DateFormatter
-import com.uyscuti.social.circuit.MainActivity
+import com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.Fragment_Original_Post_With_Repost_Inside
+import com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.Fragment_Original_Post_Without_Repost_Inside
+import com.uyscuti.sharedmodule.utils.DialogUtils
+import com.uyscuti.sharedmodule.viewmodels.feed.FeedNotificationViewModel
+import com.uyscuti.sharedmodule.viewmodels.feed.FeedNotificationViewModelFactory
 import com.uyscuti.social.circuit.PostDetailsActivity2
 import com.uyscuti.social.circuit.R
-import com.uyscuti.social.circuit.ui.feed.NotificationViewPagerAdapter
-import com.uyscuti.social.core.common.data.room.database.NotificationDataBase
-import com.uyscuti.social.core.common.data.room.entity.NotificationEntity
+import com.uyscuti.social.circuit.user_interface.userProfile.MyUserProfileAccount
 import com.uyscuti.social.core.pushnotifications.socket.chatsocket.social.FlashNotificationsEvents
+import com.uyscuti.social.network.api.response.getUnifiedNotification.Avatar
+import com.uyscuti.social.network.api.response.getUnifiedNotification.DataX
+import com.uyscuti.social.network.api.response.getUnifiedNotification.FeedNotification
+import com.uyscuti.social.network.api.response.getUnifiedNotification.Sender
 import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
 import com.uyscuti.social.network.utils.LocalStorage
+import com.uyscuti.social.notifications.feed.FeedNotificationImplementation
+import com.uyscuti.social.notifications.feed.FeedNotificationRepo
 import dagger.hilt.android.AndroidEntryPoint
-import io.socket.client.IO
-import io.socket.client.Socket
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
 import org.greenrobot.eventbus.ThreadMode
-import java.io.IOException
-import java.net.URISyntaxException
-import java.text.ParseException
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.TimeZone
 import javax.inject.Inject
 
 /**
@@ -74,72 +52,45 @@ import javax.inject.Inject
 
 private const val ARG_PARAM1 = "param1"
 private const val ARG_PARAM2 = "param2"
+private const val TAG = "NotificationsFragment"
 
 @AndroidEntryPoint
-class NotificationsFragment : Fragment(), NotificationsAdapter.NotificationActionListener {
+class NotificationsFragment : Fragment() {
 
-    companion object {
 
-        @JvmStatic
-        fun newInstance(param1: String, param2: String) =
-            NotificationsFragment().apply {
-                arguments = Bundle().apply {
-                    putString(ARG_PARAM1, param1)
-                    putString(ARG_PARAM2, param2)
-                }
-            }
-    }
-
-    val adapter: NotificationViewPagerAdapter by lazy {
-        NotificationViewPagerAdapter(childFragmentManager, lifecycle)
-    }
-    private var onItemSelectedListener: ((Boolean) -> Unit)? = null
-
+    // TODO: Rename and change types of parameters
     private var param1: String? = null
     private var param2: String? = null
 
-    //<---------------new code updated----------------------->
     @Inject
     lateinit var retrofitInterface: RetrofitInstance
+
+    @Inject
     lateinit var localStorage: LocalStorage
-    private val followUnFollowViewModel: FollowUnfollowViewModel by viewModels()
-    private lateinit var dayNotificationsAdapter: NotificationDayAdapter
-    private lateinit var nestedRecyclerView: RecyclerView
-    private lateinit var notificationDataBase: NotificationDataBase
-    private val notificationViewModel: NotificationViewModel by activityViewModels()
 
     private lateinit var notificationsAdapter: NotificationsAdapter
-    private lateinit var socket: Socket
-
-    private val processedNotificationIds = ArrayList<String>()
-
-    //    private val apiService = RetrofitInstance
-    private var notifications = mutableListOf<NotificationByDay>()
-
-    //<-----------------added a socket function ----------------------->
+    private lateinit var nestedRecyclerView: RecyclerView
+    private lateinit var progressBarLayout: LinearLayout
+    private lateinit var feedRepo: FeedNotificationRepo
+    private lateinit var feedNotificationViewModel: FeedNotificationViewModel
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         arguments?.let {
             param1 = it.getString(ARG_PARAM1)
             param2 = it.getString(ARG_PARAM2)
-            try {
-                socket = IO.socket("http://192.168.1.103:8080")
-
-            } catch (e: URISyntaxException) {
-                e.printStackTrace()
-            }
-            socket.connect()
 
         }
 
+        initViewModel()
 
+    }
 
-        notificationDataBase = Room.databaseBuilder(
-            requireContext().applicationContext,
-            NotificationDataBase::class.java, "notifications"
-        ).build()
-        // Initialize the adapter
+    private fun initViewModel() {
+        feedRepo = FeedNotificationImplementation(retrofitInterface)
+        val factory = FeedNotificationViewModelFactory(feedRepo)
+        feedNotificationViewModel =
+            ViewModelProvider(this, factory)[FeedNotificationViewModel::class.java]
 
     }
 
@@ -152,332 +103,229 @@ class NotificationsFragment : Fragment(), NotificationsAdapter.NotificationActio
         EventBus.getDefault().register(this)
         // Inflate the layout for this fragment
         val view = inflater.inflate(R.layout.fragment_notifications, container, false)
-        (activity as? MainActivity)?.showAppBar()
-        activity?.window?.statusBarColor = ContextCompat.getColor(requireContext(), R.color.white)
-        // Set the navigation bar color dynamically
-        activity?.window?.navigationBarColor =
-            ContextCompat.getColor(requireContext(), R.color.white)
 
-        notifications.clear()
 
         nestedRecyclerView = view.findViewById(R.id.nestedRecyclerView)
+        progressBarLayout = view.findViewById(R.id.noteProgress)
         nestedRecyclerView.layoutManager = LinearLayoutManager(requireContext())
 
-        dayNotificationsAdapter = NotificationDayAdapter(notifications, this)
+        notificationsAdapter = NotificationsAdapter(
+            onNotificationClick = { notification, position ->
+                if (notification.data.`for` == "feed") {
+                    handleFeedNotifications(notification, position)
+                } else {
+                    handleShortsNotification(notification, position)
+                }
+            },
+            onLoadMore = {
+                feedNotificationViewModel.loadNextPage()
+            },
+            onMarkAsRead = { notification, position ->
+                feedNotificationViewModel.toggleReadStatus(notification._id)
+                notificationsAdapter.updateNotificationReadStatus(
+                    notification._id,
+                    !notification.read
+                )
+            },
+            onDelete = { notification, position ->
+                DialogUtils.showDeleteConfirmationDialog(
+                    requireActivity(),
+                    onConfirm = {
+                        feedNotificationViewModel.deleteNotification(notification._id)
+                        notificationsAdapter.removeNotification(notification._id)
+                    }
+                )
+            }
+        )
 
-        nestedRecyclerView.adapter = dayNotificationsAdapter
+        nestedRecyclerView.adapter = notificationsAdapter
 
-        val notifications = notificationViewModel.notifications.value
-
-        getMyUnifiedNotifications()
+        observeViewModel()
 
         return view
     }
+
+    @OptIn(UnstableApi::class)
+    private fun goToPostDetailsActivity(
+        notification: FeedNotification,
+        showComments: Boolean,
+        commentId: String? = null
+    ) {
+        val intent = Intent(requireActivity(), PostDetailsActivity2::class.java).apply {
+            if (showComments) {
+                putExtra("comment_id", commentId)
+            } else {
+                putExtra("comment_id", "")
+            }
+            putExtra("post_id", notification.data.postId)
+            putExtra("showComments", showComments)
+        }
+        startActivity(intent)
+
+    }
+
+    @OptIn(UnstableApi::class)
+    private fun handleFeedNotifications(notification: FeedNotification, position: Int) {
+        //first change notification state from unread to read
+        if (!notification.read) {
+            markNotification(notification, position)
+        }
+        //launch associated activity
+        progressBarLayout.isVisible = true
+        lifecycleScope.launch {
+            val response = retrofitInterface.apiService.getFeedPostById(notification.data.postId)
+            if (response.isSuccessful) {
+                progressBarLayout.isVisible = false
+                val post = response.body()!!.data.data.posts.first()
+                Log.d(TAG, "Post: $post")
+                when (notification.type) {
+                    "postLiked" -> {
+
+                        val isLikedComment = notification.message.contains("comment", true)
+                        if (isLikedComment) {
+                            val isLikeReply = notification.message.contains("reply", true)
+
+                            if (isLikeReply) {
+                                navigateToFeedDetailsFragment(post)
+                            } else {
+                                navigateToFeedDetailsFragment(post)
+                            }
+                        } else {
+                            navigateToFeedDetailsFragment(post)
+                        }
+                    }
+
+                    "onCommentPost" -> {
+                        val isCommentReply = notification.message.contains("replied", true)
+                        if (isCommentReply) {
+                            navigateToFeedDetailsFragment(post)
+                        } else {
+                            navigateToFeedDetailsFragment(post)
+                        }
+                    }
+
+                    "followed" -> {
+                        goUserProfileActivity()
+                    }
+
+                    else -> "No such type of notification"
+                }
+            } else {
+                progressBarLayout.isVisible = false
+                Toast.makeText(requireActivity(), "Something went wrong", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+    }
+
+    private fun navigateToFeedDetailsFragment(data: com.uyscuti.social.network.api.response.posts.Post) {
+        if (data.isReposted) {
+            navigateToOriginalPostWithRepostInside(data)
+        } else {
+            navigateToOriginalPostWithoutRepostInside(data)
+        }
+    }
+
+    @OptIn(UnstableApi::class)
+    private fun handleShortsNotification(notification: FeedNotification, position: Int) {
+        if (!notification.read) {
+            markNotification(notification, position)
+        }
+
+        when (notification.type) {
+            "postLiked" -> {
+                val isLikeComment = notification.message.contains("comment", true)
+                if (isLikeComment) {
+                    val isLikeReply = notification.message.contains("reply", true)
+                    if (isLikeReply) {
+                        goToPostDetailsActivity(
+                            notification,
+                            true,
+                            notification.data.commentReplyId
+                        )
+                    } else {
+                        goToPostDetailsActivity(notification, true, notification.data.commentId)
+                    }
+                } else {
+                    goToPostDetailsActivity(notification, false)
+                }
+            }
+
+            "onCommentPost" -> {
+                val isCommentReply = notification.message.contains("replied", true)
+                if (isCommentReply) {
+                    goToPostDetailsActivity(notification, true, notification.data.commentReplyId)
+                } else {
+                    goToPostDetailsActivity(notification, true, notification.data.commentId)
+                }
+
+            }
+
+            "followed" -> {
+                goUserProfileActivity()
+            }
+
+            else -> "No such type of notification"
+        }
+
+    }
+
+    private fun markNotification(notification: FeedNotification, position: Int) {
+        feedNotificationViewModel.markAsRead(notification._id)
+        notificationsAdapter.notifyItemChanged(position)
+    }
+
+    @OptIn(UnstableApi::class)
+    private fun goUserProfileActivity() {
+        val intent = Intent(requireActivity(), MyUserProfileAccount::class.java)
+        requireActivity().startActivity(intent)
+    }
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        observeMainNotificationToDelete()
+
     }
 
-
-
-    @OptIn(UnstableApi::class)
-    private fun getAllCommentNotification() {
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
-                val response = retrofitInterface.apiService.getCommentNotification()
-                if (response.isSuccessful) {
-                    val notifications = response.body()?.data ?: emptyList()
-                    val notes: ArrayList<INotification> = arrayListOf()
-                    val notificationEntities: ArrayList<NotificationEntity> = arrayListOf()
-                    val groupedNotification = mutableMapOf<String, MutableList<Notification>>()
-                    Log.d("ApiService", "notifications: $notifications")
-                    for (notification in notifications) {
-
-                        val createdAt = convertIso8601ToUnixTimestamp(notification.createdAt)
-                        val date = Date(createdAt)
-                        val formated = format(date)
-
-                        val isLike = notification.message.contains("liked")
-                        val isCommented = notification.message.contains("commented")
-                        val isCommentReply = notification.message.contains("replied")
-
-
-                        val isFollowed = notification.message.contains("started")
-                        Log.d("CheckFollowed", "you are followed: $isFollowed")
-                        val link = "onComment"
-
-                        val note = CommentNotification(
-                            notification.sender.username,
-                            notification.message,
-                            "onComment",
-                            formated,
-                            notification.sender.avatar.url,
-                            notification._id,
-                            notification.sender._id,
-                            isRead = notification.read,
-                            postId = notification.postId,
-                            commentId = notification.commentId ?: ""
-                        )
-                        notes.add(note)
-                        val notificationEntity = NotificationEntity(
-                            _id = notification._id,
-                            name = notification.sender.username,
-                            notificationMessage = notification.message,
-                            link = link,
-                            notificationTime = formated,
-                            avatar = notification.sender.avatar.url,
-                            owner = notification.sender._id,
-                            isRead = notification.read,
-
-
-                        )
-                        notificationEntities.add(notificationEntity)
+    private fun observeViewModel() {
+        lifecycleScope.launch {
+            feedNotificationViewModel.state.collect { state ->
+                when {
+                    state.isLoading && state.notifications.isEmpty() -> {
+//                        linearLayout.visibility = View.VISIBLE
+//                        businessRecyclerView.visibility = View.GONE
 
                     }
-                    // Insert notifications into the database
-                    notificationDataBase.notificationDao().insertNotifications(notificationEntities)
 
-                    val dayNotifications = NotificationByDay("Today", "", notes)
-
-                    Log.d("Api Service", "notificationDay itemCount : $dayNotifications")
-                    // Update the UI with the notifications
-                    withContext(Dispatchers.Main) {
-                        dayNotificationsAdapter.addNotifications(arrayListOf(dayNotifications))
-                        dayNotificationsAdapter.addNotification(dayNotifications)
-                    }
-                } else {
-                    Log.e("ApiService", "failed to fetch successfully: ${response.message()}")
-                    // Handle error response
-                }
-            } catch (e: IOException) {
-                // Handle network error
-                Log.e("ApiServices", "failed to fetch successfully ${e.message}")
-            }
-        }
-    }
-    @SuppressLint("Range")
-    @OptIn(UnstableApi::class)
-    private fun getMyUnifiedNotifications() {
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
-                val response = retrofitInterface.apiService.getMyUnifiedNotifications("100")
-
-                if (response.isSuccessful) {
-
-                    val notifications = response.body()?.data ?: emptyList()
-                    Log.d("NotificationApi", "getMyUnifiedNotifications: $notifications")
-
-                    val notificationEntities: ArrayList<NotificationEntity> = arrayListOf()
-                    val groupedNotifications = mutableMapOf<String, MutableList<INotification>>()
-                    val notificationsByDate = mutableMapOf<String, MutableList<INotification>>()
-                    val notes: ArrayList<INotification> = arrayListOf()
-
-                    for (notification in notifications) {
-
-                        val createdAt = convertIso8601ToUnixTimestamp(notification.createdAt)
-                        val date = Date(createdAt)
-                        val formated = format(date)
-                        val label = getDateLabel(date)
-
-
-                        Log.d("CommentType", "Type: ${notification.type}")
-
-                        when (notification.type) {
-
-                            "onCommentPost" -> {
-                                Log.d("commentNotification", "commentNotification")
-                                val note = CommentNotification(
-                                    notification.sender.username,
-                                    notification.message,
-                                    "onComment",
-                                    formated,
-                                    notification.sender.avatar.url,
-                                    notification._id,
-                                    notification.sender._id,
-                                    isRead = notification.read,
-                                    postId = "", // notification.data.postId
-                                    commentId = "", //notification.data.commentId,
-                                )
-                                notes.add(note)
-                            }
-
-                            "postLiked" -> {
-                                val note = LikeNotification(
-                                    notification.sender.username,
-                                    notification.message,
-                                    "onLiked",
-                                    formated,
-                                    notification.sender.avatar.url,
-                                    notification._id,
-                                    notification.sender._id,
-                                    isRead = notification.read,
-                                    postId = "" //notification.data.postId,
-
-                                )
-                                notes.add(note)
-                            }
-
-                            "bookMarked" -> {
-                                val note = FavoriteBookMarkNotification(
-                                    notification.sender.username,
-                                    notification.message,
-                                    "postBooked",
-                                    formated,
-                                    notification.sender.avatar.url,
-                                    notification._id,
-                                    notification.sender._id,
-                                    isRead = notification.read,
-                                    postId = "", //notification.data.postId,
-                                    commentId = "" //notification.data.commentId
-                                )
-                                notes.add(note)
-                            }
-
-                            "reply" -> {
-                                val note = ReplyCommentNotification(
-                                    notification.sender.username,
-                                    notification.message,
-                                    "onCommentReply",
-                                    formated,
-                                    notification.sender.avatar.url,
-                                    notification._id,
-                                    notification.sender._id,
-                                    isRead = notification.read,
-                                    replyId = "", //notification.data.commentId,
-                                    postId = "", //notification.data.postId,
-                                    commentId = "", // notification.data.commentId
-                                )
-                                notes.add(note)
-                            }
-
-                            "followed" -> {
-
-                                val note = FollowNotification(
-                                    notification.sender.username,
-                                    notification.message,
-                                    "follow",
-                                    formated,
-                                    notification.sender.avatar.url,
-                                    notification._id,
-                                    notification.sender._id,
-                                    isRead = notification.read,
-                                    followId = "",
-                                )
-                                notes.add(note)
-                            }
-
-                            "unfollow" -> {
-                                val note = UnfollowNotification(
-                                    notification.sender.username,
-                                    notification.message,
-                                    "unfollowed",
-                                    formated,
-                                    notification.sender.avatar.url,
-                                    notification._id,
-                                    notification.owner,
-                                    isRead = notification.read,
-                                    unfollowId = "",
-                                )
-                                notes.add(note)
-                            }
-
-                            "friendSuggestions" -> {
-                                val note = FriendSuggestionReq(
-                                    ownerId = notification.owner,
-                                    suggestedUserId = notification.sender._id,
-                                    notification.sender.username,
-                                    notification.message,
-                                    "friendSuggestion",
-                                    formated,
-                                    notification.sender.avatar.url,
-                                    notification._id,
-                                    notification.sender._id,
-                                    isRead = notification.read,
-                                )
-                                notes.add(note)
-                            }
-
-
-
-                            else -> null
-                        }
-                        lifecycleScope.launch {
-                            notificationViewModel.setNotifications(notes)
-                        }
-                        val dayNotifications = NotificationByDay("Today", "", notes)
-
-                        withContext(Dispatchers.Main) {
-                            dayNotificationsAdapter.addNotifications(arrayListOf(dayNotifications))
-
+                    state.notifications.isNotEmpty() -> {
+//                        linearLayout.visibility = View.GONE
+//                        businessRecyclerView.visibility = View.VISIBLE
+                        // Update adapter
+                        if (state.currentPage == 1) {
+                            // First page - submit entire list
+                            notificationsAdapter.submitListSafe(
+                                state.notifications,
+                                state.hasNextPage,
+                                nestedRecyclerView
+                            )
+                            notificationsAdapter.setHasMorePages(state.hasNextPage)
+                        } else {
+                            // Subsequent pages - this shouldn't be needed
+                            // because we're submitting the full list each time
+                            notificationsAdapter.submitListSafe(
+                                state.notifications,
+                                state.hasNextPage,
+                                nestedRecyclerView
+                            )
+                            notificationsAdapter.setHasMorePages(state.hasNextPage)
                         }
                     }
-                } else {
-                    Log.e("ApiService", "failed to fetch successfully: ${response.message()}")
-                    // Handle error response
+
+                    state.error != null -> {
+                        // Show error
+                        //  notificationsAdapter.onLoadFailed()
+                    }
                 }
-
-
-            } catch (e: IOException) {
-                // Handle network error
-                Log.e("ApiServices", "failed to fetch successfully ${e.message}")
             }
-        }
-    }
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    fun handleFollowButtonClick(event: ShortsFollowButtonClicked) {
-        val tag = "handleFollowButtonClick"
-        android.util.Log.d(tag, "handleFollowButtonClick: inside")
-        val connectivityManager =
-            requireActivity().getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-        followUnFollowViewModel.followUnFollow(event.followUnFollowEntity.userId)
-    }
-    //<------------------added a notification read function ------------------------>
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    fun handleNotificationRead(event: NotificationRead) {
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
-                val readNotificationResponse =
-                    retrofitInterface.apiService.markNotificationRead(event.notificationId)
-                if (readNotificationResponse.isSuccessful) {
-                    // Assuming the response body contains the updated notification item
-                    val newNotification = readNotificationResponse.body()
-                    android.util.Log.d(
-                        "NotificationAdapter",
-                        "Mark as read notification: $newNotification"
-                    )
-                } else {
-                    android.util.Log.e(
-                        "NotificationAdapter",
-                        "Failed to mark notification as read: ${
-                            readNotificationResponse.errorBody()?.string()
-                        }"
-                    )
-                }
-            } catch (e: Exception) {
-                android.util.Log.e(
-                    "NotificationAdapter",
-                    "Exception while marking notification as read",
-                    e
-                )
-            }
-        }
-    }
-
-    //        shortsAdapter.updateBtn("")
-    @SuppressLint("SimpleDateFormat")
-    @OptIn(UnstableApi::class)
-    private fun convertIso8601ToUnixTimestamp(iso8601Date: String): Long {
-        if (iso8601Date.isEmpty()) {
-            return 0L
-        }
-        return try {
-            val sdf = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
-            sdf.timeZone = TimeZone.getTimeZone("UTC")
-            val date = sdf.parse(iso8601Date)
-            return date?.time ?: 0L
-        } catch (e: ParseException) {
-            e.printStackTrace()
-            return 0L
         }
     }
 
@@ -485,284 +333,147 @@ class NotificationsFragment : Fragment(), NotificationsAdapter.NotificationActio
     @OptIn(UnstableApi::class)
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun handleNewNotification(events: FlashNotificationsEvents) {
-        Log.d("handleNewNotification", "notifications no working: ${events.notificationMessage}")
 
-        val notes: ArrayList<INotification> = arrayListOf()
-        val createdAt = convertIso8601ToUnixTimestamp(events.notificationTime)
-        val date = Date(createdAt)
-        val formated = format(date)
-
-        val notificationEntities: ArrayList<NotificationEntity> = arrayListOf()
-        val notificationDateLabel = getDateLabel(date)
-        /**Check if this notification has already been processed*/
-
-        if (events._id in processedNotificationIds) {
-            Log.d("handleNewNotification", "Notification already processed: ${events._id}")
-            return
-        }
-        processedNotificationIds.add(events._id)
-        /** Add the notification ID to the set of processed IDs*/
-
-        val type = when {
-            events.type.contains("follow", ignoreCase = true) -> "follow"
-            events.type.contains("like", ignoreCase = true) -> "like"
-            events.type.contains("comment", ignoreCase = true) -> "comment"
-            events.type.contains("commentReply", ignoreCase = true) -> "commentReply"
-            else -> "unknown"
-        }
-
-        val note = when (events.type) {
-            "postLiked" -> LikeNotification(
-                events.name,
-                events.notificationMessage,
-                "onLiked",
-                formated,
-                events.avatar,
-                events._id,
-                events.owner,
-                isRead = events.isRead,
-                postId = events.postId,// Assuming link represents postId
-
+        if (events.noteFor != "business") {
+            val avatar = Avatar(
+                "",
+                "",
+                events.avatar
             )
-            "onCommentPost" -> CommentNotification(
-                events.name,
-                events.notificationMessage,
-                "onComment",
-                formated,
-                events.avatar,
-                events._id,
-                events.owner,
-                isRead = events.isRead,
-                postId = events.postId,
-                commentId = events.commentId
-                /**Assuming link represents commentId*/
-                /**Assuming link represents commentId*/
-            )
-            "reply" -> ReplyCommentNotification(
-                events.name,
-                events.notificationMessage,
-                "onCommentReply",
-                formated,
-                events.avatar,
-                events._id,
-                events.owner,
-                isRead = events.isRead,
-                replyId = "",// Assuming link represents replyId
-                commentId = events.commentId,
-                postId = events.postId
-            )
-            "followed" -> FollowNotification(
-                events.name,
-                events.notificationMessage,
-                "follow",
-                formated,
-                events.avatar,
-                events._id,
-                events.owner,
-                isRead = events.isRead,
-                followId = events.link // Assuming link represents followId
-            )
-            "unfollow" -> UnfollowNotification(
-                events.name,
-                events.notificationMessage,
-                "unfollowed",
-                formated,
-                events.avatar,
-                events._id,
-                events.owner,
-                isRead = events.isRead,
-                unfollowId = events.link // Assuming link represents followId
-            )
-            "bookMarked" -> FavoriteBookMarkNotification(
-                events.name,
-                events.notificationMessage,
-                "postBooked",
-                formated,
-                events.avatar,
-                events._id,
-                events.owner,
-                isRead = events.isRead,
-                postId = events.postId, // Assuming link represents postId
-                commentId = events.commentId // Assuming link represents commentId
 
+            val sender = Sender(
+                "",
+                avatar,
+                "",
+                events.name
             )
-            else -> {
-                Log.e(
-                    "handleNewNotification",
-                    "Unknown notification type: ${events.type}"
-                )
-                null
-            }
-        }
 
-        if (note != null) {
-            notes.add(note)
-            val dayNotifications = NotificationByDay("Today", "", notes)
-            dayNotificationsAdapter.addNotification(dayNotifications)
+            val postId = DataX(
+                events.postId,
+                events.noteFor
+            )
 
+            val notification = FeedNotification(
+                events._id,
+                events.avatar,
+                events.notificationTime,
+                postId,
+                events.notificationMessage,
+                events.owner,
+                events.isRead,
+                sender,
+                events.type
+            )
+
+            notificationsAdapter.addNewNotification(notification)
             nestedRecyclerView.scrollToPosition(0)
-            lifecycleScope.launch {
-                notificationViewModel.addNotification(note)
+
+        }
+    }
+
+
+    companion object {
+        /**
+         * Use this factory method to create a new instance of
+         * this fragment using the provided parameters.
+         *
+         * @param param1 Parameter 1.
+         * @param param2 Parameter 2.
+         * @return A new instance of fragment NotificationsFragment.
+         */
+        // TODO: Rename and change types and number of parameters
+        @JvmStatic
+        fun newInstance(param1: String, param2: String) =
+            NotificationsFragment().apply {
+                arguments = Bundle().apply {
+                    putString(ARG_PARAM1, param1)
+                    putString(ARG_PARAM2, param2)
+                }
             }
-        }
     }
-//<------------------added another date format ------------------->
-    private fun getDateLabel(date: Date): String {
-        return when {
-            DateFormatter.isToday(date) -> "Today"
-            DateFormatter.isYesterday(date) -> "Yesterday"
-
-            else -> "Older"
-        }
-    }
-    private fun getType(notifications: ArrayList<Notification>): String {
-        return notifications.firstOrNull()?.notificationTime ?: "text"
-    }
-
-//<------------------added another date format ------------------->
-    fun format(date: Date): String {
-        return when {
-            DateFormatter.isToday(date) -> DateFormatter.format(date, DateFormatter.Template.TIME)
-            DateFormatter.isYesterday(date) -> getString(R.string.date_header_yesterday)
-            DateFormatter.isCurrentYear(date) -> DateFormatter.format(
-                date,
-                DateFormatter.Template.STRING_DAY_MONTH
-            )
-
-            else -> DateFormatter.format(date, DateFormatter.Template.STRING_DAY_MONTH_YEAR)
-        }
-    }
-
 
     override fun onResume() {
         super.onResume()
-        updateStatusBar()
-    }
-    private fun updateStatusBar() {
-        val decor: View? = activity?.window?.decorView
-        decor?.systemUiVisibility = View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
-
     }
 
-    override fun onGetLayoutInflater(
-        savedInstanceState: Bundle?
-    ): LayoutInflater {
-        // Use a custom theme for the fragment layout
-        return super.onGetLayoutInflater(savedInstanceState).cloneInContext(
-            ContextThemeWrapper(
-                requireContext(), R.style.DarkTheme
-            )
-        )
+    private fun navigateToOriginalPostWithRepostInside(originalPostData: com.uyscuti.social.network.api.response.posts.Post) {
+        try {
+            val fragment = Fragment_Original_Post_With_Repost_Inside.newInstance(originalPostData)
+            navigateToFragment(fragment, "repost_with_context")
+        } catch (e: Exception) {
+            Log.e(tag, "Error navigating to repost fragment: ${e.message}")
+            e.printStackTrace()
+        }
     }
 
-    //<------------------added an on going event bus --------------------------->
+    private fun navigateToOriginalPostWithoutRepostInside(data: com.uyscuti.social.network.api.response.posts.Post) {
+        try {
+            Log.d(TAG, "Navigating to original Post for Post ID: ${data._id}")
+
+            val firstName = data.author.firstName
+            val lastName = data.author.lastName
+            val displayName = when {
+                firstName.isNotBlank() && lastName.isNotBlank() -> "$firstName $lastName"
+                firstName.isNotBlank() -> firstName
+                lastName.isNotBlank() -> lastName
+                else -> data.author.account.username
+            }
+
+            val fragment = Fragment_Original_Post_Without_Repost_Inside().apply {
+                arguments = Bundle().apply {
+                    putString(
+                        Fragment_Original_Post_Without_Repost_Inside.ARG_ORIGINAL_POST,
+                        Gson().toJson(data)
+                    )
+                    putString("post_id", data._id)
+                    // putInt("adapter_position", absoluteAdapterPosition)
+                    putString("navigation_source", "feed_mixed_files")
+                    putLong("navigation_timestamp", System.currentTimeMillis())
+
+                    putString("author_name", displayName)
+                    putString("author_username", data.author?.account?.username ?: "unknown_user")
+                    putString("author_profile_image_url", data.author?.account?.avatar?.url ?: "")
+                    putString("user_id", data.author?._id ?: "")
+
+                    Log.d(
+                        TAG,
+                        "Author Info - Name: $displayName, Username: ${data.author?.account?.username}, ID: ${data.author?._id}"
+                    )
+                }
+            }
+
+            navigateToFragment(fragment, "original_post_without_repost")
+
+        } catch (e: Exception) {
+            Log.e(TAG, "Error navigating to original post fragment: ${e.message}", e)
+        }
+    }
+
+    private fun navigateToFragment(fragment: Fragment, tag: String) {
+        try {
+            val activity = requireActivity()
+            activity.supportFragmentManager.beginTransaction()
+                .setCustomAnimations(
+                    com.uyscuti.sharedmodule.R.anim.slide_in_right,
+                    com.uyscuti.sharedmodule.R.anim.slide_out_left,
+                    com.uyscuti.sharedmodule.R.anim.slide_in_left,
+                    com.uyscuti.sharedmodule.R.anim.slide_out_right
+                )
+                .replace(android.R.id.content, fragment, tag)
+                .addToBackStack(tag)
+                .commit()
+
+            Log.d(TAG, "Successfully navigated to fragment: $tag")
+        } catch (e: Exception) {
+            Log.e(TAG, "Error navigating to fragment: $tag", e)
+        }
+    }
+
+
     override fun onDestroy() {
         super.onDestroy()
-        // Check if socket is initialized
-        if (::socket.isInitialized) {
-            socket.off("notification") // Only call off if socket is initialized
-            socket.disconnect() // Only disconnect if socket is initialized
-        }
-
         // Unregister from EventBus
         EventBus.getDefault().unregister(this)
     }
 
-    override fun removeNotification(notification: INotification) {
-        notificationViewModel.removeNotification(notification)
-    }
-
-    override fun onNotificationLongClick(notification: INotification) {
-        notificationViewModel.incrementAndAddToSelectedNotifications(notification)
-    }
-    @OptIn(UnstableApi::class)
-    override fun onClickSingleNotification(notification: INotification) {
-        val selected = notificationViewModel.selectedNotificationCount.value ?: 0
-        if (selected > 0) {
-            notificationViewModel.incrementAndAddToSelectedNotifications(notification)
-        } else {
-            when (notification) {
-                is ReplyCommentNotification -> {
-                    val postId = notification.postId
-                    val replyId = notification.replyId
-                    val commentId = notification.commentId
-                    val intent =
-                        Intent(requireActivity(), PostDetailsActivity2::class.java).apply {
-                            putExtra("replyId", replyId)
-                            putExtra("comment_id", commentId)
-                            putExtra("post_id", postId)
-                        }
-                    startActivity(intent)
-                }
-
-                is FavoriteBookMarkNotification -> {
-                    android.util.Log.d("FavoriteProfile", "listener is working ")
-                    val postId = notification.postId
-                    val intent =
-                        Intent(requireActivity(), PostDetailsActivity2::class.java).apply {
-                            putExtra("post_id", postId)
-                            putExtra("show_comments", true)
-                        }
-                    startActivity(intent)
-                    EventBus.getDefault().post(NotificationRead(true, notification._id))
-                }
-
-                is LikeNotification -> {
-                    val postId = notification.postId
-                    val intent = Intent(requireActivity(), PostDetailsActivity2::class.java).apply {
-                        putExtra("post_id", postId)
-                        putExtra("show_comments", true)
-                    }
-                    EventBus.getDefault().post(NotificationRead(true, notification._id))
-                    startActivity(intent)
-                }
-
-                is CommentNotification -> {
-                    android.util.Log.d("OnCommentNotification", "listener is working ")
-                    val postId = notification.postId
-                    val commentId = notification.commentId
-                    val intent = Intent(requireActivity(), PostDetailsActivity2::class.java).apply {
-                        putExtra("post_id", postId)
-                        putExtra("comment_id", commentId)
-                        putExtra("show_comments", true)
-                    }
-                    EventBus.getDefault().post(NotificationRead(true, notification._id))
-                    startActivity(intent)
-                }
-
-                is FollowNotification -> {
-                    val otherUsersProfile = OtherUsersProfile(
-                        notification.name,
-                        notification.name,
-                        notification.avatar,
-                        notification.owner
-                    )
-                    EventBus.getDefault().post(NotificationRead(true, notification._id))
-                   // OtherUserProfile.Companion.openFromShorts(requireContext(), otherUsersProfile)
-                }
-
-                is UnfollowNotification -> {
-                    val otherUsersProfile = OtherUsersProfile(
-                        notification.name,
-                        notification.name,
-                        notification.avatar,
-                        notification.owner
-                    )
-                    EventBus.getDefault().post(NotificationRead(true, notification._id))
-                  //  OtherUserProfile.Companion.openFromShorts(requireContext(), otherUsersProfile)
-                }
-            }
-        }
-    }
-    override fun onRemoveNotificationClick(notification: INotification) {
-        notificationViewModel.decrementAndRemoveFromSelectedNotifications(notification)
-    }
-
-    @SuppressLint("Range", "NotifyDataSetChanged")
-    @OptIn(UnstableApi::class)
-    private fun observeMainNotificationToDelete() {
-        notificationViewModel.deleteSelectedList.observe(viewLifecycleOwner) { deletedNotes ->
-            adapter.notifyDataSetChanged()
-        }
-    }
 }
