@@ -8,15 +8,13 @@ import android.widget.TextView
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.uyscuti.sharedmodule.R
-import com.uyscuti.sharedmodule.adapter.notifications.NotificationsAdapter.NotificationActionListener
 import com.uyscuti.sharedmodule.model.notifications_data_class.INotification
 import com.uyscuti.sharedmodule.model.notifications_data_class.NotificationByDay
 
 class NotificationDayAdapter(
-    private val notificationsList: MutableList<NotificationByDay>,
-    private val notificationActionListener: NotificationActionListener,
+    private val notificationsList: MutableList<NotificationByDay>
 
-    ) :
+) :
     RecyclerView.Adapter<ClassViewHolder>() {
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ClassViewHolder {
         val view = LayoutInflater.from(parent.context)
@@ -32,8 +30,7 @@ class NotificationDayAdapter(
         for (notification in notifications.notification) {
             notes.add(notification)
         }
-        holder.notificationsRecyclerView.adapter =
-            NotificationsAdapter(notes, notificationActionListener)
+
     }
     override fun getItemCount(): Int {
         return notificationsList.size
