@@ -207,3 +207,26 @@ class FeedNotificationViewModel(
         }
     }
 
+
+    fun toggleReadStatus(notificationId: String) {
+        val notification = _state.value.notifications.find { it._id == notificationId }
+
+        if (notification != null) {
+            if (notification.read) {
+                markAsUnread(notificationId)
+            } else {
+                markAsRead(notificationId)
+            }
+        }
+    }
+}
+
+data class NotificationState(
+    val notifications: List<FeedNotification> = emptyList(),
+    val isLoading: Boolean = false,
+    val isLoadingMore: Boolean = false,
+    val error: String? = null,
+    val currentPage: Int = 0,
+    val totalPages: Int = 0,
+    val hasNextPage: Boolean = true
+)
