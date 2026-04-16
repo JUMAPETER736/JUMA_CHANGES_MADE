@@ -1102,11 +1102,23 @@ interface IFlashapi {
     @GET("notifications/myComment")
     suspend fun getCommentNotification(): Response<GetCommentNotification>
 
-    @GET("notifications/u")
-    suspend fun getMyUnifiedNotifications(@Query("limit") page: String): Response<GetUnifiedNotifications>
-
     @PUT("notifications/read/{notificationId}")
-    suspend fun markNotificationRead(@Path("notificationId") notificationId: String): Response<ReadNotificationResponse>
+    suspend fun markNotificationRead(@Path("notificationId")notificationId:String): Response<ReadNotificationResponse>
+
+    @PUT("notifications/unread/{notificationId}")
+    suspend fun markNotificationUnread(@Path("notificationId")notificationId:String): Response<ReadNotificationResponse>
+
+    @DELETE("notifications/delete/{notificationId}")
+    suspend fun deleteNotification(
+        @Path("notificationId") notificationId: String
+    ): Response<ReadNotificationResponse>
+
+    @GET("notifications/u")
+    suspend fun getMyUnifiedNotifications(
+        @Query("page") page: Int,
+        @Query("limit") limit:Int
+    ): Response<GetUnifiedNotifications>
+
 
     //  Existing — signature UNCHANGED so nothing else breaks
     @POST("chat-app/chats/group")
