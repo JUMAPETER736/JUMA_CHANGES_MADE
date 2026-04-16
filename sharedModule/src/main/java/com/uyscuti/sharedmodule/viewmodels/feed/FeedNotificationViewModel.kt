@@ -132,3 +132,78 @@ class FeedNotificationViewModel(
         }
     }
 
+    fun markAsUnread(notificationId: String) {
+        viewModelScope.launch {
+            try {
+                // Optimistically update UI first
+                val updatedNotifications = _state.value.notifications.map { notification ->
+                    if (notification._id == notificationId) {
+                        notification.copy(read = false)
+                    } else {
+                        notification
+                    }
+                }
+
+                _state.value = _state.value.copy(notifications = updatedNotifications)
+
+                // Make API call
+                val response = repository.markAsUnread(notificationId)
+
+                if (!response.isSuccessful) {
+                    // Revert if API call fails
+                    val revertedNotifications = _state.value.notifications.map { notification ->
+                        if (notification._id == notificationId) {
+                            notification.copy(read = true)
+                        } else {
+                            notification
+                        }
+                    }
+                    _state.value = _state.value.copy(notifications = revertedNotifications)
+                }
+            } catch (e: Exception) {
+                // Revert on error
+                val revertedNotifications = _state.value.notifications.map { notification ->
+                    if (notification._id == notificationId) {
+                        notification.copy(read = true)
+                    } else {
+                        notification
+                    }
+                }
+                _state.value = _state.value.copy(notifications = revertedNotifications)
+            }
+        }
+    }
+
+    fun deleteNotification(notificationId: String) {
+        viewModelScope.launch {
+            try {
+                // Store the notification in case we need to revert
+                val notificationToDelete = _state.value.notifications.find { it._id == notificationId }
+                val originalPosition = _state.value.notifications.indexOfFirst { it._id == notificationId }
+
+                // Optimistically remove from UI first
+                val updatedNotifications = _state.value.notifications.filter {
+                    it._id != notificationId
+                }
+
+                _state.value = _state.value.copy(notifications = updatedNotifications)
+
+                // Make API call
+                val response = repository.deleteNotification(notificationId)
+
+                if (!response.isSuccessful) {
+                    // Revert if API call fails - add the notification back
+                    if (notificationToDelete != null && originalPosition != -1) {
+                        val revertedNotifications = _state.value.notifications.toMutableList()
+                        revertedNotifications.add(originalPosition, notificationToDelete)
+                        _state.value = _state.value.copy(notifications = revertedNotifications)
+                    }
+                }
+            } catch (e: Exception) {
+                // On error, you might want to reload all notifications to ensure consistency
+                // Or you could try to revert like in the unsuccessful response case
+                loadNotifications()
+            }
+        }
+    }
+
