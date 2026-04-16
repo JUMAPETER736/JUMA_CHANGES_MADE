@@ -1,522 +1,481 @@
 package com.uyscuti.sharedmodule.adapter.notifications
 
-import android.annotation.SuppressLint
-import android.content.Intent
-import android.provider.Settings
-import android.util.Log
+import android.graphics.Color
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
-import androidx.annotation.OptIn
-import androidx.media3.common.util.UnstableApi
+import androidx.appcompat.widget.PopupMenu
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
-import com.bumptech.glide.load.engine.DiskCacheStrategy
-import com.bumptech.glide.load.resource.bitmap.CircleCrop
-import com.bumptech.glide.request.RequestOptions
-import com.uyscuti.sharedmodule.data.model.shortsmodels.OtherUsersProfile
-import com.uyscuti.sharedmodule.presentation.MainViewModel
-import com.uyscuti.sharedmodule.model.notificatioRead.NotificationRead
-import com.uyscuti.sharedmodule.model.notifications_data_class.INotification
 import com.uyscuti.sharedmodule.R
-import com.uyscuti.sharedmodule.User_Interfaces.OtherUserProfile.OtherUserProfileAccount
-import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
-import org.greenrobot.eventbus.EventBus
-
-private const val NOTIFICATION_TYPE_WITH_TEXT = 1
-private const val NOTIFICATION_TYPE_WITH_IMAGE = 2
-private const val NOTIFICATION_TYPE_WITH_VIDEO = 3
-private const val NOTIFICATION_TYPE_WITH_FOLLOW = 4
-private const val NOTIFICATION_TYPE_WITH_UNFOLLOW = 5
-private const val NOTIFICATION_TYPE_REPLY_COMMENT = 6
-private const val NOTIFICATION_TYPE_FAVORITE = 7
-private const val NOTIFICATION_TYPE_LIKE = 8
-private const val NOTIFICATION_TYPE_COMMENT = 9
-private const val NOTIFICATION_TYPE_FRIEND_SUGGESTION = 10
-
+import com.uyscuti.social.network.api.response.getUnifiedNotification.FeedNotification
+import java.util.Calendar
 
 
 class NotificationsAdapter(
-    private val notifications: ArrayList<INotification>,
-    private val notificationActionListener: NotificationActionListener
+    private val onNotificationClick: (FeedNotification, Int) -> Unit,
+    private val onLoadMore: () -> Unit,
+    private val onMarkAsRead: (FeedNotification, Int) -> Unit,
+    private val onDelete: (FeedNotification, Int) -> Unit
+):RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
-) :
-    RecyclerView.Adapter<RecyclerView.ViewHolder>() {
-private lateinit var retrofitInterface: RetrofitInstance
-    private val selectedItems = mutableSetOf<Int>()
-    private lateinit var mainViewModel: MainViewModel
-    private var selectedNotifications = 0
+    private val items = mutableListOf<NotificationItem>()
+    private var isLoading = false
+    private var hasMorePages = true
 
-    /**this is the interface for the NotificationListener*/
-    interface NotificationActionListener {
-        fun removeNotification(notification: INotification)
-        fun onNotificationLongClick(notification: INotification)
-        fun onClickSingleNotification(notification: INotification)
-        fun onRemoveNotificationClick(notification: INotification)
-    }
-    interface OnMarkAsUnreadListener {
-        fun onMarkAsUnread(notification: INotification)
+    companion object {
+        private const val VIEW_TYPE_HEADER = 0
+        private const val VIEW_TYPE_NOTIFICATION = 1
+        private const val VIEW_TYPE_LOADING = 2
+        private const val VIEW_TYPE_NO_DATA = 3
     }
 
+    // Add more notifications for pagination
+    fun addMoreNotifications(newNotifications: List<FeedNotification>) {
+        // Remove loading indicator if present
+        val loadingIndex = items.indexOfFirst { it is NotificationItem.Loading }
+        if (loadingIndex != -1) {
+            items.removeAt(loadingIndex)
+            notifyItemRemoved(loadingIndex)
+        }
+
+        isLoading = false
+
+        if (newNotifications.isEmpty()) {
+            hasMorePages = false
+            return
+        }
+
+        val startPosition = items.size
+        val groupedItems = groupNotificationsByDate(newNotifications)
+
+        // Merge with existing items (avoid duplicate headers)
+        for (item in groupedItems) {
+            if (item is NotificationItem.Header) {
+                // Check if this header already exists
+                val existingHeader = items.find {
+                    it is NotificationItem.Header && it.title == item.title
+                }
+                if (existingHeader == null) {
+                    items.add(item)
+                }
+            } else {
+                items.add(item)
+            }
+        }
+
+        notifyItemRangeInserted(startPosition, items.size - startPosition)
+    }
+
+    // Add new notifications and group them by date
+    fun submitList(newNotifications: List<FeedNotification>, hasMorePages: Boolean) {
+        items.clear()
+        isLoading = false
+
+        if (newNotifications.isEmpty()) {
+            notifyDataSetChanged()
+            return
+        }
+
+        val groupedItems = groupNotificationsByDate(newNotifications)
+        items.addAll(groupedItems)
+        notifyDataSetChanged()
+    }
+
+    // Safe version that posts to avoid layout conflicts
+    fun submitListSafe(newItems: List<FeedNotification>, hasMorePages: Boolean, recyclerView: RecyclerView) {
+        recyclerView.post {
+            submitList(newItems, hasMorePages)
+        }
+    }
+
+    private fun loadMore() {
+        if (isLoading || !hasMorePages || items.isEmpty()) return
+
+        isLoading = true
+
+        // Add loading indicator at the end
+        items.add(NotificationItem.Loading)
+        val position = items.size - 1
+        notifyItemInserted(position)
+
+        // Call the callback
+        onLoadMore()
+    }
+
+    fun resetLoadingState() {
+        isLoading = false
+        val loadingIndex = items.indexOfFirst { it is NotificationItem.Loading }
+        if (loadingIndex != -1) {
+            items.removeAt(loadingIndex)
+            notifyItemRemoved(loadingIndex)
+        }
+    }
+
+    fun setHasMorePages(hasMore: Boolean) {
+        hasMorePages = hasMore
+    }
+
+    override fun getItemViewType(position: Int): Int {
+        return when (items[position]) {
+            is NotificationItem.Header -> VIEW_TYPE_HEADER
+            is NotificationItem.NotificationData -> VIEW_TYPE_NOTIFICATION
+            is NotificationItem.Loading -> VIEW_TYPE_LOADING
+            else -> VIEW_TYPE_NO_DATA
+        }
+    }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
-        Log.d("NotificationsAdapter", "ViewType: $viewType")
+        val inflater = LayoutInflater.from(parent.context)
         return when (viewType) {
-            NOTIFICATION_TYPE_WITH_TEXT -> {
-                val view = LayoutInflater.from(parent.context)
-                    .inflate(R.layout.notification_type_with_text, parent, false)
-                TextViewHolder(view)
+            VIEW_TYPE_HEADER -> {
+                val view = inflater.inflate(R.layout.item_notification_header, parent, false)
+                HeaderViewHolder(view)
             }
-            NOTIFICATION_TYPE_WITH_IMAGE -> {
-                val view = LayoutInflater.from(parent.context)
-                    .inflate(R.layout.notification_type_with_image, parent, false)
-                ImageViewHolder(view)
+            VIEW_TYPE_LOADING -> {
+                val view = inflater.inflate(R.layout.item_loading, parent, false)
+                LoadingViewHolder(view)
             }
-            NOTIFICATION_TYPE_WITH_UNFOLLOW -> {
-                val view = LayoutInflater.from(parent.context)
-                    .inflate(R.layout.notification_unfollow, parent, false)
-                UnfollowViewHolder(view)
-            }
-            NOTIFICATION_TYPE_REPLY_COMMENT -> {
-                val view = LayoutInflater.from(parent.context)
-                    .inflate(R.layout.notification_comment_reply, parent, false)
-                CommentReplyViewHolder(view)
-            }
-            NOTIFICATION_TYPE_FAVORITE -> {
-                val view = LayoutInflater.from(parent.context)
-                    .inflate(R.layout.notification_fav_book, parent, false)
-                FavoriteViewHolder(view)
-            }
-            NOTIFICATION_TYPE_LIKE -> {
-                val view = LayoutInflater.from(parent.context)
-                    .inflate(R.layout.notification_like_type, parent, false)
-                LikeNotificationViewHolder(view)
-            }
-            NOTIFICATION_TYPE_COMMENT -> {
-                val view = LayoutInflater.from(parent.context)
-                    .inflate(R.layout.notification_oncomment_type, parent, false)
-                OnCommentViewHolder(view)
-            }
-            NOTIFICATION_TYPE_FRIEND_SUGGESTION -> {
-                val view = LayoutInflater.from(parent.context)
-                    .inflate(R.layout.friend_suggestions, parent, false)
-                FriendSuggestionViewHolder(view)
-            }
-            NOTIFICATION_TYPE_WITH_FOLLOW ->{
-                val view = LayoutInflater.from(parent.context)
-                    .inflate(R.layout.notification_type_with_follow, parent, false)
-                FollowViewHolder(view)
-            }
-            else -> throw IllegalArgumentException("Invalid view type")
-        }
-    }
-    override fun getItemCount(): Int {
-        return notifications.size
-    }
-    @OptIn(UnstableApi::class)
-    @SuppressLint("SetTextI18n", "NotifyDataSetChanged", "SuspiciousIndentation")
-    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
-        val notificationItem = notifications[position]
-        /**listener for every notification item */
-        holder.itemView.setOnLongClickListener { view ->
-            /**Scale up the view**/
-            view.animate().scaleX(0.95f).scaleY(0.95f).setDuration(100).withEndAction {
-                /**Scale back to original size*/
-                view.animate().scaleX(1f).scaleY(1f).setDuration(100).start()
-            }.start()
-            if (selectedItems.contains(position)) {
-                holder.itemView.setBackgroundResource(R.color.white)
-                notificationActionListener.onRemoveNotificationClick(notificationItem)
-            } else {
-                selectedItems.add(position)
-                holder.itemView.setBackgroundResource(R.color.bluejeans)
-                notificationActionListener.onNotificationLongClick(notificationItem)
-            }
-            true
-        }
-        holder.itemView.setOnClickListener {
-            /**Fade to white background with animation*/
-            notificationItem.isRead = true
-            holder.itemView.setBackgroundColor(holder.itemView.context.getColor(com.uyscuti.social.chatsuit.R.color.transparent))
-            EventBus.getDefault().post(NotificationRead(false, notificationItem._id))
-            if (selectedItems.contains(position)) {
-                selectedItems.remove(position)
-                notificationActionListener.onRemoveNotificationClick(notificationItem)
-            } else {
-                selectedItems.add(position)
-                holder.itemView.setBackgroundResource(R.color.bluejeans)
-                notificationActionListener.onClickSingleNotification(notificationItem)
-            }
-        }
-
-        val isSelected = selectedItems.contains(position)
-        if (notificationItem.isRead) {
-            holder.itemView.setBackgroundResource(R.color.white)
-        } else {
-            holder.itemView.setBackgroundResource(R.color.bluejeans)
-        }
-        when (holder) {
-            /**TextViewHolder is used for text notifications*/
-            is TextViewHolder -> {
-                val fullMessage = notificationItem.notificationMessage
-                // Limit the message to 40 characters
-                val truncatedMessage = if (fullMessage.length > 40) {
-                    "${fullMessage.substring(0, 40)}..."
-                } else {
-                    fullMessage
-                }
-                notificationItem.avatar
-                holder.notificationMessage.text =
-                    truncatedMessage + " ${notificationItem.notificationTime}"
-                holder.username.text = notificationItem.name
-                Log.d(
-                    "NotificationAdapter",
-                    "Profile Image URL NotificationAdapter: ${notificationItem.avatar}"
-                )
-
-                if (notificationItem.avatar.isNotEmpty()) {
-                    Log.w(
-                        "NotificationAdapter",
-                        "Avatar URL is empty or null for notification: $notificationItem"
-                    )
-                }
-
-                Log.e("NotificationAdapter", "avatar upload : ${notificationItem.avatar}")
-                Glide.with(holder.itemView.context)
-                    .load(notificationItem.avatar)
-                    .apply(RequestOptions.bitmapTransform(CircleCrop()))
-                    .apply(RequestOptions.placeholderOf(R.drawable.nav_user_svg))
-                    .diskCacheStrategy(DiskCacheStrategy.ALL)
-                    .into(holder.profilePic)
-
-
-                holder.itemView.setOnClickListener {
-                    if (notificationItem.isRead.not()) {
-                        notificationItem.isRead = true
-                        holder.itemView.setBackgroundResource(R.color.white)
-                        EventBus.getDefault().post(NotificationRead(true, notificationItem._id))
-                    }
-                }
-            }
-            /**code not in use*/
-            is ImageViewHolder -> {
-                /** Set up your image view or other views for image type */
-                holder.notificationMessage.text =
-                    notificationItem.notificationMessage + " ${notificationItem.notificationTime}"
-                holder.username.text = notificationItem.name
-                Glide.with(holder.itemView.context)
-                    .load(notificationItem.avatar)
-                    .apply(RequestOptions.bitmapTransform(CircleCrop()))
-                    .apply(RequestOptions.placeholderOf(R.drawable.nav_user_svg))
-                    .diskCacheStrategy(DiskCacheStrategy.ALL)
-                    .into(holder.profilePic)
-            }
-            /**t his is FollowViewHolder */
-       /**the is UnfollowViewHolder */
-            is UnfollowViewHolder -> {
-                val fullMessage = notificationItem.notificationTime
-                val truncatedMessage = if (fullMessage.length > 40) {
-                    "${fullMessage.substring(0, 40)}..."
-                } else {
-                    fullMessage
-                }
-                notificationItem.avatar
-                holder.username.text = notificationItem.name
-                holder.notificationTime.text = notificationItem.notificationTime
-//                <-------user profile image --------->
-                Glide.with(holder.itemView.context)
-                    .load(notificationItem.avatar)
-                    .apply(RequestOptions.bitmapTransform(CircleCrop()))
-                    .apply(RequestOptions.placeholderOf(R.drawable.nav_user_svg))
-                    .diskCacheStrategy(DiskCacheStrategy.ALL)
-                    .into(holder.profilePic)
-                /**this is the listener for profilePic */
-                holder.profilePic.setOnClickListener {
-                    notificationItem.isRead = true
-                    holder.itemView.setBackgroundResource(R.color.white)
-                    Log.d(
-                        "followButton",
-                        "Profile Image URL NotificationAdapter: ${notificationItem.avatar}"
-                    )
-
-                }
-            }
-            /**this is the comment REPLY VIEW HOLDER */
-            is CommentReplyViewHolder -> {
-                val fullMessage = notificationItem.notificationMessage
-                // Limit the message to 40 characters
-                if (fullMessage.length > 40) {
-                    "${fullMessage.substring(0, 40)}..."
-                } else {
-                    fullMessage
-                }
-
-                holder.notificationTime.text = notificationItem.notificationTime
-                holder.username.text = notificationItem.name
-                notificationItem.avatar
-                holder.notificationMessage.text = fullMessage
-
-                if (notificationItem.avatar.isNotEmpty()) {
-                    Log.w(
-                        "NotificationAdapter",
-                        "Avatar URL is empty or null for notification: $notificationItem"
-                    )
-                }
-                /**profile pic here*/
-                Glide.with(holder.itemView.context)
-                    .load(notificationItem.avatar)
-                    .apply(RequestOptions.bitmapTransform(CircleCrop()))
-                    .apply(RequestOptions.placeholderOf(R.drawable.nav_user_svg))
-                    .diskCacheStrategy(DiskCacheStrategy.ALL)
-                    .into(holder.profilePic)
-                /**profile Pic listener is here*/
-                holder.profilePic.setOnClickListener {
-                    Log.d(
-                        "OnCommentProfile",
-                        "Profile Image URL OnCommentProfile: ${notificationItem.avatar}"
-                    )
-                    notificationItem.isRead = true
-                    holder.itemView.setBackgroundResource(R.color.white)
-                    val otherUsersProfile = OtherUsersProfile(
-                        notificationItem.name,
-                        notificationItem.name,
-                        notificationItem.avatar,
-                        notificationItem.owner,
-                        false
-                    )
-                 //   OtherUserProfileAccount.openFromShorts(holder.itemView.context, otherUsersProfile)
-                }
-            }
-            /**This is the function for favorite */
-            is FavoriteViewHolder -> {
-                val fullMessage = notificationItem.notificationTime
-                if (fullMessage.length > 40) {
-                    "${fullMessage.substring(0, 40)}..."
-                } else {
-                    fullMessage
-                }
-                notificationItem.avatar
-                holder.notificationMessage.text = notificationItem.notificationMessage
-                holder.notificationTime.text = notificationItem.notificationTime
-                holder.username.text = notificationItem.name
-                Log.d(
-                    "FavoriteListener",
-                    "Profile Image URL FavoriteListener: ${notificationItem.avatar}"
-                )
-//                <-------user profile image --------->
-                Glide.with(holder.itemView.context)
-                    .load(notificationItem.avatar)
-                    .apply(RequestOptions.bitmapTransform(CircleCrop()))
-                    .apply(RequestOptions.placeholderOf(R.drawable.nav_user_svg))
-                    .diskCacheStrategy(DiskCacheStrategy.ALL)
-                    .into(holder.profilePic)
-                //click listeners on the notification item
-                holder.profilePic.setOnClickListener {
-                    notificationItem.isRead = true
-                    holder.itemView.setBackgroundResource(R.color.white)
-                    Log.d(
-                        "FavoriteListener",
-                        "Profile Image URL FavoriteListener: ${notificationItem.avatar}"
-                    )
-                    val otherUsersProfile = OtherUsersProfile(
-                        notificationItem.name,
-                        notificationItem.name,
-                        notificationItem.avatar,
-                        notificationItem.owner
-                    )
-                   // OtherUserProfile.openFromShorts(holder.itemView.context, otherUsersProfile)
-                }
-            }
-            /**This is Like Notification View Holder */
-            is LikeNotificationViewHolder -> {
-                val fullMessage = notificationItem.notificationMessage
-                val truncatedMessage = if (fullMessage.length > 40) {
-                    "${fullMessage.substring(0, 40)}..."
-                } else {
-                    fullMessage
-                }
-                notificationItem.avatar
-                holder.username.text = notificationItem.name
-                holder.notificationTime.text = notificationItem.notificationTime
-                holder.notificationMessage.text = truncatedMessage
-                if (notificationItem.avatar.isNotEmpty()) {
-                    Log.w(
-                        "LikeNotification",
-                        "Avatar URL is empty or null for LikeNotification: $notificationItem"
-                    )
-                }
-                /**this is the avatar retriever  */
-                Glide.with(holder.itemView.context)
-                    .load(notificationItem.avatar)
-                    .apply(RequestOptions.bitmapTransform(CircleCrop()))
-                    .apply(RequestOptions.placeholderOf(R.drawable.nav_user_svg))
-                    .diskCacheStrategy(DiskCacheStrategy.ALL)
-                    .into(holder.profilePic)
-                /**this is the profile pic listener */
-                holder.profilePic.setOnClickListener {
-                    Log.d(
-                        "OnCommentProfile",
-                        "Profile Image URL OnCommentProfile: ${notificationItem.avatar}"
-                    )
-                    notificationItem.isRead = true
-                    holder.itemView.setBackgroundResource(R.color.white)
-                    val otherUsersProfile = OtherUsersProfile(
-                        notificationItem.name,
-                        notificationItem.name,
-                        notificationItem.avatar,
-                        notificationItem.owner
-                    )
-                  //  OtherUserProfile.openFromShorts(holder.itemView.context, otherUsersProfile)
-                }
-            }
-            /**this is the function for comment view Holder*/
-            is OnCommentViewHolder -> {
-                val fullMessage = notificationItem.notificationMessage
-                val truncatedMessage = if (fullMessage.length > 40) {
-                    "${fullMessage.substring(0, 40)}..."
-                } else {
-                    fullMessage
-                }
-                holder.notificationMessage.text = truncatedMessage
-                notificationItem.avatar
-                holder.username.text = notificationItem.name
-                holder.notificationMessage.text = truncatedMessage
-                holder.notificationTime.text = notificationItem.notificationTime
-                holder.username.text = notificationItem.name
-                if (notificationItem.avatar.isNotEmpty()) {
-                    Log.w(
-                        "OnCommentNotification",
-                        "Avatar URL is empty or null for OnCommentNotification: $notificationItem"
-                    )
-                }
-                /**this is the avatar retriever */
-                Glide.with(holder.itemView.context)
-                    .load(notificationItem.avatar)
-                    .apply(RequestOptions.bitmapTransform(CircleCrop()))
-                    .apply(RequestOptions.placeholderOf(R.drawable.nav_user_svg))
-                    .diskCacheStrategy(DiskCacheStrategy.ALL)
-                    .into(holder.profilePic)
-                /**this is the profile pic for the listener */
-                holder.profilePic.setOnClickListener {
-                    notificationItem.isRead = true
-                    EventBus.getDefault().post(NotificationRead(true, notificationItem._id))
-                    holder.itemView.setBackgroundResource(R.color.white)
-                    val otherUsersProfile = OtherUsersProfile(
-                        notificationItem.name,
-                        notificationItem.name,
-                        notificationItem.avatar,
-                        notificationItem.owner
-                    )
-                   // OtherUserProfile.openFromShorts(holder.itemView.context, otherUsersProfile)
-                    EventBus.getDefault().post(NotificationRead(true, notificationItem._id))
-                }
-            }
-
-
-        }
-    }
-
-    /**code not used */
-    private fun handleMarkUnread(position: Int) {
-        notifications[position].isRead = false
-        notifyItemChanged(position)
-    }
-
-    private fun handlePriority(position: Int) {
-        val intent = Intent().apply {
-            Log.d("handlePriority", "settings ar available $position")
-            setAction(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
-            putExtra(Settings.EXTRA_APP_PACKAGE, "com.uyscut.flashdesign")
-            putExtra("EXTRA_NOTIFICATION_POSITION", position)
-
-        }
-        startActivity(intent)
-    }
-
-    private fun startActivity(intent: Intent) {
-
-    }
-
-    /** Determine the view type based on the link type (assuming linkType is a string)*/
-    override fun getItemViewType(position: Int): Int {
-        val notificationItem = notifications[position]
-        return when (notificationItem.link) {
-            "text" -> NOTIFICATION_TYPE_WITH_TEXT
-            "image" -> NOTIFICATION_TYPE_WITH_IMAGE
-            "unfollowed" -> NOTIFICATION_TYPE_WITH_FOLLOW
-            "unfollowed" -> NOTIFICATION_TYPE_WITH_UNFOLLOW
-            "onCommentReply" -> NOTIFICATION_TYPE_REPLY_COMMENT
-            "postBooked" -> NOTIFICATION_TYPE_FAVORITE
-            "onLiked" -> NOTIFICATION_TYPE_LIKE
-            "onComment" -> NOTIFICATION_TYPE_COMMENT
-            "friendSuggestion" -> NOTIFICATION_TYPE_FRIEND_SUGGESTION
             else -> {
-                Log.w("NotificationsAdapter", "Unknown link type: ${notificationItem.link}")
-                NOTIFICATION_TYPE_WITH_TEXT
+                val view = inflater.inflate(R.layout.item_notification, parent, false)
+                NotificationViewHolder(view)
             }
         }
     }
 
+    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+        when (holder) {
+            is HeaderViewHolder -> {
+                val header = items[position] as NotificationItem.Header
+                holder.bind(header)
+            }
+            is NotificationViewHolder -> {
+                val notificationData = items[position] as NotificationItem.NotificationData
+                holder.bind(notificationData.notification, position)
+            }
+            is LoadingViewHolder -> {
+                // Loading indicator is already visible
+            }
+        }
+
+        if (position >= items.size - 3 &&
+            position > 0 &&
+            items.size > 3 &&
+            !isLoading &&
+            hasMorePages) {
+            holder.itemView.post {
+                if (!isLoading && hasMorePages) {
+                    loadMore()
+                }
+            }
+        }
+
+    }
+
+    override fun getItemCount(): Int = items.size
+
+
+    private fun groupNotificationsByDate(notifications: List<FeedNotification>): List<NotificationItem> {
+        val result = mutableListOf<NotificationItem>()
+        val sortedNotifications = notifications.sortedByDescending { it.getTimestamp() }
+
+        // Get today's start (00:00:00)
+        val todayCalendar = Calendar.getInstance()
+        todayCalendar.set(Calendar.HOUR_OF_DAY, 0)
+        todayCalendar.set(Calendar.MINUTE, 0)
+        todayCalendar.set(Calendar.SECOND, 0)
+        todayCalendar.set(Calendar.MILLISECOND, 0)
+        val today = todayCalendar.timeInMillis
+
+        // Get yesterday's start (00:00:00)
+        val yesterdayCalendar = Calendar.getInstance()
+        yesterdayCalendar.set(Calendar.HOUR_OF_DAY, 0)
+        yesterdayCalendar.set(Calendar.MINUTE, 0)
+        yesterdayCalendar.set(Calendar.SECOND, 0)
+        yesterdayCalendar.set(Calendar.MILLISECOND, 0)
+        yesterdayCalendar.add(Calendar.DAY_OF_YEAR, -1)
+        val yesterday = yesterdayCalendar.timeInMillis
+
+        // Get 7 days ago (for "This Week" - anything in the last 7 days)
+        val sevenDaysAgoCalendar = Calendar.getInstance()
+        sevenDaysAgoCalendar.set(Calendar.HOUR_OF_DAY, 0)
+        sevenDaysAgoCalendar.set(Calendar.MINUTE, 0)
+        sevenDaysAgoCalendar.set(Calendar.SECOND, 0)
+        sevenDaysAgoCalendar.set(Calendar.MILLISECOND, 0)
+        sevenDaysAgoCalendar.add(Calendar.DAY_OF_YEAR, -7)
+        val sevenDaysAgo = sevenDaysAgoCalendar.timeInMillis
+
+        var currentSection = ""
+
+        for (notification in sortedNotifications) {
+            val timestamp = notification.getTimestamp()
+
+            val section = when {
+                timestamp >= today -> "Today"
+                timestamp >= yesterday -> "Yesterday"
+                timestamp >= sevenDaysAgo -> "This Week"
+                else -> "Older"
+            }
+
+            if (section != currentSection) {
+                result.add(NotificationItem.Header(section))
+                currentSection = section
+            }
+
+            result.add(NotificationItem.NotificationData(notification))
+        }
+
+        return result
+    }
+
+    // Add a single new notification (e.g., from real-time updates)
+    fun addNewNotification(notification: FeedNotification) {
+        val timestamp = notification.getTimestamp()
+
+        // Determine which section this notification belongs to
+        val calendar = Calendar.getInstance()
+        calendar.set(Calendar.HOUR_OF_DAY, 0)
+        calendar.set(Calendar.MINUTE, 0)
+        calendar.set(Calendar.SECOND, 0)
+        calendar.set(Calendar.MILLISECOND, 0)
+        val today = calendar.timeInMillis
+
+        calendar.add(Calendar.DAY_OF_YEAR, -1)
+        val yesterday = calendar.timeInMillis
+
+        calendar.set(Calendar.HOUR_OF_DAY, 0)
+        calendar.set(Calendar.MINUTE, 0)
+        calendar.set(Calendar.SECOND, 0)
+        calendar.set(Calendar.MILLISECOND, 0)
+        calendar.add(Calendar.DAY_OF_YEAR, -6) // 7 days ago total
+        val sevenDaysAgo = calendar.timeInMillis
+
+        val section = when {
+            timestamp >= today -> "Today"
+            timestamp >= yesterday -> "Yesterday"
+            timestamp >= sevenDaysAgo -> "This Week"
+            else -> "Older"
+        }
+
+        // Find the position to insert
+        var insertPosition = 0
+        var headerExists = false
+
+        // Check if the header for this section already exists
+        for (i in items.indices) {
+            val item = items[i]
+            if (item is NotificationItem.Header && item.title == section) {
+                headerExists = true
+                insertPosition = i + 1
+                break
+            }
+            if (item is NotificationItem.Header) {
+                // If we found a different header, we need to insert before it
+                insertPosition = i
+                break
+            }
+        }
+
+        // If no header exists, add it first
+        if (!headerExists) {
+            items.add(insertPosition, NotificationItem.Header(section))
+            notifyItemInserted(insertPosition)
+            insertPosition++
+        }
+
+        // Find correct position within the section (sorted by timestamp)
+        var notificationPosition = insertPosition
+        while (notificationPosition < items.size) {
+            val item = items[notificationPosition]
+            if (item is NotificationItem.Header) {
+                // Reached next section, insert before it
+                break
+            }
+            if (item is NotificationItem.NotificationData) {
+                if (timestamp > item.notification.getTimestamp()) {
+                    // Found the right position
+                    break
+                }
+            }
+            notificationPosition++
+        }
+
+        // Insert the notification
+        items.add(notificationPosition, NotificationItem.NotificationData(notification))
+        notifyItemInserted(notificationPosition)
+
+    }
+
+    // Remove a notification by ID
+    fun removeNotification(notificationId: String) {
+        val position = items.indexOfFirst {
+            it is NotificationItem.NotificationData && it.notification._id == notificationId
+        }
+
+        if (position != -1) {
+            items.removeAt(position)
+            notifyItemRemoved(position)
+
+            // Check if the section is now empty and remove header if needed
+            removeEmptyHeaders()
+        }
+    }
+
+    // Update notification read status
+    fun updateNotificationReadStatus(notificationId: String, isRead: Boolean) {
+        val position = items.indexOfFirst {
+            it is NotificationItem.NotificationData && it.notification._id == notificationId
+        }
+
+        if (position != -1) {
+            val item = items[position] as NotificationItem.NotificationData
+            val updatedNotification = item.notification.copy(read = isRead)
+            items[position] = NotificationItem.NotificationData(updatedNotification)
+            notifyItemChanged(position)
+        }
+    }
+
+    private fun removeEmptyHeaders() {
+        val headersToRemove = mutableListOf<Int>()
+
+        for (i in items.indices) {
+            if (items[i] is NotificationItem.Header) {
+                // Check if next item is another header or end of list
+                val isLastItem = i == items.size - 1
+                val nextIsHeader = !isLastItem && items[i + 1] is NotificationItem.Header
+
+                if (isLastItem || nextIsHeader) {
+                    headersToRemove.add(i)
+                }
+            }
+        }
+
+        // Remove headers in reverse order to maintain correct indices
+        headersToRemove.reversed().forEach { index ->
+            items.removeAt(index)
+            notifyItemRemoved(index)
+        }
+    }
+
+    // ViewHolder for Header
+    class HeaderViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        private val headerText: TextView = itemView.findViewById(R.id.headerText)
+
+        fun bind(header: NotificationItem.Header) {
+            headerText.text = header.title
+        }
+    }
+
+    // ViewHolder for Notification
+    inner  class NotificationViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        private val titleText: TextView = itemView.findViewById(R.id.notificationTitle)
+        private val messageText: TextView = itemView.findViewById(R.id.notificationMessage)
+        private val timeText: TextView = itemView.findViewById(R.id.notificationTime)
+        private val imageView: ImageView = itemView.findViewById(R.id.notificationImage)
+        private val optionsMenu: ImageView = itemView.findViewById(R.id.optionsMenu)
+
+        fun bind(notification: FeedNotification, position: Int) {
+
+            setupNotification(notification)
+            updateNotificationState(notification)
+            itemView.setOnClickListener { onNotificationClick(notification, position) }
+            optionsMenu.setOnClickListener { view ->
+                showPopupMenu(view, notification,position)
+            }
+        }
+
+        private fun setupNotification(item: FeedNotification) {
+            titleText.text = item.sender.username
+            messageText.text = item.message
+            timeText.text = getTimeAgo(item.getTimestamp())
+
+            Glide.with(imageView.context)
+                .load(item.sender.avatar.url)
+                .error(R.drawable.ic_person)
+                .circleCrop()
+                .into(imageView)
+        }
+
+        private fun updateNotificationState(notification: FeedNotification) {
+            // Change background for unread notifications
+            itemView.setBackgroundColor(
+                if (notification.read)
+                    Color.TRANSPARENT
+                else
+                    itemView.context.resources.getColor(R.color.unReadNotification)
+            )
+        }
+
+        private fun getTimeAgo(timestamp: Long): String {
+            val now = System.currentTimeMillis()
+            val diff = now - timestamp
+
+            return when {
+                diff < 60_000 -> "Just now"
+                diff < 3600_000 -> {
+                    val minutes = diff / 60_000
+                    if (minutes == 1L) "1 minute ago" else "$minutes minutes ago"
+                }
+                diff < 86400_000 -> {
+                    val hours = diff / 3600_000
+                    if (hours == 1L) "1 hour ago" else "$hours hours ago"
+                }
+                diff < 604800_000 -> {
+                    val days = diff / 86400_000
+                    if (days == 1L) "1 day ago" else "$days days ago"
+                }
+                else -> {
+                    val weeks = diff / 604800_000
+                    if (weeks == 1L) "1 week ago" else "$weeks weeks ago"
+                }
+            }
+        }
+
+        private fun showPopupMenu(
+            view: View,
+            notification: FeedNotification,
+            position: Int
+        ) {
+            val popup = PopupMenu(view.context, view)
+            popup.menuInflater.inflate(R.menu.notification_menu_options, popup.menu)
+
+            // Show/hide "Mark as Read" based on current state
+            val markAsReadItem = popup.menu.findItem(R.id.action_mark_as_read)
+            if (notification.read) {
+                markAsReadItem?.title = "Mark as Unread"
+            } else {
+                markAsReadItem?.title = "Mark as Read"
+            }
+
+            popup.setOnMenuItemClickListener { menuItem ->
+                when (menuItem.itemId) {
+                    R.id.action_mark_as_read -> {
+                        onMarkAsRead(notification, position)
+                        true
+                    }
+                    R.id.delete -> {
+                        onDelete(notification, position)
+                        true
+                    }
+                    else -> false
+                }
+            }
+
+            popup.show()
+        }
+    }
+
+    // ViewHolder for Loading
+    inner    class LoadingViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView)
 
 }
 
-/**these are the class view holder */
-class TextViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-    val notificationMessage: TextView = itemView.findViewById(R.id.notificationMessage)
-    val username: TextView = itemView.findViewById(R.id.username)
-    val profilePic: ImageView = itemView.findViewById(R.id.profilePic1)
+// Sealed class for different view types
+sealed class NotificationItem {
+    data class Header(val title: String) : NotificationItem()
+    data class NotificationData(val notification: FeedNotification) : NotificationItem()
+    object Loading : NotificationItem()
 }
 
-class ImageViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-    val notificationMessage: TextView = itemView.findViewById(R.id.notificationMessage)
-    val username: TextView = itemView.findViewById(R.id.username)
-    val profilePic: ImageView = itemView.findViewById(R.id.profilePic1)
-}
-
-class FollowViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-    val notificationMessage: TextView = itemView.findViewById(R.id.notificationMessage)
-    val username: TextView = itemView.findViewById(R.id.username)
-    val profilePic: ImageView = itemView.findViewById(R.id.profilePic1)
-}
-
-class UnfollowViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-    val notificationMessage: TextView = itemView.findViewById(R.id.notificationMessageUnfollow)
-    val username: TextView = itemView.findViewById(R.id.username)
-    val profilePic: ImageView = itemView.findViewById(R.id.profilePic1)
-    val notificationTime: TextView = itemView.findViewById(R.id.notificationTime)
-}
-
-class CommentReplyViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-    val notificationMessage: TextView = itemView.findViewById(R.id.notificationMessage)
-    val profilePic: ImageView = itemView.findViewById(R.id.profilePic1)
-    val username: TextView = itemView.findViewById(R.id.username)
-    val notificationTime: TextView = itemView.findViewById(R.id.notificationTime)
-}
-
-class FavoriteViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-    val notificationMessage: TextView = itemView.findViewById(R.id.notificationMessage1)
-    val profilePic: ImageView = itemView.findViewById(R.id.profilePic1)
-    val username: TextView = itemView.findViewById(R.id.username)
-    val notificationTime: TextView = itemView.findViewById(R.id.notificationTime)
-}
-
-class LikeNotificationViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-    val notificationMessage: TextView = itemView.findViewById(R.id.notificationMessage)
-    val profilePic: ImageView = itemView.findViewById(R.id.profilePic1)
-    val username: TextView = itemView.findViewById(R.id.username)
-    val notificationTime: TextView = itemView.findViewById(R.id.notificationTime)
-}
-
-class OnCommentViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-    val notificationMessage: TextView = itemView.findViewById(R.id.notificationMessage)
-    val profilePic: ImageView = itemView.findViewById(R.id.profilePic1)
-    val username: TextView = itemView.findViewById(R.id.username)
-    val notificationTime: TextView = itemView.findViewById(R.id.notificationTime)
-}
-
-class FriendSuggestionViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-
-
-}

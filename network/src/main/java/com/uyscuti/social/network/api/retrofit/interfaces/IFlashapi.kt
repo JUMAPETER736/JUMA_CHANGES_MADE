@@ -1119,6 +1119,11 @@ interface IFlashapi {
         @Query("limit") limit:Int
     ): Response<GetUnifiedNotifications>
 
+    @GET("feed/post/one/{postId}")
+    suspend fun getFeedPostById(
+        @Path("postId") postId: String
+    ): Response<FeedResponse>
+
 
     //  Existing — signature UNCHANGED so nothing else breaks
     @POST("chat-app/chats/group")
