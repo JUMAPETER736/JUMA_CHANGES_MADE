@@ -5,6 +5,7 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Activity.RESULT_OK
 import android.content.ClipboardManager
+import android.content.ContentUris
 import android.content.Context
 import android.content.Context.INPUT_METHOD_SERVICE
 import android.content.Context.MODE_PRIVATE
@@ -18,6 +19,7 @@ import android.os.Bundle
 import android.os.Environment
 import android.os.Handler
 import android.os.Looper
+import android.provider.MediaStore
 import android.provider.OpenableColumns
 import android.util.Log
 import android.view.LayoutInflater
@@ -780,6 +782,28 @@ class FavoriteFragment : Fragment(),
         val intent = Intent(requireActivity(), CatalogueDetailsActivity::class.java)
         intent.putExtra("catalogue", item)
         requireActivity().startActivity(intent)
+    }
+
+    private fun getContentUriFromFilePath(context: Context, filePath: String): Uri? {
+        val file = File(filePath)
+        val projection = arrayOf(MediaStore.Files.FileColumns._ID)
+        val selection = "${MediaStore.Files.FileColumns.DATA}=?"
+        val selectionArgs = arrayOf(file.absolutePath)
+
+        context.contentResolver.query(
+            MediaStore.Files.getContentUri("external"),
+            projection,
+            selection,
+            selectionArgs,
+            null
+        )?.use { cursor ->
+            if (cursor.moveToFirst()) {
+                val id =
+                    cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns._ID))
+                return ContentUris.withAppendedId(MediaStore.Files.getContentUri("external"), id)
+            }
+        }
+        return null
     }
 
     private fun followBusinessPostOwner(post: Post) {
@@ -4011,6 +4035,12 @@ class FavoriteFragment : Fragment(),
             lastSeen = Date(),
             true
         )
+    }
+
+    private fun insertDialog(dialog: DialogEntity) {
+        CoroutineScope(Dispatchers.IO).launch {
+            dialogViewModel.insertDialog(dialog)
+        }
     }
 
     override fun likeUnlikeCommentReply(
