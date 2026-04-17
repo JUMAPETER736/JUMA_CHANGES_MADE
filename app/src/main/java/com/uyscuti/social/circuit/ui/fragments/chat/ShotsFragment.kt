@@ -141,6 +141,7 @@ import com.uyscuti.sharedmodule.model.PausePlayEvent
 import com.uyscuti.sharedmodule.model.ProgressEvent
 import com.uyscuti.sharedmodule.model.ProgressViewModel
 import com.uyscuti.sharedmodule.model.ShortsBookmarkButton
+import com.uyscuti.sharedmodule.model.ShortsFavoriteUnFavorite
 import com.uyscuti.sharedmodule.model.ShortsFollowButtonClicked
 import com.uyscuti.sharedmodule.model.ShortsLikeUnLike
 import com.uyscuti.sharedmodule.model.ShortsLikeUnLikeButton
@@ -358,6 +359,7 @@ class ShortsAdapter(
         val view = LayoutInflater.from(parent.context).inflate(
             R.layout.shorts_view_pager_item, parent, false
         )
+
         val viewHolder = StringViewHolder(
             view,
             commentsClickListener,
@@ -857,11 +859,11 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor(
         }
 
         btnLike.setOnClickListener {
-            handleLikeClick(shortOwnerId)
+            handleLikeClick(data)
         }
 
         favorite.setOnClickListener {
-            handleFavoriteClick()
+            handleFavoriteClick(data)
         }
 
         shareBtn.setOnClickListener {
@@ -938,7 +940,7 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor(
         downloadCount.text = formatCount(totalDownloads)
     }
 
-    private fun handleLikeClick(shortOwnerId: String) {
+    private fun handleLikeClick(data: MyData) {
         isLiked = !isLiked
         if (isLiked) {
             totalLikes += 1
@@ -948,7 +950,7 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor(
             )
             btnLike.setImageResource(R.drawable.filled_favorite_like)
             YoYo.with(Techniques.Tada).duration(700).repeat(1).playOn(btnLike)
-            EventBus.getDefault().post(ShortsLikeUnLike(shortOwnerId, isLiked))
+            EventBus.getDefault().post(ShortsLikeUnLike(data.shortsEntity._id))
         } else {
             totalLikes = maxOf(0, totalLikes - 1)
             likeCount.text = totalLikes.toString()
@@ -957,11 +959,11 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor(
             )
             btnLike.setImageResource(R.drawable.favorite_svgrepo_com)
             YoYo.with(Techniques.Tada).duration(700).repeat(1).playOn(btnLike)
-            EventBus.getDefault().post(ShortsLikeUnLike(shortOwnerId, isLiked))
+            EventBus.getDefault().post(ShortsLikeUnLike(data.shortsEntity._id))
         }
     }
 
-    private fun handleFavoriteClick() {
+    private fun handleFavoriteClick(data: MyData) {
         isFavorite = !isFavorite
         if (isFavorite) {
             totalFavorites += 1
@@ -971,6 +973,7 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor(
             )
             favorite.setImageResource(R.drawable.filled_favorite)
             YoYo.with(Techniques.Tada).duration(700).repeat(1).playOn(favorite)
+            EventBus.getDefault().post(ShortsFavoriteUnFavorite(data.shortsEntity._id))
         } else {
             totalFavorites = maxOf(0, totalFavorites - 1)
             favoriteCount.text = totalFavorites.toString()
@@ -979,6 +982,7 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor(
             )
             favorite.setImageResource(R.drawable.favorite_svgrepo_com__1_)
             YoYo.with(Techniques.Tada).duration(700).repeat(1).pivotX(2.6F).playOn(favorite)
+            EventBus.getDefault().post(ShortsFavoriteUnFavorite(data.shortsEntity._id))
         }
     }
 
@@ -1950,7 +1954,7 @@ class ShotsFragment : Fragment(), OnClickListeners {
                 )
 
                 // Sort by createdAt in descending order (newest first)
-                val sortedPosts = responseBody.data.posts.posts.sortedByDescending { it.createdAt }
+                val sortedPosts = responseBody.data.posts.shorts.sortedByDescending { it.createdAt }
                 val shortsEntity = serverResponseToEntity(sortedPosts)
 
                 val followListItem =
@@ -2108,59 +2112,51 @@ class ShotsFragment : Fragment(), OnClickListeners {
                 val responseBody = response.body()
                 Log.d(
                     "AllShorts3",
-                    "Shorts List in page $currentPage ${responseBody?.data!!.posts}"
+                    "Shorts List in page $currentPage ${responseBody?.data?.posts}"
                 )
                 Log.d(
                     "AllShorts3",
-                    "loadMoreShorts: followItem:  ${responseBody.data.followList}"
+                    "loadMoreShorts: followItem:  ${responseBody?.data?.followList}"
                 )
 
-                // Sort by createdAt in descending order (newest first)
-                val sortedPosts = responseBody.data.posts.posts.sortedByDescending { it.createdAt }
-                val shortsEntity = serverResponseToEntity(sortedPosts)
+                val shorts = responseBody?.data?.posts?.shorts
+                if (shorts.isNullOrEmpty()) {
+                    Log.d("AllShorts3", "Shorts list is null or empty, nothing to load")
+                    return
+                }
 
-                val followListItem =
-                    responseBody.data.followList.let { serverResponseToFollowEntity(it) }
+                val shortsEntity = serverResponseToEntity(shorts)
 
-                // Now, insert yourEntity into the Room database
+                val followListItem = responseBody.data.followList?.let {
+                    serverResponseToFollowEntity(it)
+                } ?: emptyList()
+
                 lifecycleScope.launch(Dispatchers.IO) {
-
                     val uniqueFollowList = removeDuplicateFollowers(followListItem)
                     Log.d(
                         "AllShorts3",
                         "getAllShort3: Inserted uniqueFollowList $uniqueFollowList"
                     )
                     followShortsViewModel.insertFollowListItems(uniqueFollowList)
+
                     if (uniqueFollowList.isEmpty()) {
                         Log.d("AllShorts3", "loadMoreShorts:uniqueFollowList is empty")
 
                         withContext(Dispatchers.Main) {
                             followShortsViewModel._followListItems.observe(viewLifecycleOwner) {
                                 shortsViewModel.followList.addAll(it)
-
                                 shortsAdapter.addIsFollowingData(it)
-
                             }
                         }
                     }
 
-
                     for (entity in shortsEntity) {
-
-                        // Access the list of images for each entity
                         val images = entity.images
-
                         Log.d("ShortsData", "short: $entity")
-
-
-                        // Add the unique entity to both the set and your ViewModel's list
                         shortsViewModel.videoShorts.add(entity)
 
-
                         for (image in images) {
-                            // Access individual image properties or perform any desired actions
                             val imageUrl = image.url
-
                             shortsList.add(imageUrl)
                         }
                     }
@@ -2170,31 +2166,18 @@ class ShotsFragment : Fragment(), OnClickListeners {
                         if (shortsEntity.isNotEmpty()) {
                             Log.d("AllShorts3", "loadMoreShorts: shorts entity is not empty")
 
-
                             shortsViewModel.mutableShortsList.addAll(shortsEntity)
                             shortsViewModel.followList.addAll(followListItem)
                             shortsAdapter.addData(shortsEntity)
-
                             shortsAdapter.addIsFollowingData(followListItem)
-
                         } else {
                             Log.d("AllShorts3", "loadMoreShorts:shorts entity is empty")
                         }
-
                     }
-
                 }
-
 
             } else {
                 Log.d("ErrorInShortsFragment", "Error message: ${response.message()}")
-                Log.d("ErrorInShortsFragment", "Error body: ${response.body()}")
-                Log.d("ErrorInShortsFragment", "Error error body: ${response.errorBody()}")
-                Log.d("ErrorInShortsFragment", "Error response: $response")
-                Log.d("ErrorInShortsFragment", "Error response code: ${response.code()}")
-                Log.d("ErrorInShortsFragment", "Error response headers: ${response.headers()}")
-                Log.d("ErrorInShortsFragment", "Error response raw: ${response.raw()}")
-
                 requireActivity().runOnUiThread {
                     showToast(response.message())
                 }
@@ -2230,7 +2213,7 @@ class ShotsFragment : Fragment(), OnClickListeners {
                 )
 
                 // Sort by createdAt in descending order (newest first)
-                val sortedPosts = responseBody.data.posts.posts.sortedByDescending { it.createdAt }
+                val sortedPosts = responseBody.data.posts.shorts.sortedByDescending { it.createdAt }
                 val shortsEntity = serverResponseToEntity(sortedPosts)
 
                 val followListItem =
@@ -2454,12 +2437,22 @@ class ShotsFragment : Fragment(), OnClickListeners {
         }
     }
 
-    private fun serverResponseToFollowEntity(serverResponse: List<FollowListItem>): List<ShortsEntityFollowList> {
-        return serverResponse.map { serverResponse ->
-            ShortsEntityFollowList(
-                followersId = serverResponse.followersId,
-                isFollowing = serverResponse.isFollowing
-            )
+    private fun serverResponseToFollowEntity(serverResponse: List<FollowListItem>?): List<ShortsEntityFollowList> {
+        // Handle null or empty list
+        if (serverResponse.isNullOrEmpty()) {
+            return emptyList()
+        }
+
+        return serverResponse.mapNotNull { followItem ->
+            // Skip null items
+            if (followItem.followersId == null || followItem.isFollowing == null) {
+                null
+            } else {
+                ShortsEntityFollowList(
+                    followersId = followItem.followersId,
+                    isFollowing = followItem.isFollowing
+                )
+            }
         }
     }
 
