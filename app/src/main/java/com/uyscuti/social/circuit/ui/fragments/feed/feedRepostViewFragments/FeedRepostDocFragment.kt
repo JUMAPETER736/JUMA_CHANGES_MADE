@@ -143,4 +143,101 @@ class FeedRepostDocFragment : Fragment(), OnFeedClickListener {
 
 
 
+    override fun onResume() {
+        Log.d(TAG, "onResume: ")
+        super.onResume()
+        backPressedCallback = object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                // Handle back press
+//                navigateBack()
+                if (feedTextViewFragmentInterface != null) {
+                    feedTextViewFragmentInterface?.backPressedFromFeedTextViewFragment()
+                }
+            }
+        }
+        requireActivity().onBackPressedDispatcher.addCallback(this, backPressedCallback)
+    }
+    fun setListener(listener: FeedTextViewFragmentInterface) {
+        feedTextViewFragmentInterface = listener
+    }
+
+    override fun likeUnLikeFeed(
+        position: Int,
+        data: com.uyscuti.social.network.api.response.posts.Post
+    ) {
+        TODO("Not yet implemented")
+    }
+
+    override fun feedCommentClicked(
+        position: Int,
+        data: com.uyscuti.social.network.api.response.posts.Post
+    ) {
+        TODO("Not yet implemented")
+    }
+
+    override fun feedFavoriteClick(
+        position: Int,
+        data: com.uyscuti.social.network.api.response.posts.Post
+    ) {
+        TODO("Not yet implemented")
+    }
+
+    override fun moreOptionsClick(
+        position: Int,
+        data: com.uyscuti.social.network.api.response.posts.Post
+    ) {
+        TODO("Not yet implemented")
+    }
+
+    override fun feedFileClicked(
+        position: Int,
+        data: com.uyscuti.social.network.api.response.posts.Post
+    ) {
+        TODO("Not yet implemented")
+    }
+
+    override fun feedRepostFileClicked(
+        position: Int,
+        data: com.uyscuti.social.network.api.response.posts.OriginalPost
+    ) {
+        TODO("Not yet implemented")
+    }
+
+
+
+    override fun feedShareClicked(
+        position: Int,
+        data: com.uyscuti.social.network.api.response.posts.Post
+    ) {
+        TODO("Not yet implemented")
+    }
+
+    override fun followButtonClicked(
+        followUnFollowEntity: FollowUnFollowEntity,
+        followButton: AppCompatButton
+    ) {
+        TODO("Not yet implemented")
+    }
+
+    override fun feedRepostPost(
+        position: Int,
+        data: com.uyscuti.social.network.api.response.posts.Post
+    ) {
+        TODO("Not yet implemented")
+    }
+
+    override fun feedRepostPostClicked(
+        position: Int,
+        data: com.uyscuti.social.network.api.response.posts.Post
+    ) {
+        TODO("Not yet implemented")
+    }
+
+    override fun feedClickedToOriginalPost(position: Int, originalPostId: String) {
+        TODO("Not yet implemented")
+    }
+
+    override fun onImageClick() {
+        TODO("Not yet implemented")
+    }
 }
