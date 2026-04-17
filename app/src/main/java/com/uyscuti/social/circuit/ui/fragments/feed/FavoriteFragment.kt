@@ -1317,8 +1317,6 @@ class FavoriteFragment : Fragment(),
         EventBus.getDefault().unregister(this)
     }
 
-
-
     @SuppressLint("InflateParams", "MissingInflatedId")
     override fun moreOptionsClick(position: Int, data: com.uyscuti.social.network.api.response.posts.Post) {
         Log.d(TAG, "moreOptionsClick: More options clicked")
@@ -1424,7 +1422,7 @@ class FavoriteFragment : Fragment(),
 
                 favoriteFeedAdapter.removeItem(position)
                 favoriteFeedAdapter.notifyItemRemoved(position)
-
+//                allFeedAdapter.notifyItemChanged(position)
                 // Optional: Add fade-out animation
                 val viewHolder = binding.rv.findViewHolderForAdapterPosition(position)
                 if (viewHolder != null) {
@@ -1463,6 +1461,16 @@ class FavoriteFragment : Fragment(),
         }
     }
 
+
+    private fun muteUserOption(userId: String) {
+        Log.d(TAG, "muteUserOption: $userId")
+        val sharedPreferences = requireContext().getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
+        val editor = sharedPreferences.edit()
+        val mutedUsersSet = sharedPreferences.getStringSet("muted_users", mutableSetOf()) ?: mutableSetOf()
+        mutedUsersSet.add(userId)
+        editor.putStringSet("muted_users", mutedUsersSet)
+        editor.apply()
+    }
 
     @OptIn(DelicateCoroutinesApi::class)
     private fun downloadMediaFile(fileUrl: String, fileName: String, fileType: String) {
@@ -1513,6 +1521,9 @@ class FavoriteFragment : Fragment(),
             }
         }
     }
+
+    @SuppressLint("ServiceCast")
+
 
 
     fun forShow() {
