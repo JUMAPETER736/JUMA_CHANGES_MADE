@@ -36,9 +36,9 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.ActivityResultLauncher
-import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.AppCompatButton
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -54,10 +54,12 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
+import androidx.media3.database.ExoDatabaseProvider
 import androidx.media3.datasource.DefaultDataSourceFactory
 import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.datasource.HttpDataSource
 import androidx.media3.datasource.cache.CacheDataSource
+import androidx.media3.datasource.cache.LeastRecentlyUsedCacheEvictor
 import androidx.media3.datasource.cache.SimpleCache
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
@@ -72,6 +74,10 @@ import com.google.android.material.snackbar.Snackbar
 import com.tom_roush.pdfbox.pdmodel.PDDocument
 import com.uyscuti.social.circuit.adapter.feed.ShareFeedPostAdapter
 import com.uyscuti.social.circuit.ui.feedactivities.FeedVideoViewFragment
+import com.uyscuti.social.circuit.ui.fragments.feed.feedRepostViewFragments.FeedRepostDocFragment
+import com.uyscuti.social.circuit.ui.fragments.feed.feedRepostViewFragments.FeedRepostImageFragment
+import com.uyscuti.social.circuit.ui.fragments.feed.feedRepostViewFragments.FeedRepostTextFragment
+import com.uyscuti.social.circuit.ui.fragments.feed.feedRepostViewFragments.FeedRepostVideoViewFragment
 import com.uyscut.flashdesign.ui.fragments.feed.feedviewfragments.FeedAudioViewFragment
 import com.uyscut.flashdesign.ui.fragments.feed.feedviewfragments.FeedMultipleImageViewFragment
 import com.uyscut.flashdesign.ui.fragments.feed.feedviewfragments.FeedTextViewFragment
@@ -82,7 +88,10 @@ import com.uyscuti.sharedmodule.adapter.OnViewRepliesClickListener
 import com.uyscuti.sharedmodule.adapter.feed.FeedAdapter
 import com.uyscuti.sharedmodule.adapter.feed.OnFeedClickListener
 import com.uyscuti.sharedmodule.adapter.notifications.AdPaginatedAdapter
-import com.uyscuti.sharedmodule.data.model.Comment
+import com.uyscuti.social.network.api.models.Comment
+import com.uyscuti.social.core.models.data.Dialog
+import com.uyscuti.social.core.models.data.Message
+import com.uyscuti.social.core.models.data.User
 import com.uyscuti.sharedmodule.eventbus.FeedFavoriteClick
 import com.uyscuti.sharedmodule.eventbus.FeedFavoriteFollowUpdate
 import com.uyscuti.sharedmodule.eventbus.FeedLikeClick
@@ -105,9 +114,12 @@ import com.uyscuti.sharedmodule.popupDialog.DialogManager
 import com.uyscuti.sharedmodule.presentation.DialogViewModel
 import com.uyscuti.sharedmodule.presentation.MessageViewModel
 import com.uyscuti.sharedmodule.ui.GifActivity
+import com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.FeedMixedFilesViewFragment
 import com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.Fragment_Original_Post_With_Repost_Inside
 import com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.NewRepostedPostFragment
 import com.uyscuti.sharedmodule.uploads.AudioActivity
+import com.uyscuti.sharedmodule.uploads.DocumentsActivity
+import com.uyscuti.sharedmodule.uploads.ImagesActivity
 import com.uyscuti.sharedmodule.uploads.VideosActivity
 import com.uyscuti.sharedmodule.utils.AndroidUtil.showToast
 import com.uyscuti.sharedmodule.utils.AudioDurationHelper
@@ -146,6 +158,8 @@ import com.uyscuti.social.business.viewmodel.business.BusinessPostsViewModel
 import com.uyscuti.social.chatsuit.messages.CommentsInput
 import com.uyscuti.social.circuit.R
 import com.uyscuti.social.circuit.databinding.FragmentFavoriteBinding
+import com.uyscuti.social.circuit.ui.fragments.feed.feedRepostViewFragments.FeedRepostAudioViewFragment
+import com.uyscuti.social.circuit.ui.fragments.feed.feedRepostViewFragmentsimport.FeedRepostMultipleImageFragment
 import com.uyscuti.social.core.common.data.api.RemoteMessageRepository
 import com.uyscuti.social.core.common.data.api.RemoteMessageRepositoryImpl
 import com.uyscuti.social.core.common.data.room.entity.DialogEntity
@@ -153,9 +167,7 @@ import com.uyscuti.social.core.common.data.room.entity.FollowUnFollowEntity
 import com.uyscuti.social.core.common.data.room.entity.MessageEntity
 import com.uyscuti.social.core.common.data.room.entity.ShortsEntityFollowList
 import com.uyscuti.social.core.common.data.room.entity.UserEntity
-import com.uyscuti.social.core.models.data.Dialog
-import com.uyscuti.social.core.models.data.Message
-import com.uyscuti.social.core.models.data.User
+import com.uyscuti.social.network.api.request.messages.SendMessageRequest
 import com.uyscuti.social.network.api.response.business.response.post.Post
 import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
 import com.uyscuti.social.network.utils.LocalStorage
@@ -172,6 +184,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.apache.poi.hwpf.HWPFDocument
 import org.apache.poi.hwpf.usermodel.Range
+import org.apache.poi.ss.usermodel.WorkbookFactory
 import org.apache.poi.xwpf.usermodel.XWPFDocument
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
@@ -190,7 +203,7 @@ import javax.inject.Inject
 import kotlin.properties.Delegates
 import kotlin.random.Random
 
-
+// TODO: Rename parameter arguments, choose names that match
 // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
 private const val ARG_PARAM1 = "param1"
 private const val ARG_PARAM2 = "param2"
@@ -279,7 +292,7 @@ class FavoriteFragment : Fragment(),
     private var postPosition = 0
     private var commentId = ""
 
-    private var commentToAddReplies: com.uyscuti.social.network.api.models.Comment? = null
+    private var commentToAddReplies: Comment? = null
     private var commentPosition = 0
 
 
@@ -422,7 +435,6 @@ class FavoriteFragment : Fragment(),
         EventBus.getDefault().register(this)
         remoteMessageRepository = RemoteMessageRepositoryImpl(retrofitInstance)
     }
-
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     @SuppressLint("CutPasteId")
     override fun onCreateView(
@@ -606,77 +618,9 @@ class FavoriteFragment : Fragment(),
         return binding.root
     }
 
-    private fun registerImagePicker() {
-        imagePickerLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-            if (result.resultCode == RESULT_OK) {
-                // Handle image selection result here
-                val data = result.data
-                // Process the selected image data
-                val imagePath = data?.getStringExtra("image_url")
-                val caption = data?.getStringExtra("caption") ?: ""
-
-                val filePath = PathUtil.getPath(
-                    requireActivity(),
-                    imagePath!!.toUri()
-                ) // Use the utility class to get the real file path
-                Log.d("PhotoPicker", "File path: $filePath")
-                Log.d("PhotoPicker", "File path: $isReply")
-
-                val file = filePath?.let { File(it) }
-                if (file?.exists() == true) {
-                    lifecycleScope.launch {
-                        val compressedImageFile = Compressor.compress(requireActivity(), file)
-                        Log.d(
-                            "PhotoPicker",
-                            "PhotoPicker: compressedImageFile absolutePath: ${compressedImageFile.absolutePath}"
-                        )
-
-                        val fileSizeInBytes = compressedImageFile.length()
-                        val fileSizeInKB = fileSizeInBytes / 1024
-                        val fileSizeInMB = fileSizeInKB / 1024
-
-                        Log.d(
-                            "PhotoPicker",
-                            "PhotoPicker: compressedImageFile size $fileSizeInKB KB, $fileSizeInMB MB"
-                        )
-
-                        if (!isReply) {
-                            uploadImageComment(
-                                compressedImageFile.absolutePath,
-                                caption,
-                                isReply
-                            )
-                        } else {
-                            uploadImageComment(
-                                compressedImageFile.absolutePath,
-                                caption,
-                                isReply
-                            )
-                        }
-                    }
-                }
-
-            }
-        }
-    }
-
-    private fun registerDocPicker() {
-        docsPickerLauncher =
-            registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-                if (result.resultCode == RESULT_OK) {
-                    val data = result.data
-                    // Process the selected image data
-                    val docPath = data?.getStringExtra("doc_url")
-                    val caption = data?.getStringExtra("caption") ?: ""
-
-                    Log.d(TAG, "Path: $docPath caption: $caption")
-
-                    handleDocumentUri(
-                        getContentUriFromFilePath(requireActivity(), docPath!!)!!,
-                        caption
-                    )
-                }
-            }
+    override fun onResume() {
+        super.onResume()
+        chatManager.listener = this@FavoriteFragment
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -694,7 +638,7 @@ class FavoriteFragment : Fragment(),
                     TAG,
                     "onCreateView: data is available and size is ${getFeedViewModel.getAllFavoriteFeedData().size}"
                 )
-
+//                    allFeedAdapter.item
                 favoriteFeedAdapter.submitItems(getFeedViewModel.getAllFavoriteFeedData())
                 getFeedViewModel.setIsDataAvailable(false)
 
@@ -705,8 +649,6 @@ class FavoriteFragment : Fragment(),
             }
         }
     }
-
-
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     private fun handleEventsLister() {
@@ -784,28 +726,6 @@ class FavoriteFragment : Fragment(),
         requireActivity().startActivity(intent)
     }
 
-    private fun getContentUriFromFilePath(context: Context, filePath: String): Uri? {
-        val file = File(filePath)
-        val projection = arrayOf(MediaStore.Files.FileColumns._ID)
-        val selection = "${MediaStore.Files.FileColumns.DATA}=?"
-        val selectionArgs = arrayOf(file.absolutePath)
-
-        context.contentResolver.query(
-            MediaStore.Files.getContentUri("external"),
-            projection,
-            selection,
-            selectionArgs,
-            null
-        )?.use { cursor ->
-            if (cursor.moveToFirst()) {
-                val id =
-                    cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns._ID))
-                return ContentUris.withAppendedId(MediaStore.Files.getContentUri("external"), id)
-            }
-        }
-        return null
-    }
-
     private fun followBusinessPostOwner(post: Post) {
 
         viewLifecycleOwner.lifecycleScope.launch {
@@ -826,6 +746,8 @@ class FavoriteFragment : Fragment(),
             businessPostsViewModel.bookmarkUnBookmarkBusinessPost(data._id)
         }
     }
+
+
 
     private fun getAllFeed(page: Int) {
         CoroutineScope(Dispatchers.IO).launch {
@@ -854,6 +776,7 @@ class FavoriteFragment : Fragment(),
                     getFeedViewModel.addAllFavoriteFeedData(data.bookmarkedPosts.toMutableList())
                     withContext(Dispatchers.Main) {
                         favoriteFeedAdapter.submitItems(data.bookmarkedPosts.toMutableList())
+                        favoriteFeedAdapter.notifyDataSetChanged()
                     }
                     Log.d(TAG, "text comment data response: $data")
                 } else {
@@ -867,6 +790,26 @@ class FavoriteFragment : Fragment(),
             }
         }
     }
+
+    companion object {
+        /**
+         * Use this factory method to create a new instance of
+         * this fragment using the provided parameters.
+         * @param param1 Parameter 1.
+         * @param param2 Parameter 2.
+         * @return A new instance of fragment FavoriteFragment.
+         **/
+        // TODO: Rename and change types and number of parameters
+        @JvmStatic
+        fun newInstance(param1: String, param2: String) =
+            FavoriteFragment().apply {
+                arguments = Bundle().apply {
+                    putString(ARG_PARAM1, param1)
+                    putString(ARG_PARAM2, param2)
+                }
+            }
+    }
+
 
 
     override fun likeUnLikeFeed(position: Int, data: com.uyscuti.social.network.api.response.posts.Post) {
@@ -934,33 +877,200 @@ class FavoriteFragment : Fragment(),
         )
     }
 
-    // feedFavoriteClick - removes duplicate API call
     override fun feedFavoriteClick(position: Int, data: com.uyscuti.social.network.api.response.posts.Post) {
-        Log.d(TAG, "feedFavoriteClick in FavoriteFragment: postId=${data._id}, isBookmarked=${data.isBookmarked}")
-
-        // Use centralized sync method (API call already happened in adapter)
-        getFeedViewModel.toggleBookmarkInAllFeeds(
-            postId = data._id,
-            isBookmarked = data.isBookmarked,
-            bookmarkCount = data.bookmarkCount
-        )
-
-        // Notify other fragments to sync their UI
         EventBus.getDefault().post(FromFavoriteFragmentFeedFavoriteClick(position, data))
-
-        // If unbookmarked, remove from favorites list after animation
-        if (!data.isBookmarked) {
-            Handler(Looper.getMainLooper()).postDelayed({
-                val currentPosition = favoriteFeedAdapter.getPositionById(data._id)
-                if (currentPosition != -1) {
-                    favoriteFeedAdapter.removeItem(currentPosition)
-                    getFeedViewModel.removeFavoriteFeed(currentPosition)
-                    Log.d(TAG, "Removed post from favorites at position: $currentPosition")
-                }
-            }, 500)
+        val isMyFeedEmpty = getFeedViewModel.getMyFeedData().isEmpty()
+        if (!isMyFeedEmpty) {
+            val myFeedData = getFeedViewModel.getMyFeedData()
+            val feedToUpdate = myFeedData.find { feed -> feed._id == data._id }
+            if (feedToUpdate != null) {
+                feedToUpdate.isBookmarked = data.isBookmarked
+                val myFeedDataPosition = getFeedViewModel.getMyFeedPositionById(feedToUpdate._id)
+                getFeedViewModel.updateMyFeedData(myFeedDataPosition, feedToUpdate)
+            } else {
+                Log.d(TAG, "feedFavoriteClick: feed to update is not available in the list")
+            }
+        } else {
+            Log.i(TAG, "feedFavoriteClick: my feed data is empty")
         }
+        if (!data.isBookmarked) {
+            favoriteFeedAdapter.removeItem(position)
+            getFeedViewModel.removeFavoriteFeed(position)
+        }
+        lifecycleScope.launch {
+            feedUploadViewModel.favoriteFeed(data._id)
+        }
+    }
+
+    @SuppressLint("NotifyDataSetChanged")
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    fun feedAdapterNotifyDatasetChanged(event: FeedAdapterNotifyDatasetChanged) {
+        Log.d(
+            TAG,
+            "FeedAdapterNotifyDatasetChanged: in feed adapter notify adapter: seh data set changed"
+        )
+        favoriteFeedAdapter.notifyDataSetChanged()
 
     }
+
+    @SuppressLint("NotifyDataSetChanged")
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    fun favoriteFeedClick(event: FeedFavoriteClick) {
+
+        Log.d(TAG, "favoriteFeedClick: ${getFeedViewModel.getFollowList()}")
+        if (event.data.isBookmarked) {
+            // Check if the feed already exists in the viewModel
+            val existingFeed = getFeedViewModel.getPositionById(event.data._id)
+            Log.d(TAG, "favoriteFeedClick: existing feed $existingFeed")
+            if (existingFeed == -1) {
+                getFeedViewModel.addFavoriteFeed(0, event.data)
+                favoriteFeedAdapter.addFollowList(getFeedViewModel.getFollowList())
+                favoriteFeedAdapter.notifyDataSetChanged()
+            } else {
+                Log.e(TAG, "favoriteFeedClick: feed already exists")
+            }
+
+            favoriteFeedAdapter.submitItem(event.data, 0)
+
+        } else {
+            val existingFeedPosition = getFeedViewModel.getPositionById(event.data._id)
+            Log.d(TAG, "favoriteFeedClick: existingFeedPosition $existingFeedPosition")
+            if (existingFeedPosition != -1) {
+
+                getFeedViewModel.removeFavoriteFeed(existingFeedPosition)
+            } else {
+                Log.e(
+                    TAG,
+                    "favoriteFeedClick: you can't delete if there is no existing feed position"
+                )
+            }
+            val feedPosition = favoriteFeedAdapter.getPositionById(event.data._id)
+
+            Log.d(
+                TAG,
+                "favoriteFeedClick: item to remove on position $feedPosition"
+            )
+            favoriteFeedAdapter.removeItem(feedPosition)
+        }
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    fun likeFeedClick(event: FeedLikeClick) {
+        Log.d(
+            TAG,
+            "likeFeedClick: event bus position ${event.position} is bookmarked ${event.data.likes}"
+        )
+        val feedPosition = favoriteFeedAdapter.getPositionById(event.data._id)
+        favoriteFeedAdapter.updateItem(feedPosition, event.data)
+        getFeedViewModel.updateForFavoriteFragment(feedPosition, event.data)
+    }
+
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    fun feedFavoriteFollowUpdate(event: FeedFavoriteFollowUpdate) {
+
+    }
+
+    
+
+    private fun registerImagePicker() {
+        imagePickerLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            if (result.resultCode == RESULT_OK) {
+                // Handle image selection result here
+                val data = result.data
+                // Process the selected image data
+                val imagePath = data?.getStringExtra("image_url")
+                val caption = data?.getStringExtra("caption") ?: ""
+
+                val filePath = PathUtil.getPath(
+                    requireActivity(),
+                    imagePath!!.toUri()
+                ) // Use the utility class to get the real file path
+                Log.d("PhotoPicker", "File path: $filePath")
+                Log.d("PhotoPicker", "File path: $isReply")
+
+                val file = filePath?.let { File(it) }
+                if (file?.exists() == true) {
+                    lifecycleScope.launch {
+                        val compressedImageFile = Compressor.compress(requireActivity(), file)
+                        Log.d(
+                            "PhotoPicker",
+                            "PhotoPicker: compressedImageFile absolutePath: ${compressedImageFile.absolutePath}"
+                        )
+
+                        val fileSizeInBytes = compressedImageFile.length()
+                        val fileSizeInKB = fileSizeInBytes / 1024
+                        val fileSizeInMB = fileSizeInKB / 1024
+
+                        Log.d(
+                            "PhotoPicker",
+                            "PhotoPicker: compressedImageFile size $fileSizeInKB KB, $fileSizeInMB MB"
+                        )
+
+                        if (!isReply) {
+                            uploadImageComment(
+                                compressedImageFile.absolutePath,
+                                caption,
+                                isReply
+                            )
+                        } else {
+                            uploadImageComment(
+                                compressedImageFile.absolutePath,
+                                caption,
+                                isReply
+                            )
+                        }
+                    }
+                }
+
+            }
+        }
+    }
+
+    private fun registerDocPicker() {
+        docsPickerLauncher =
+            registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+                if (result.resultCode == RESULT_OK) {
+                    val data = result.data
+                    // Process the selected image data
+                    val docPath = data?.getStringExtra("doc_url")
+                    val caption = data?.getStringExtra("caption") ?: ""
+
+                    Log.d(TAG, "Path: $docPath caption: $caption")
+
+                    handleDocumentUri(
+                        getContentUriFromFilePath(requireActivity(), docPath!!)!!,
+                        caption
+                    )
+                }
+            }
+    }
+
+
+
+    private fun getContentUriFromFilePath(context: Context, filePath: String): Uri? {
+        val file = File(filePath)
+        val projection = arrayOf(MediaStore.Files.FileColumns._ID)
+        val selection = "${MediaStore.Files.FileColumns.DATA}=?"
+        val selectionArgs = arrayOf(file.absolutePath)
+
+        context.contentResolver.query(
+            MediaStore.Files.getContentUri("external"),
+            projection,
+            selection,
+            selectionArgs,
+            null
+        )?.use { cursor ->
+            if (cursor.moveToFirst()) {
+                val id =
+                    cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns._ID))
+                return ContentUris.withAppendedId(MediaStore.Files.getContentUri("external"), id)
+            }
+        }
+        return null
+    }
+
+
 
     // EventBus subscriber for updates from AllFeedFragment
     @Subscribe(threadMode = ThreadMode.MAIN)
@@ -1016,18 +1126,6 @@ class FavoriteFragment : Fragment(),
 
 
 
-    @SuppressLint("NotifyDataSetChanged")
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    fun feedAdapterNotifyDatasetChanged(event: FeedAdapterNotifyDatasetChanged) {
-        Log.d(
-            TAG,
-            "FeedAdapterNotifyDatasetChanged: in feed adapter notify adapter: seh data set changed"
-        )
-        favoriteFeedAdapter.notifyDataSetChanged()
-
-    }
-
-
     override fun onStart() {
         super.onStart()
         if (!EventBus.getDefault().isRegistered(this)) {
@@ -1040,23 +1138,6 @@ class FavoriteFragment : Fragment(),
         EventBus.getDefault().unregister(this)
     }
 
-
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    fun likeFeedClick(event: FeedLikeClick) {
-        Log.d(
-            TAG,
-            "likeFeedClick: event bus position ${event.position} is bookmarked ${event.data.likes}"
-        )
-        val feedPosition = favoriteFeedAdapter.getPositionById(event.data._id)
-        favoriteFeedAdapter.updateItem(feedPosition, event.data)
-        getFeedViewModel.updateForFavoriteFragment(feedPosition, event.data)
-    }
-
-
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    fun feedFavoriteFollowUpdate(event: FeedFavoriteFollowUpdate) {
-
-    }
 
 
     override fun onDestroy() {
