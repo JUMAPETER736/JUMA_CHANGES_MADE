@@ -40,6 +40,7 @@ import androidx.annotation.RequiresApi
 import androidx.appcompat.widget.AppCompatButton
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.core.net.toUri
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
@@ -149,6 +150,7 @@ import com.uyscuti.social.core.common.data.room.entity.DialogEntity
 import com.uyscuti.social.core.common.data.room.entity.FollowUnFollowEntity
 import com.uyscuti.social.core.common.data.room.entity.MessageEntity
 import com.uyscuti.social.core.common.data.room.entity.ShortsEntityFollowList
+import com.uyscuti.social.core.common.data.room.entity.UserEntity
 import com.uyscuti.social.core.models.data.Dialog
 import com.uyscuti.social.core.models.data.Message
 import com.uyscuti.social.core.models.data.User
@@ -600,6 +602,79 @@ class FavoriteFragment : Fragment(),
         handleEventsLister()
 
         return binding.root
+    }
+
+    private fun registerImagePicker() {
+        imagePickerLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            if (result.resultCode == RESULT_OK) {
+                // Handle image selection result here
+                val data = result.data
+                // Process the selected image data
+                val imagePath = data?.getStringExtra("image_url")
+                val caption = data?.getStringExtra("caption") ?: ""
+
+                val filePath = PathUtil.getPath(
+                    requireActivity(),
+                    imagePath!!.toUri()
+                ) // Use the utility class to get the real file path
+                Log.d("PhotoPicker", "File path: $filePath")
+                Log.d("PhotoPicker", "File path: $isReply")
+
+                val file = filePath?.let { File(it) }
+                if (file?.exists() == true) {
+                    lifecycleScope.launch {
+                        val compressedImageFile = Compressor.compress(requireActivity(), file)
+                        Log.d(
+                            "PhotoPicker",
+                            "PhotoPicker: compressedImageFile absolutePath: ${compressedImageFile.absolutePath}"
+                        )
+
+                        val fileSizeInBytes = compressedImageFile.length()
+                        val fileSizeInKB = fileSizeInBytes / 1024
+                        val fileSizeInMB = fileSizeInKB / 1024
+
+                        Log.d(
+                            "PhotoPicker",
+                            "PhotoPicker: compressedImageFile size $fileSizeInKB KB, $fileSizeInMB MB"
+                        )
+
+                        if (!isReply) {
+                            uploadImageComment(
+                                compressedImageFile.absolutePath,
+                                caption,
+                                isReply
+                            )
+                        } else {
+                            uploadImageComment(
+                                compressedImageFile.absolutePath,
+                                caption,
+                                isReply
+                            )
+                        }
+                    }
+                }
+
+            }
+        }
+    }
+
+    private fun registerDocPicker() {
+        docsPickerLauncher =
+            registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+                if (result.resultCode == RESULT_OK) {
+                    val data = result.data
+                    // Process the selected image data
+                    val docPath = data?.getStringExtra("doc_url")
+                    val caption = data?.getStringExtra("caption") ?: ""
+
+                    Log.d(TAG, "Path: $docPath caption: $caption")
+
+                    handleDocumentUri(
+                        getContentUriFromFilePath(requireActivity(), docPath!!)!!,
+                        caption
+                    )
+                }
+            }
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -3926,6 +4001,16 @@ class FavoriteFragment : Fragment(),
         )
 
         insertDialog(dialogEntity)
+    }
+
+    private fun User.toUserEntity(): UserEntity {
+        return UserEntity(
+            id,
+            name,
+            avatar,
+            lastSeen = Date(),
+            true
+        )
     }
 
     override fun likeUnlikeCommentReply(
