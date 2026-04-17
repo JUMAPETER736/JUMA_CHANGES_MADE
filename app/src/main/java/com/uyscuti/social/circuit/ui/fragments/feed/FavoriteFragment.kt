@@ -100,6 +100,7 @@ import com.uyscuti.sharedmodule.model.ShowAppBar
 import com.uyscuti.sharedmodule.model.ShowBottomNav
 import com.uyscuti.sharedmodule.popupDialog.DialogManager
 import com.uyscuti.sharedmodule.presentation.DialogViewModel
+import com.uyscuti.sharedmodule.presentation.MessageViewModel
 import com.uyscuti.sharedmodule.ui.GifActivity
 import com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.Fragment_Original_Post_With_Repost_Inside
 import com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.NewRepostedPostFragment
@@ -108,6 +109,8 @@ import com.uyscuti.sharedmodule.uploads.VideosActivity
 import com.uyscuti.sharedmodule.utils.AndroidUtil.showToast
 import com.uyscuti.sharedmodule.utils.AudioDurationHelper
 import com.uyscuti.sharedmodule.utils.AudioDurationHelper.getFormattedDuration
+import com.uyscuti.sharedmodule.utils.ChatManager
+import com.uyscuti.sharedmodule.utils.ChatManager.ChatManagerListener
 import com.uyscuti.sharedmodule.utils.NetworkUtil
 import com.uyscuti.sharedmodule.utils.PathUtil
 import com.uyscuti.sharedmodule.utils.Timer
@@ -140,7 +143,10 @@ import com.uyscuti.social.business.viewmodel.business.BusinessPostsViewModel
 import com.uyscuti.social.chatsuit.messages.CommentsInput
 import com.uyscuti.social.circuit.R
 import com.uyscuti.social.circuit.databinding.FragmentFavoriteBinding
+import com.uyscuti.social.core.common.data.api.RemoteMessageRepository
+import com.uyscuti.social.core.common.data.api.RemoteMessageRepositoryImpl
 import com.uyscuti.social.core.common.data.room.entity.FollowUnFollowEntity
+import com.uyscuti.social.core.common.data.room.entity.MessageEntity
 import com.uyscuti.social.core.common.data.room.entity.ShortsEntityFollowList
 import com.uyscuti.social.network.api.response.business.response.post.Post
 import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
@@ -201,30 +207,11 @@ class FavoriteFragment : Fragment(),
     CommentsInput.GifListener,
     CommentsInput.AttachmentsListener,
     OnViewRepliesClickListener,
-    Timer.OnTimeTickListener
+    Timer.OnTimeTickListener,
+    ChatManagerListener
 
 {
-
-
-    companion object {
-        /**
-         * Use this factory method to create a new instance of
-         * this fragment using the provided parameters.
-         * @param param1 Parameter 1.
-         * @param param2 Parameter 2.
-         * @return A new instance of fragment FavoriteFragment.
-         **/
-
-        @JvmStatic
-        fun newInstance(param1: String, param2: String) =
-            FavoriteFragment().apply {
-                arguments = Bundle().apply {
-                    putString(ARG_PARAM1, param1)
-                    putString(ARG_PARAM2, param2)
-                }
-            }
-    }
-
+    // TODO: Rename and change types of parameters
     private var param1: String? = null
     private var param2: String? = null
 
@@ -233,39 +220,49 @@ class FavoriteFragment : Fragment(),
 
     private val requestCode = 2024
     private val WRITE_EXTERNAL_STORAGE_REQUEST_CODE = 12
-
     private val shortsViewModel: GetShortsByUsernameViewModel by activityViewModels()
     private val getFeedViewModel: GetFeedViewModel by activityViewModels()
     private val feedUploadViewModel: FeedUploadViewModel by activityViewModels()
     private val followUnFollowViewModel: FollowUnfollowViewModel by viewModels()
-    private val businessPostsViewModel: BusinessPostsViewModel by activityViewModels()
-    private val feesShortsSharedViewModel: FeedShortsViewModel by activityViewModels()
-    private val dialogViewModel: DialogViewModel by activityViewModels()
-
     private var feedVideoViewFragment: FeedVideoViewFragment? = null
     private var feedTextViewFragment: FeedTextViewFragment?= null
     private var feedAudioViewFragment: FeedAudioViewFragment? = null
     private var feedMultipleImageViewFragment: FeedMultipleImageViewFragment? = null
+    private var feedMixedFilesViewFragment: FeedMixedFilesViewFragment? = null
     private lateinit var favoriteFeedAdapter: FeedAdapter
-
+    private val feesShortsSharedViewModel: FeedShortsViewModel by activityViewModels()
     private var fragmentOriginalPostWithRepostInside: Fragment_Original_Post_With_Repost_Inside? = null
+    private var feedRepostDocFragment : FeedRepostDocFragment? = null
+    private var feedRepostTextFragment : FeedRepostTextFragment? = null
+    private var feedRepostVideoViewFragment : FeedRepostVideoViewFragment? = null
+    private var feedRepostAudioViewFragment : FeedRepostAudioViewFragment? = null
+    private var feedRepostImageFragment : FeedRepostImageFragment? = null
+    private var feedRepostMultipleImageFragment: FeedRepostMultipleImageFragment? = null
 
 
     private lateinit var businessAdapter: BusinessCatalogueAdapter
-    private lateinit var catalogueViewModel: BusinessCatalogueViewModel
-    private lateinit var dialogManager: DialogManager
-    private var catalogueList: ArrayList<Post> = ArrayList()
 
+    private val businessPostsViewModel: BusinessPostsViewModel by activityViewModels()
+
+    private lateinit var catalogueViewModel: BusinessCatalogueViewModel
+
+    private val dialogViewModel: DialogViewModel by activityViewModels()
+
+    private lateinit var dialogManager: DialogManager
 
     private lateinit var gifsPickerLauncher: ActivityResultLauncher<Intent>
     private lateinit var audioPickerLauncher: ActivityResultLauncher<Intent>
     private lateinit var videoPickerLauncher: ActivityResultLauncher<Intent>
     private lateinit var cameraLauncher: ActivityResultLauncher<Intent>
+    private lateinit var imagePickerLauncher: ActivityResultLauncher<Intent>
+    private lateinit var docsPickerLauncher: ActivityResultLauncher<Intent>
 
     private var commentAdapter: CommentsRecyclerViewAdapter? = null
     private lateinit var commentRecyclerView: RecyclerView
+
     private lateinit var inputMethodManager: InputMethodManager
     private lateinit var emojiPopup: EmojiPopup
+
     private var emojiShowing = false
 
     private var isReply = false
@@ -273,20 +270,28 @@ class FavoriteFragment : Fragment(),
     private var postPosition = 0
     private var commentId = ""
 
-    private var commentToAddReplies: Comment? = null
+    private var commentToAddReplies: com.uyscuti.social.network.api.models.Comment? = null
     private var commentPosition = 0
+
+
     private var exoPlayer: ExoPlayer? = null
+
     private val recordedAudioFiles = mutableListOf<String>()
+
     private var mediaRecorder: MediaRecorder? = null
 
 
     private var player: MediaPlayer? = null
     private val waveHandler = Handler()
+
     private lateinit var outputFile: String
+
     private var outputVnFile: String = ""
+
     private lateinit var amplitudes: ArrayList<Float>
 
     private var amps = 0
+
     var wasPaused = false
     var sending = false
     var firstTimeSendVn = false
@@ -297,7 +302,10 @@ class FavoriteFragment : Fragment(),
     private var isAudioVNPaused = false
 
     private var mixingCompleted = false
+
     private var isVnResuming = false
+
+
     var vnRecordAudioPlaying = false
     var vnRecordProgress = 0
     var isOnRecordDurationOnPause = false
@@ -310,15 +318,18 @@ class FavoriteFragment : Fragment(),
     private var position: Int = 0
     var maxDuration = 0L
 
-    private val simpleCache: SimpleCache = FlashApplication.cache
+    private var simpleCache: SimpleCache? = FlashApplication.cache
+
+
     private lateinit var audioDurationTVCount: TextView
     private lateinit var audioFormWave: WaveformSeekBar
+
     private lateinit var audioSeekBar: SeekBar
 
     private lateinit var httpDataSourceFactory: HttpDataSource.Factory
     private lateinit var defaultDataSourceFactory: DefaultDataSourceFactory
     private lateinit var cacheDataSourceFactory: CacheDataSource.Factory
-    private lateinit var timer: Timer
+
 
     private var isReplyVnPlaying = false
     private var isVnAudioToPlay = false
@@ -327,6 +338,7 @@ class FavoriteFragment : Fragment(),
     private var currentCommentAudioPath = ""
 
 
+    private lateinit var timer: Timer
 
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -343,7 +355,53 @@ class FavoriteFragment : Fragment(),
     @Inject
     lateinit var localStorage: LocalStorage
 
+    @Inject // or another appropriate scope
+    lateinit var chatManager: ChatManager
+    private var offerMessage = ""
 
+    private val messageViewModel: MessageViewModel by activityViewModels()
+    private var messageEntity: MessageEntity? = null
+
+    private lateinit var remoteMessageRepository: RemoteMessageRepository
+
+    private fun setUpViewModel() {
+
+        repository = IFlashApiRepositoryImplementation(retrofitInstance)
+
+        val factory = BusinessCatalogueViewModelFactory(repository)
+
+        catalogueViewModel = ViewModelProvider(this,factory)[BusinessCatalogueViewModel::class.java]
+
+    }
+
+    private fun observeViewModel() {
+        // Observe catalogue items and update adapter
+        catalogueViewModel.catalogueItems.observe(viewLifecycleOwner) { items ->
+            val list = ArrayList<Post>()
+            items.forEach {
+                if (it.isBookmarked) {
+                    list.add(it)
+                }
+            }
+            businessAdapter.updateCatalogue(list)
+        }
+
+
+        businessPostsViewModel.commentLiveData.observe(viewLifecycleOwner) { commentState ->
+            if (binding.motionLayout.isVisible) {
+                if (commentState.isReply) {
+                    processReplyComments(commentState.comment)
+                } else {
+                    commentAdapter!!.submitItem(commentState.comment,0)
+                    businessAdapter.updateCommentCount(postPosition)
+
+                    if(commentAdapter!!.itemCount == 1) {
+                        updateUI(false)
+                    }
+                }
+            }
+        }
+    }
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -353,7 +411,9 @@ class FavoriteFragment : Fragment(),
             param2 = it.getString(ARG_PARAM2)
         }
         EventBus.getDefault().register(this)
+        remoteMessageRepository = RemoteMessageRepositoryImpl(retrofitInstance)
     }
+
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     @SuppressLint("CutPasteId")
     override fun onCreateView(
@@ -532,46 +592,6 @@ class FavoriteFragment : Fragment(),
         }
     }
 
-    private fun setUpViewModel() {
-
-        repository = IFlashApiRepositoryImplementation(retrofitInstance)
-
-        val factory = BusinessCatalogueViewModelFactory(repository)
-
-        catalogueViewModel = ViewModelProvider(this,factory)[BusinessCatalogueViewModel::class.java]
-
-    }
-
-    private fun observeViewModel() {
-        // Observe catalogue items and update adapter
-        catalogueViewModel.catalogueItems.observe(viewLifecycleOwner) { items ->
-            val list = ArrayList<Post>()
-            items.forEach {
-                if (it.isBookmarked) {
-                    list.add(it)
-                }
-            }
-            businessAdapter.updateCatalogue(list)
-        }
-
-
-        businessPostsViewModel.commentLiveData.observe(viewLifecycleOwner) { commentState ->
-            if (binding.motionLayout.isVisible) {
-                if (commentState.isReply) {
-                    processReplyComments(commentState.comment)
-                } else {
-                    commentAdapter!!.submitItem(commentState.comment,0)
-                    businessAdapter.updateCommentCount(postPosition)
-
-                    if(commentAdapter!!.itemCount == 1) {
-                        updateUI(false)
-
-                    }
-                }
-            }
-        }
-
-    }
 
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
