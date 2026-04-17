@@ -148,6 +148,7 @@ import com.uyscuti.social.core.common.data.api.RemoteMessageRepositoryImpl
 import com.uyscuti.social.core.common.data.room.entity.FollowUnFollowEntity
 import com.uyscuti.social.core.common.data.room.entity.MessageEntity
 import com.uyscuti.social.core.common.data.room.entity.ShortsEntityFollowList
+import com.uyscuti.social.core.models.data.User
 import com.uyscuti.social.network.api.response.business.response.post.Post
 import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
 import com.uyscuti.social.network.utils.LocalStorage
@@ -423,7 +424,6 @@ class FavoriteFragment : Fragment(),
         // Inflate the layout for this fragment
         binding = FragmentFavoriteBinding.inflate(layoutInflater)
 
-
         setUpViewModel()
 
         val config = ConcatAdapter.Config.Builder()
@@ -443,7 +443,6 @@ class FavoriteFragment : Fragment(),
             requireActivity(),
             retrofitInstance,
             localStorage,
-            catalogueList,
             onItemClick = { item ->
                 // Handle item click - navigate to detail screen
                 navigateToItemDetail(item)
@@ -456,7 +455,7 @@ class FavoriteFragment : Fragment(),
                 followBusinessPostOwner(item)
             },
             onMessageClick = { user, post ->
-                val productReference = "#Is Product available\n${post.itemName}\n${post.description}\n\n${post.images.first()}"
+                val productReference = post.images.first()
                 dialogManager = DialogManager(
                     requireActivity(),
                     dialogViewModel,
@@ -464,6 +463,38 @@ class FavoriteFragment : Fragment(),
                     productReference
                 )
                 dialogManager.openChat(user)
+            },
+            onSendOfferClicked = {amount, message, data ->
+                val user = User(
+                    data.owner,
+                    data.userDetails.username,
+                    data.userDetails.avatar,
+                    false,
+                    Date()
+                )
+
+                var messageToSend = ""
+
+                messageToSend = if (message.isEmpty()) {
+                    "" +
+                            "Hi! I'm interested in your ${data.itemName}." +
+                            "\nWould you accept MWK$amount ?" +
+                            "\nLet me know, thanks!"
+                } else {
+                    "" +
+                            "${data.itemName}.\n${data.description}." +
+                            "\nOffer Amount: MWK$amount ?" +
+                            "\n$message"
+                }
+
+                offerMessage = messageToSend
+
+                if (NetworkUtil.isConnected(requireActivity())) {
+                    addDialogInTheBackGround(user, messageToSend)
+                } else {
+                    showToast(requireActivity(),"You have no internet connection")
+                }
+
             },
             childFragmentManager
         )
@@ -480,13 +511,13 @@ class FavoriteFragment : Fragment(),
 
         favoriteFeedAdapter.setOnPaginationListener(object : com. uyscuti. sharedmodule. adapter. FeedPaginatedAdapter. OnPaginationListener {
             override fun onCurrentPage(page: Int) {
-
+//                Toast.makeText(requireContext(), "Page $page loaded!", Toast.LENGTH_SHORT).show()
                 Log.d(TAG, "currentPage: page number $page")
 
             }
             override fun onNextPage(page: Int) {
                 lifecycleScope.launch(Dispatchers.Main) {
-
+//                    loadMoreShorts(page)
                     Log.d(TAG, "onNextPage: page number $page")
                     getAllFeed(page)
                 }
@@ -560,6 +591,8 @@ class FavoriteFragment : Fragment(),
         registerVideoPickerLauncher()
         registerAudioPickerLauncher()
         registerCameraLauncher()
+        registerImagePicker()
+        registerDocPicker()
         handleEventsLister()
 
         return binding.root
