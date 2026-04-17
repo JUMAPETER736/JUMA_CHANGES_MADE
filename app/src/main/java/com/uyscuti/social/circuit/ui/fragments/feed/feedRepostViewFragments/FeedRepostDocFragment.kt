@@ -34,6 +34,25 @@ private const val TAG = "FeedDocumentViewAdapter"
 
 class FeedRepostDocFragment : Fragment(), OnFeedClickListener {
 
+    companion object {
+        /**
+         * Use this factory method to create a new instance of
+         * this fragment using the provided parameters.
+         *
+         * @param param1 Parameter 1.
+         * @param param2 Parameter 2.
+         * @return A new instance of fragment FeedRepostDocFragment.
+         */
+        // TODO: Rename and change types and number of parameters
+        @JvmStatic
+        fun newInstance(param1: String, param2: String) =
+            FeedRepostDocFragment().apply {
+                arguments = Bundle().apply {
+                    putString(ARG_PARAM1, param1)
+                    putString(ARG_PARAM2, param2)
+                }
+            }
+    }
 
     private var currentCommentCount = 0
 
@@ -62,6 +81,66 @@ class FeedRepostDocFragment : Fragment(), OnFeedClickListener {
                 (it.getSerializable("data") as com.uyscuti.social.network.api.response.allFeedRepostsPost.OriginalPost?)!!
         }
     }
+
+    override fun onCreateView(
+        inflater: LayoutInflater, container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
+        // Inflate the layout for this fragment
+        binding = FragmentFeedRepostDocBinding.inflate(layoutInflater, container, false)
+        if (data.content == "") {
+            binding.feedTextContent.text = ""
+        } else {
+            binding.feedTextContent.text = data.content
+        }
+
+        if (data.tags.isEmpty()) {
+            binding.tags.visibility = View.GONE
+        } else {
+            binding.tags.visibility = View.VISIBLE
+            val formattedTags = data.tags.joinToString(" ") { "#$it" }
+
+            binding.tags.text = formattedTags
+        }
+
+        Glide.with(this)
+            .load(data.author[0].account.avatar.url)
+            .apply(RequestOptions.bitmapTransform(CircleCrop()))
+            .placeholder(com.uyscuti.sharedmodule.R.drawable.profilepic2)
+            .diskCacheStrategy(DiskCacheStrategy.ALL)
+            .into(binding.toolbar.feedProfilePic)
+
+        binding.toolbar.backIcon.setOnClickListener {
+
+            if (feedTextViewFragmentInterface != null) {
+                feedTextViewFragmentInterface?.backPressedFromFeedTextViewFragment()
+            }
+        }
+
+
+        val documentList:MutableList<String> = mutableListOf()
+        if(data.files.isNotEmpty()) {
+            for (document in data.files) {
+                documentList.add(document.url)
+            }
+        }else {
+        }
+
+        //   val feedDocumentAdapter = FeedRepostDocumentViewAdapter()
+
+
+
+        binding.viewPager.orientation = ViewPager2.ORIENTATION_HORIZONTAL
+        binding.circleIndicator.setViewPager(binding.viewPager)
+        return binding.root
+
+
+        // Initialize comment count
+        currentCommentCount = data.commentCount ?: 0
+        binding.feedCommentsCount.text = currentCommentCount.toString()
+
+    }
+
 
 
 }
