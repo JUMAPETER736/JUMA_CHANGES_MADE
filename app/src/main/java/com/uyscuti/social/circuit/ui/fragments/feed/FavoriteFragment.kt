@@ -145,9 +145,12 @@ import com.uyscuti.social.circuit.R
 import com.uyscuti.social.circuit.databinding.FragmentFavoriteBinding
 import com.uyscuti.social.core.common.data.api.RemoteMessageRepository
 import com.uyscuti.social.core.common.data.api.RemoteMessageRepositoryImpl
+import com.uyscuti.social.core.common.data.room.entity.DialogEntity
 import com.uyscuti.social.core.common.data.room.entity.FollowUnFollowEntity
 import com.uyscuti.social.core.common.data.room.entity.MessageEntity
 import com.uyscuti.social.core.common.data.room.entity.ShortsEntityFollowList
+import com.uyscuti.social.core.models.data.Dialog
+import com.uyscuti.social.core.models.data.Message
 import com.uyscuti.social.core.models.data.User
 import com.uyscuti.social.network.api.response.business.response.post.Post
 import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
@@ -181,6 +184,7 @@ import java.util.Locale
 import java.util.UUID
 import javax.inject.Inject
 import kotlin.properties.Delegates
+import kotlin.random.Random
 
 
 // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
@@ -3869,6 +3873,59 @@ class FavoriteFragment : Fragment(),
         } else {
             showToast(requireActivity(), "Like failed. No internet access.")
         }
+    }
+
+    private fun addDialogInTheBackGround(user: User, lastMessage: String) {
+        val singleUserList = arrayListOf(user)
+
+        val message = Message(
+            user.id,
+            user,
+            lastMessage,
+            Date()
+        )
+
+        val tempDialog = Dialog(
+            user.id,
+            user.name,
+            user.avatar,
+            singleUserList,
+            message,
+            0
+        )
+
+        val messageId = "Text_${Random.Default.nextInt()}"
+
+        val textMessage = MessageEntity(
+            id = messageId,
+            chatId = user.id,
+            userName = "You",
+            user = user.toUserEntity(),
+            userId = localStorage.getUserId(),
+            text = lastMessage,
+            createdAt = System.currentTimeMillis(),
+            imageUrl = null,
+            voiceUrl = null,
+            voiceDuration = 0,
+            status = "Sending",
+            videoUrl = null,
+            audioUrl = null,
+            docUrl = null,
+            fileSize = 0
+        )
+
+        messageEntity = textMessage
+
+        val dialogEntity = DialogEntity(
+            id = tempDialog.dialogName,
+            dialogPhoto = tempDialog.dialogPhoto,
+            dialogName = tempDialog.dialogName,
+            users = listOf(user.toUserEntity()),
+            lastMessage = textMessage,
+            unreadCount = 0
+        )
+
+        insertDialog(dialogEntity)
     }
 
     override fun likeUnlikeCommentReply(
