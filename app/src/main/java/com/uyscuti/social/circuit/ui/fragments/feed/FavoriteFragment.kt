@@ -1524,11 +1524,143 @@ class FavoriteFragment : Fragment(),
 
     @SuppressLint("ServiceCast")
 
+    private fun showDeleteConfirmationDialog(feedId: String, position: Int) {
+        val inflater = LayoutInflater.from(requireContext())
+        val customTitleView: View = inflater.inflate(R.layout.delete_title_custom_layout, null)
+        val builder = AlertDialog.Builder(requireContext())
 
+        builder.setCustomTitle(customTitleView)
+        builder.setMessage("Are you sure you want to delete this feed?")
+
+        // Positive Button
+        builder.setPositiveButton("Delete") { dialog, which ->
+            // Handle delete action
+
+            handleDeleteAction(feedId = feedId, position){ isSuccess, message ->
+                if (isSuccess) {
+                    Log.d(TAG, "handleDeleteAction $message")
+                    dialog.dismiss()
+                } else {
+                    dialog.dismiss()
+                    Log.e(TAG, "handleDeleteAction $message")
+                }}
+            dialog.dismiss()
+        }
+
+
+        // Negative Button
+        builder.setNegativeButton("Cancel") { dialog, which ->
+            dialog.dismiss() // Dismiss the dialog
+        }
+
+        // Create and show the AlertDialog
+        val alertDialog = builder.create()
+        alertDialog.show()
+    }
+
+
+    @SuppressLint("NotifyDataSetChanged")
+    private fun handleDeleteAction(feedId: String, position: Int, callback: (Boolean, String) -> Unit) {
+        // Logic to delete the item
+        // e.g., remove it from a list or database
+        Log.d(TAG, "handleDeleteAction: remove from database")
+        lifecycleScope.launch {
+            val response = retrofitInstance.apiService.deleteFeed(feedId)
+
+            Log.d(TAG, "handleDeleteAction: $response")
+            Log.d(TAG, "handleDeleteAction body: ${response.body()}")
+            Log.d(TAG, "handleDeleteAction isSuccessful: ${response.isSuccessful}")
+            if(response.isSuccessful) {
+                getFeedViewModel.removeMyFeed(position)
+                favoriteFeedAdapter.removeItem(position)
+
+
+                shortsViewModel.postCount -= 1
+                shortsViewModel.setIsRefreshPostCount(true)
+
+                Log.d(TAG, "handleDeleteAction: delete successful")
+                showSnackBar("File has been deleted successfully")
+                val isAllFeedDataEmpty = getFeedViewModel.getAllFeedData().isEmpty()
+                val isFavoriteFeedDataEmpty = getFeedViewModel.getAllFavoriteFeedData().isEmpty()
+
+                if(!isFavoriteFeedDataEmpty) {
+                    val favoriteFeed = getFeedViewModel.getAllFavoriteFeedData()
+                    val feedToUpdate = favoriteFeed.find { feed-> feed._id == feedId }
+
+                    if(feedToUpdate != null) {
+
+                        Log.d(TAG, "handleDeleteAction: feed to update id ${feedToUpdate._id}")
+                        try {
+                            Log.d("feedResponse", "handleDeleteAction: 1 ${feedToUpdate._id}")
+                            val feedPos = getFeedViewModel.getPositionById(feedId)
+                            Log.d("feedResponse", "handleDeleteAction: 2 ${feedToUpdate._id}")
+                            getFeedViewModel.removeFavoriteFeed(feedPos)
+                            Log.d("feedResponse", "handleDeleteAction: 3 ${feedToUpdate._id}")
+
+                            Log.d("feedResponse", "handleDeleteAction: 4 ${feedToUpdate._id}")
+
+                        }catch (e: Exception) {
+                            Log.e(TAG, "handleDeleteAction: error on bookmark delete ${e.message}")
+                            e.printStackTrace()
+                        }
+
+                    }else {
+                        Log.e("feedResponse", "handleDeleteAction: feed to un-favorite not available")
+                    }
+                }
+
+                if(!isAllFeedDataEmpty) {
+                    val allFeedData = getFeedViewModel.getAllFeedData()
+                    val feedToUpdate = allFeedData.find { feed -> feed._id == feedId }
+                    if (feedToUpdate != null) {
+                        Log.d(TAG, "handleDeleteAction: feed data found for all fragment")
+                        val pos = getFeedViewModel.getAllFeedDataPositionById(feedToUpdate._id)
+                        try{
+                            getFeedViewModel.removeAllFeedFragment(pos)
+                        }catch (e: Exception) {
+                            e.printStackTrace()
+                        }
+
+                    }else {
+                        Log.d(TAG, "handleDeleteAction: feed data not found for all fragment")
+                    }
+                }else {
+                    Log.i(TAG, "handleDeleteAction: all feed data is empty")
+                }
+
+                if(!isFavoriteFeedDataEmpty) {
+                    val favoriteFeedData = getFeedViewModel.getAllFavoriteFeedData()
+                    val feedToUpdate = favoriteFeedData.find { feed -> feed._id == feedId }
+                    if (feedToUpdate != null) {
+                        Log.d(TAG, "handleDeleteAction: feed data found for favorite")
+                        getFeedViewModel.setRefreshMyData(position, true)
+                    }else {
+                        Log.d(TAG, "handleDeleteAction: feed data not found for favorite")
+                    }
+                }else {
+                    Log.i(TAG, "handleDeleteAction: favorite feed data is empty")
+                }
+            }else {
+                callback(false, "Failed to delete file")
+                showSnackBar("Please try again!!!")
+            }
+
+        }
+    }
+
+    private fun showSnackBar(message: String) {
+        Snackbar.make(requireActivity().findViewById(android.R.id.content), message, 1000)
+            .setBackgroundTint((ContextCompat.getColor(requireContext(),R.color.green_dark))) // Custom background color
+            .setAction("OK") {
+                // Handle undo action if needed
+            }
+            .show()
+    }
 
     fun forShow() {
         Log.d("forShow", "forShow: is called")
     }
+
 
 
     override fun feedFileClicked(position: Int, data: com.uyscuti.social.network.api.response.posts.Post) {
