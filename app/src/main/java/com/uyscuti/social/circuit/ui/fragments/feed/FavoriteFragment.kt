@@ -971,7 +971,186 @@ class FavoriteFragment : Fragment(),
 
     }
 
-    
+    override fun onDestroy() {
+        super.onDestroy()
+        Log.d(TAG, "onDestroy: called")
+        EventBus.getDefault().unregister(this)
+    }
+    fun updateLayoutVisibility(contentType: ContentType, downloadFeedLayout: View, followUnfollowLayout: View, muteUser: View, hideFavorite: View) {
+        when (contentType) {
+            ContentType.TEXT -> {
+                downloadFeedLayout.visibility = View.GONE
+                followUnfollowLayout.visibility = View.GONE
+                muteUser.visibility = View.VISIBLE // Or handle it accordingly
+                hideFavorite.visibility = View.VISIBLE
+            }
+            ContentType.VIDEO -> {
+                downloadFeedLayout.visibility = View.VISIBLE
+                followUnfollowLayout.visibility = View.VISIBLE
+                muteUser.visibility = View.GONE
+                hideFavorite.visibility = View.GONE
+            }
+            ContentType.IMAGE -> {
+                downloadFeedLayout.visibility = View.VISIBLE
+                followUnfollowLayout.visibility = View.VISIBLE
+                muteUser.visibility = View.VISIBLE
+                hideFavorite.visibility = View.VISIBLE
+            }
+            ContentType.AUDIO -> {
+                downloadFeedLayout.visibility = View.VISIBLE
+                followUnfollowLayout.visibility = View.VISIBLE
+                muteUser.visibility = View.VISIBLE
+                hideFavorite.visibility = View.VISIBLE
+            }
+        }
+    }
+
+
+    fun onDownloadClick(url: String, fileLocation: String) {
+        Log.d(
+            "Download",
+            "OnDownload $url  \nto path : $fileLocation"
+        )
+
+        val permissions = arrayOf(
+            Manifest.permission.WRITE_EXTERNAL_STORAGE,
+            Manifest.permission.READ_EXTERNAL_STORAGE
+        )
+
+        if (ContextCompat.checkSelfPermission(
+                requireActivity(),
+                Manifest.permission.WRITE_EXTERNAL_STORAGE
+            )
+            != PackageManager.PERMISSION_GRANTED
+        ) {
+            ActivityCompat.requestPermissions(requireActivity(), permissions, requestCode)
+        } else {
+            // You have permission, proceed with your file operations
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+
+                // Check if the permission is not granted
+                if (ContextCompat.checkSelfPermission(
+                        requireContext(),
+                        Manifest.permission.WRITE_EXTERNAL_STORAGE
+                    ) != PackageManager.PERMISSION_GRANTED
+                ) {
+                    // Request the permission
+                    ActivityCompat.requestPermissions(
+                        requireActivity(),
+                        arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE),
+                        WRITE_EXTERNAL_STORAGE_REQUEST_CODE
+                    )
+                } else {
+
+                    download(url, fileLocation)
+                }
+
+
+            } else {
+                download(url, fileLocation)
+            }
+        }
+
+
+
+
+    }
+
+
+    @OptIn(DelicateCoroutinesApi::class)
+    private fun download(
+        mUrl: String,
+        fileLocation: String,
+    ) {
+        //STORAGE_FOLDER += fileLocation
+        Log.d("Download", "directory path - $fileLocation")
+
+        if (mUrl.startsWith("/storage/") || mUrl.startsWith("/storage/")) {
+
+            Log.d("Download", "Cannot download a local file")
+            return
+        }
+
+        //STORAGE_FOLDER += fileLocation
+        val STORAGE_FOLDER = "/Download/Flash/$fileLocation"
+
+        val fileName = generateUniqueFileName(mUrl)
+
+        val storageDirectory =
+            Environment.getExternalStorageDirectory().toString() + STORAGE_FOLDER + "/$fileName"
+
+        Log.d("Download", "directory path - $storageDirectory")
+        val file = File(Environment.getExternalStorageDirectory().toString() + STORAGE_FOLDER)
+        if (!file.exists()) {
+            file.mkdirs()
+        }
+
+        GlobalScope.launch(Dispatchers.IO) {
+            val url = URL(mUrl)
+            val connection = url.openConnection() as HttpURLConnection
+            connection.requestMethod = "GET"
+            connection.setRequestProperty("Accept-Encoding", "identity")
+            connection.connect()
+
+            try {
+                if (connection.responseCode in 200..299) {
+                    val fileSize = connection.contentLength
+                    val inputStream = connection.inputStream
+                    val outputStream = FileOutputStream(storageDirectory)
+
+                    var bytesCopied: Long = 0
+                    val buffer = ByteArray(1024)
+                    var bytes = inputStream.read(buffer)
+                    while (bytes >= 0) {
+                        bytesCopied += bytes
+                        val downloadProgress =
+                            (bytesCopied.toFloat() / fileSize.toFloat() * 100).toInt()
+                        requireActivity().runOnUiThread {
+//
+                        }
+                        outputStream.write(buffer, 0, bytes)
+                        bytes = inputStream.read(buffer)
+                    }
+
+                    requireActivity().runOnUiThread {
+
+                        Log.d("Download", "File Downloaded : $storageDirectory")
+
+                        val downloadedFile = File(storageDirectory)
+
+                    }
+                    outputStream.close()
+                    inputStream.close()
+                } else {
+                    requireActivity().runOnUiThread {
+                        Toast.makeText(
+                            requireActivity(),
+                            "Not successful",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("DownloadFailed", e.message.toString())
+
+                e.printStackTrace()
+                requireActivity().runOnUiThread {
+
+                }
+            }
+        }
+    }
+    private fun generateUniqueFileName(originalUrl: String): String {
+        val timestamp =
+            SimpleDateFormat("yyyy_MM_dd_HHmmss", Locale.getDefault()).format(Date())
+        val originalFileName = originalUrl.split("/").last()
+        val fileExtension = MimeTypeMap.getFileExtensionFromUrl(originalFileName)
+        val randomString = UUID.randomUUID().toString().substring(0, 8)
+        return "$timestamp-$randomString.$fileExtension"
+    }
+
+
 
     private fun registerImagePicker() {
         imagePickerLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -1139,183 +1318,6 @@ class FavoriteFragment : Fragment(),
     }
 
 
-
-    override fun onDestroy() {
-        super.onDestroy()
-        Log.d(TAG, "onDestroy: called")
-        EventBus.getDefault().unregister(this)
-    }
-    fun updateLayoutVisibility(contentType: ContentType, downloadFeedLayout: View, followUnfollowLayout: View, muteUser: View, hideFavorite: View) {
-        when (contentType) {
-            ContentType.TEXT -> {
-                downloadFeedLayout.visibility = View.GONE
-                followUnfollowLayout.visibility = View.GONE
-                muteUser.visibility = View.VISIBLE // Or handle it accordingly
-                hideFavorite.visibility = View.VISIBLE
-            }
-            ContentType.VIDEO -> {
-                downloadFeedLayout.visibility = View.VISIBLE
-                followUnfollowLayout.visibility = View.VISIBLE
-                muteUser.visibility = View.GONE
-                hideFavorite.visibility = View.GONE
-            }
-            ContentType.IMAGE -> {
-                downloadFeedLayout.visibility = View.VISIBLE
-                followUnfollowLayout.visibility = View.VISIBLE
-                muteUser.visibility = View.VISIBLE
-                hideFavorite.visibility = View.VISIBLE
-            }
-            ContentType.AUDIO -> {
-                downloadFeedLayout.visibility = View.VISIBLE
-                followUnfollowLayout.visibility = View.VISIBLE
-                muteUser.visibility = View.VISIBLE
-                hideFavorite.visibility = View.VISIBLE
-            }
-        }
-    }
-
-
-    fun onDownloadClick(url: String, fileLocation: String) {
-        Log.d(
-            "Download",
-            "OnDownload $url  \nto path : $fileLocation"
-        )
-
-        val permissions = arrayOf(
-            Manifest.permission.WRITE_EXTERNAL_STORAGE,
-            Manifest.permission.READ_EXTERNAL_STORAGE
-        )
-
-        if (ContextCompat.checkSelfPermission(
-                requireActivity(),
-                Manifest.permission.WRITE_EXTERNAL_STORAGE
-            )
-            != PackageManager.PERMISSION_GRANTED
-        ) {
-            ActivityCompat.requestPermissions(requireActivity(), permissions, requestCode)
-        } else {
-            // You have permission, proceed with your file operations
-
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-
-                // Check if the permission is not granted
-                if (ContextCompat.checkSelfPermission(
-                        requireContext(),
-                        Manifest.permission.WRITE_EXTERNAL_STORAGE
-                    ) != PackageManager.PERMISSION_GRANTED
-                ) {
-                    // Request the permission
-                    ActivityCompat.requestPermissions(
-                        requireActivity(),
-                        arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE),
-                        WRITE_EXTERNAL_STORAGE_REQUEST_CODE
-                    )
-                } else {
-
-                    download(url, fileLocation)
-                }
-
-
-            } else {
-                download(url, fileLocation)
-            }
-        }
-
-    }
-
-
-    @OptIn(DelicateCoroutinesApi::class)
-    private fun download(
-        mUrl: String,
-        fileLocation: String,
-    ) {
-        //STORAGE_FOLDER += fileLocation
-        Log.d("Download", "directory path - $fileLocation")
-
-        if (mUrl.startsWith("/storage/") || mUrl.startsWith("/storage/")) {
-
-            Log.d("Download", "Cannot download a local file")
-            return
-        }
-
-        //STORAGE_FOLDER += fileLocation
-        val STORAGE_FOLDER = "/Download/Flash/$fileLocation"
-
-        val fileName = generateUniqueFileName(mUrl)
-
-        val storageDirectory =
-            Environment.getExternalStorageDirectory().toString() + STORAGE_FOLDER + "/$fileName"
-
-        Log.d("Download", "directory path - $storageDirectory")
-        val file = File(Environment.getExternalStorageDirectory().toString() + STORAGE_FOLDER)
-        if (!file.exists()) {
-            file.mkdirs()
-        }
-
-        GlobalScope.launch(Dispatchers.IO) {
-            val url = URL(mUrl)
-            val connection = url.openConnection() as HttpURLConnection
-            connection.requestMethod = "GET"
-            connection.setRequestProperty("Accept-Encoding", "identity")
-            connection.connect()
-
-            try {
-                if (connection.responseCode in 200..299) {
-                    val fileSize = connection.contentLength
-                    val inputStream = connection.inputStream
-                    val outputStream = FileOutputStream(storageDirectory)
-
-                    var bytesCopied: Long = 0
-                    val buffer = ByteArray(1024)
-                    var bytes = inputStream.read(buffer)
-                    while (bytes >= 0) {
-                        bytesCopied += bytes
-                        val downloadProgress =
-                            (bytesCopied.toFloat() / fileSize.toFloat() * 100).toInt()
-                        requireActivity().runOnUiThread {
-
-                        }
-                        outputStream.write(buffer, 0, bytes)
-                        bytes = inputStream.read(buffer)
-                    }
-
-                    requireActivity().runOnUiThread {
-
-                        Log.d("Download", "File Downloaded : $storageDirectory")
-
-                        val downloadedFile = File(storageDirectory)
-
-                    }
-                    outputStream.close()
-                    inputStream.close()
-                } else {
-                    requireActivity().runOnUiThread {
-                        Toast.makeText(
-                            requireActivity(),
-                            "Not successful",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    }
-                }
-            } catch (e: Exception) {
-                Log.e("DownloadFailed", e.message.toString())
-
-                e.printStackTrace()
-                requireActivity().runOnUiThread {
-
-                }
-            }
-        }
-    }
-
-    private fun generateUniqueFileName(originalUrl: String): String {
-        val timestamp =
-            SimpleDateFormat("yyyy_MM_dd_HHmmss", Locale.getDefault()).format(Date())
-        val originalFileName = originalUrl.split("/").last()
-        val fileExtension = MimeTypeMap.getFileExtensionFromUrl(originalFileName)
-        val randomString = UUID.randomUUID().toString().substring(0, 8)
-        return "$timestamp-$randomString.$fileExtension"
-    }
 
     @SuppressLint("InflateParams", "MissingInflatedId")
     override fun moreOptionsClick(position: Int, data: com.uyscuti.social.network.api.response.posts.Post) {
