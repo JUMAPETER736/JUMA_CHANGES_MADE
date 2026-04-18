@@ -50,6 +50,87 @@ class FeedRepostTextFragment : Fragment() {
         }
     }
 
+    override fun onCreateView(
+        inflater: LayoutInflater, container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
+        // Inflate the layout for this fragment
+        binding = FragmentFeedRepostTextBinding.inflate(inflater, container, false)
+        binding.feedTextContent.text = data.content
+        if (data.tags.isEmpty()) {
+            binding.tags.visibility = View.GONE
+        } else {
+            binding.tags.visibility = View.VISIBLE
+            val formattedTags = data.tags.joinToString(" ") { "#$it" }
+            binding.tags.text = formattedTags
+        }
+        if (data.content == "") {
+            binding.feedTextContent.text = ""
+        } else {
+            binding.feedTextContent.text = data.content
+        }
+
+        if (data.author.isEmpty()){
+            binding.toolbar.username.text = "Unknown"
+        }else {
+            binding.toolbar.username.text = data.author[0].account.username
+        }
+
+        binding.toolbar.backIcon.setOnClickListener {
+
+            if (feedTextViewFragmentInterface != null) {
+                feedTextViewFragmentInterface?.backPressedFromFeedTextViewFragment()
+            }
+        }
+        feedLiveDataViewModel.booleanValue.observe(viewLifecycleOwner) { value ->
+            // Update UI based on the boolean value
+            Log.d(TAG, "onCreateView: value $value")
+
+            if (value) {
+                // Handle true state
+
+                val totalComments = data.commentCount.toString()
+
+                binding.feedCommentsCount.text = "$totalComments"
+
+                feedLiveDataViewModel.setBoolean(false)
+            }
+
+        }
+
+        binding.shareButtonIcon.setOnClickListener {
+
+            Toast.makeText(requireContext(), "share clicked", Toast.LENGTH_SHORT).show()
+            val sendIntent = Intent().apply {
+                action = Intent.ACTION_SEND
+                putExtra(Intent.EXTRA_TEXT, binding.feedTextContent.text.toString())
+                type = "text/plain"
+            }
+
+            //  Verify that the Intent will resolve to an activity
+            if (sendIntent.resolveActivity(requireContext().packageManager) != null) {
+                // Start the activity to share the text
+                startActivity(Intent.createChooser(sendIntent, "Share via"))
+            }
+        }
+        feedLiveDataViewModel.counter.observe(viewLifecycleOwner) { count ->
+
+        }
+        binding.commentButtonIcon.setOnClickListener {
+
+        }
+
+        binding.favoriteSection.setOnClickListener {
+
+        }
+
+        binding.re.setOnClickListener {
+
+        }
+        return binding.root
+
+    }
+
 
 
 }
