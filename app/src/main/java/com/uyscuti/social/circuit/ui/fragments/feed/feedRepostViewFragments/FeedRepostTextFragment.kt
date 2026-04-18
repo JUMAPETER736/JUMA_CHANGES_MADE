@@ -29,7 +29,29 @@ private const val ARG_PARAM2 = "param2"
 private const val TAG = "FeedTextViewFragment"
 
 class FeedRepostTextFragment : Fragment() {
-    // TODO: Rename and change types of parameters
+
+
+    companion object {
+        /**
+         * Use this factory method to create a new instance of
+         * this fragment using the provided parameters.
+         *
+         * @param param1 Parameter 1.
+         * @param param2 Parameter 2.
+         * @return A new instance of fragment FeedRepostTextFragment.
+         */
+        // TODO: Rename and change types and number of parameters
+        @JvmStatic
+        fun newInstance(param1: String, param2: String) =
+            FeedRepostTextFragment().apply {
+                arguments = Bundle().apply {
+                    putString(ARG_PARAM1, param1)
+                    putString(ARG_PARAM2, param2)
+                }
+            }
+    }
+
+    
     private var param1: String? = null
     private var param2: String? = null
     private lateinit var data: com.uyscuti.social.network.api.response.allFeedRepostsPost.OriginalPost
@@ -132,5 +154,41 @@ class FeedRepostTextFragment : Fragment() {
     }
 
 
+
+    override fun onResume() {
+        Log.d(TAG, "onResume: ")
+        super.onResume()
+        backPressedCallback = object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                // Handle back press
+
+                if (feedTextViewFragmentInterface != null) {
+                    feedTextViewFragmentInterface?.backPressedFromFeedTextViewFragment()
+                }
+            }
+        }
+        requireActivity().onBackPressedDispatcher.addCallback(this, backPressedCallback)
+    }
+    override fun onDetach() {
+        super.onDetach()
+        Log.d(TAG, "onDetach: ")
+    }
+    override fun onDestroyView() {
+        super.onDestroyView()
+        Log.d(TAG, "onDestroyView: ")
+    }
+    override fun onPause() {
+        super.onPause()
+        // Remove the callback to prevent leaks
+        Log.d(TAG, "onPause: ")
+        backPressedCallback.remove()
+    }
+    fun setListener(listener: FeedTextViewFragmentInterface) {
+        feedTextViewFragmentInterface = listener
+    }
+    @SuppressLint("SetTextI18n")
+    fun setFeedCommentsCount() {
+
+    }
 
 }
