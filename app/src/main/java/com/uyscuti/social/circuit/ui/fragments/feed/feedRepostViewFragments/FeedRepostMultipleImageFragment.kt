@@ -31,7 +31,27 @@ private const val ARG_PARAM2 = "param2"
  */
 private const val TAG = "FeedMultipleImageViewFragment"
 class FeedRepostMultipleImageFragment : Fragment() , MultipleImagesListener {
-    // TODO: Rename and change types of parameters
+
+    companion object {
+        /**
+         * Use this factory method to create a new instance of
+         * this fragment using the provided parameters.
+         *
+         * @param param1 Parameter 1.
+         * @param param2 Parameter 2.
+         * @return A new instance of fragment FeedRepostMultipleImageFragment.
+         */
+        // TODO: Rename and change types and number of parameters
+        @JvmStatic
+        fun newInstance(param1: String, param2: String) =
+            FeedRepostMultipleImageFragment().apply {
+                arguments = Bundle().apply {
+                    putString(ARG_PARAM1, param1)
+                    putString(ARG_PARAM2, param2)
+                }
+            }
+    }
+    
     private var param1: String? = null
     private var param2: String? = null
     private lateinit var data: com.uyscuti.social.network.api.response.allFeedRepostsPost.OriginalPost
@@ -109,4 +129,25 @@ class FeedRepostMultipleImageFragment : Fragment() , MultipleImagesListener {
     }
 
 
+    override fun onResume() {
+        Log.d(TAG, "onResume: ")
+        super.onResume()
+        backPressedCallback = object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+
+                if (feedTextViewFragmentInterface != null) {
+                    feedTextViewFragmentInterface?.backPressedFromFeedTextViewFragment()
+                }
+            }
+        }
+        requireActivity().onBackPressedDispatcher.addCallback(this, backPressedCallback)
+    }
+
+    fun setListener(listener: FeedTextViewFragmentInterface) {
+        feedTextViewFragmentInterface = listener
+    }
+
+    override fun onImageClick() {
+
+    }
 }
