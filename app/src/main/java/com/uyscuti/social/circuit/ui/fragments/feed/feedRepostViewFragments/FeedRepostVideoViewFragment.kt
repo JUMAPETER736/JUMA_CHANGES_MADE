@@ -111,4 +111,22 @@ class FeedRepostVideoViewFragment : Fragment() , PlayFeedVideoInterface {
         requireActivity().onBackPressedDispatcher.addCallback(this, backPressedCallback)
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+
+    }
+
+    fun setListener(listener: FeedTextViewFragmentInterface) {
+        feedTextViewFragmentInterface = listener
+    }
+
+    @OptIn(UnstableApi::class)
+    override fun onPlayClickListener(
+        videoUrl: String,
+        playerView: PlayerView,
+        playImageView: ImageView,
+        seekBars: SeekBar,
+        currentDuration: TextView
+    ) {
+    }
 }
