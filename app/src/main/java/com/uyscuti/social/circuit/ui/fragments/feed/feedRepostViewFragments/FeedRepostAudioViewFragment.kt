@@ -46,7 +46,7 @@ class FeedRepostAudioViewFragment() : Fragment(), PlayFeedAudioInterface {
     // TODO: Rename and change types of parameters
     private var param1: String? = null
     private var param2: String? = null
-    private lateinit var data: OriginalPost
+    private lateinit var data:  OriginalPost
     private var position = 0
     private lateinit var backPressedCallback: OnBackPressedCallback
     private var feedTextViewFragmentInterface: FeedTextViewFragmentInterface? = null
@@ -56,13 +56,13 @@ class FeedRepostAudioViewFragment() : Fragment(), PlayFeedAudioInterface {
     private var seekBar: SeekBar? = null
     private var currentDuration: TextView? = null
     private var pausePlayButton: ImageView? = null
-    private lateinit var binding: FragmentFeedRepostAudioViewBinding
+    private lateinit var binding : FragmentFeedRepostAudioViewBinding
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         arguments?.let {
             param1 = it.getString(ARG_PARAM1)
             param2 = it.getString(ARG_PARAM2)
-            data = (it.getSerializable("data") as OriginalPost?)!!
+            data = (it.getSerializable("data") as  OriginalPost?)!!
             position = it.getInt("position")
 
         }
@@ -115,7 +115,7 @@ class FeedRepostAudioViewFragment() : Fragment(), PlayFeedAudioInterface {
         Glide.with(this)
             .load(data.author[0].account.avatar.url)
             .apply(RequestOptions.bitmapTransform(CircleCrop()))
-            .placeholder(R.drawable.profilepic2)
+            .placeholder(com.uyscuti.sharedmodule.R.drawable.profilepic2)
             .diskCacheStrategy(DiskCacheStrategy.ALL)
             .into(binding.toolbar.feedProfilePic)
 
@@ -433,5 +433,25 @@ class FeedRepostAudioViewFragment() : Fragment(), PlayFeedAudioInterface {
         handler = null
     }
 
+    fun setListener(listener: FeedTextViewFragmentInterface) {
+        feedTextViewFragmentInterface = listener
+    }
+
+    //    var isPlaying = false
+    override fun onAudioPlayClickListener(
+        audioUrl: String,
+        playImageView: ImageView,
+        seekBar: SeekBar,
+        currentDuration: TextView
+    ) {
+        Log.d(TAG, "onAudioPlayClickListener: start playing audio")
+//        isPlaying = true
+        this.pausePlayButton = playImageView
+        this.seekBar = seekBar
+        this.currentDuration = currentDuration
+        setupMediaPlayer(audioUrl, seekBar, playImageView, currentDuration)
+        setupPlaybackControls(playImageView, seekBar)
+
+    }
 
 }
