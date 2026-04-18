@@ -331,4 +331,51 @@ class FeedRepostAudioViewFragment() : Fragment(), PlayFeedAudioInterface {
         }
     }
 
+    @SuppressLint("SetTextI18n")
+    private fun resetUI(seekBar: SeekBar, currentDuration: TextView) {
+        // Reset SeekBar and counter TextView
+        seekBar.progress = 0
+        currentDuration.text = "0:00"
+    }
+
+    private fun updateCounterTextView(currentPosition: Int, currentDuration: TextView) {
+        val minutes = currentPosition / 1000 / 60
+        val seconds = (currentPosition / 1000) % 60
+        val timeString = String.format(Locale.getDefault(), "%d:%02d", minutes, seconds)
+        currentDuration.text = timeString
+    }
+
+    private fun setupPlaybackControls(pausePlayButton: ImageView, seekBar: SeekBar) {
+        mediaPlayer?.start()
+
+        pausePlayButton.setOnClickListener {
+            Log.d("FeedAudioViewFragment", "setupPlaybackControls: play button clicked")
+            if (isPlaying) {
+                mediaPlayer?.pause()
+                isPlaying = false
+                pausePlayButton.setImageResource(R.drawable.play_svgrepo_com)
+            } else {
+                mediaPlayer?.start()
+                isPlaying = true
+                pausePlayButton.setImageResource(R.drawable.baseline_pause_white_24)
+            }
+        }
+
+        seekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                if (fromUser) {
+                    mediaPlayer?.seekTo(progress)
+                }
+            }
+
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {
+                // Not needed for your case
+            }
+
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {
+                // Not needed for your case
+            }
+        })
+    }
+
 }
