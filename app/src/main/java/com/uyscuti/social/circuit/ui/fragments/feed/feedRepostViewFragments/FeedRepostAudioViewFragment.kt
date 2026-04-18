@@ -378,4 +378,60 @@ class FeedRepostAudioViewFragment() : Fragment(), PlayFeedAudioInterface {
         })
     }
 
+    private fun releaseMediaPlayer() {
+        handler?.removeCallbacks(updateSeekBarRunnable)
+        handler = null
+        mediaPlayer?.let {
+            if (it.isPlaying) {
+                it.stop()
+            }
+            it.release()
+        }
+        mediaPlayer = null
+
+//        mediaPlayer?.stop()
+//        mediaPlayer?.release()
+    }
+
+    override fun onResume() {
+        Log.d(TAG, "onResume: ")
+        super.onResume()
+        handler?.removeCallbacks(updateSeekBarRunnable) // Remove seekbar update runnable callbacks
+        handler = null
+        backPressedCallback = object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                // Handle back press
+//                navigateBack()
+                if (mediaPlayer?.isPlaying == true) {
+                    mediaPlayer!!.stop()
+                }
+                mediaPlayer?.release() // Release the MediaPlayer when the fragment is destroyed
+
+                if (feedTextViewFragmentInterface != null) {
+                    feedTextViewFragmentInterface?.backPressedFromFeedTextViewFragment()
+                }
+            }
+        }
+        requireActivity().onBackPressedDispatcher.addCallback(this, backPressedCallback)
+    }
+
+    override fun onPause() {
+        super.onPause()
+        releaseMediaPlayer()
+//        if(mediaPlayer?.isPlaying == true) {
+//            mediaPlayer!!.pause()
+//        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        mediaPlayer?.release() // Release the MediaPlayer when the fragment is destroyed
+        handler?.removeCallbacks(updateSeekBarRunnable) // Remove seekbar update runnable callbacks
+        if (mediaPlayer?.isPlaying == true) {
+            mediaPlayer!!.stop()
+        }
+        handler = null
+    }
+
+
 }
