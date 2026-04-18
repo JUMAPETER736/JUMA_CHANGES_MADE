@@ -253,4 +253,82 @@ class FeedRepostAudioViewFragment() : Fragment(), PlayFeedAudioInterface {
         return binding.root
     }
 
+    companion object {
+        /**
+         * Use this factory method to create a new instance of
+         * this fragment using the provided parameters.
+         *
+         * @param param1 Parameter 1.
+         * @param param2 Parameter 2.
+         * @return A new instance of fragment FeedRepostAudioViewFragment.
+         */
+        // TODO: Rename and change types and number of parameters
+        @JvmStatic
+        fun newInstance(param1: String, param2: String) =
+            FeedRepostAudioViewFragment()
+                .apply {
+                    arguments = Bundle().apply {
+                        putString(ARG_PARAM1, param1)
+                        putString(ARG_PARAM2, param2)
+                    }
+                }
+    }
+
+    private fun setupMediaPlayer(
+        audioUrl: String,
+        seekBar: SeekBar,
+        pausePlayButton: ImageView,
+        currentDuration: TextView
+    ) {
+        mediaPlayer = MediaPlayer().apply {
+            setAudioAttributes(
+                AudioAttributes.Builder()
+                    .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                    .build()
+            )
+            try {
+                setDataSource(audioUrl) // Assuming url is valid
+                prepareAsync()
+            } catch (e: IOException) {
+                Log.e(TAG, "Failed to prepare MediaPlayer", e)
+            }
+
+            setOnPreparedListener {
+                seekBar.max = mediaPlayer?.duration!!
+                mediaPlayer?.start()
+                this@FeedRepostAudioViewFragment.isPlaying = true
+                pausePlayButton.setImageResource(R.drawable.baseline_pause_white_24)
+                handler = Handler(Looper.getMainLooper())
+                try {
+                    updateSeekBarRunnable = object : Runnable {
+                        override fun run() {
+                            try {
+                                this@FeedRepostAudioViewFragment.seekBar?.progress =
+                                    mediaPlayer!!.currentPosition
+                                updateCounterTextView(mediaPlayer!!.currentPosition, currentDuration)
+                                handler!!.postDelayed(this, 1000) // Update seekbar every second
+                            }catch (e: Exception){
+                                Log.e(TAG, "run: ${e.message}", )
+                                e.printStackTrace()
+                            }
+                        }
+                    }
+                    handler!!.postDelayed(updateSeekBarRunnable, 0)
+                } catch (e: Exception) {
+                    Log.e(TAG, "setupMediaPlayer: ${e.message}")
+                    e.printStackTrace()
+                }
+            }
+
+            setOnCompletionListener {
+                // Handle completion of audio playback if needed
+                releaseMediaPlayer()
+                this@FeedRepostAudioViewFragment.isPlaying = false
+                resetUI(seekBar, currentDuration)
+                adapter?.refreshAudio(audioPlayingPosition)
+                pausePlayButton.setImageResource(R.drawable.play_svgrepo_com)
+            }
+        }
+    }
+
 }
