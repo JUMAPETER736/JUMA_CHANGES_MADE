@@ -52,4 +52,61 @@ class FeedRepostMultipleImageFragment : Fragment() , MultipleImagesListener {
     }
 
 
+    override fun onCreateView(
+        inflater: LayoutInflater, container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
+        // Inflate the layout for this fragment
+        binding = FragmentFeedRepostMultipleImageBinding.inflate(inflater, container, false)
+
+        if (data.content == "") {
+            binding.feedTextContent.text = ""
+        } else {
+            binding.feedTextContent.text = data.content
+        }
+
+        if(data.tags.isEmpty()) {
+            binding.tags.visibility = View.GONE
+        }else {
+            binding.tags.visibility = View.VISIBLE
+        }
+
+        Glide.with(this)
+            .load(data.author)
+            .apply(RequestOptions.bitmapTransform(CircleCrop()))
+            .placeholder(com.uyscuti.sharedmodule.R.drawable.profilepic2)
+            .diskCacheStrategy(DiskCacheStrategy.ALL)
+            .into(binding.toolbar.feedProfilePic)
+
+        binding.toolbar.backIcon.setOnClickListener {
+
+            if (feedTextViewFragmentInterface != null) {
+                feedTextViewFragmentInterface?.backPressedFromFeedTextViewFragment()
+            }
+        }
+        binding.commentButtonIcon.setOnClickListener {
+
+        }
+        val imageList:MutableList<String> = mutableListOf()
+        if(data.files.isNotEmpty()) {
+            for (image in data.files) {
+                Log.d(TAG, "render: images ${image.url}")
+                imageList.add(image.url)
+            }
+        }else {
+            Log.d(TAG, "render: data files is empty")
+        }
+
+        binding.viewPager.adapter = MultipleFeedImagesAdapter(requireContext(), imageList, this)
+        binding.viewPager.orientation = ViewPager2.ORIENTATION_HORIZONTAL
+
+
+        binding.circleIndicator.setViewPager(binding.viewPager)
+        binding.toolbar.username.text = data.author[0].account.username
+
+
+        return binding.root
+    }
+
+
 }
