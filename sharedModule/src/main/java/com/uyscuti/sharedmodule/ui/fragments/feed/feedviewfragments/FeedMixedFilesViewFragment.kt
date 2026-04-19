@@ -66,3 +66,168 @@ class FeedMixedFilesViewFragment : Fragment() {
     private var feedTextViewFragmentInterface: FeedTextViewFragmentInterface? = null
     private var adapter: FeedMixedFilesViewPagerAdapter? = null
 
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        val inflater = TransitionInflater.from(requireContext())
+//        enterTransition = inflater.inflateTransition(R.transition.feed_slide_from_top)
+        arguments?.let {
+            param1 = it.getString(ARG_PARAM1)
+            param2 = it.getString(ARG_PARAM2)
+            position = it.getInt("position")
+            data = (it.getSerializable("data") as Post?)!!
+        }
+    }
+
+    @SuppressLint("SetTextI18n")
+    override fun onCreateView(
+        inflater: LayoutInflater, container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
+        // Inflate the layout for this fragment
+        binding = FragmentFeedMixedFilesViewBinding.inflate(layoutInflater, container, false)
+        EventBus.getDefault().post(HideFeedFloatingActionButton())
+        activity?.window?.navigationBarColor =
+            ContextCompat.getColor(requireContext(), R.color.black)
+        binding.toolbar.backIcon.setOnClickListener {
+            if (feedTextViewFragmentInterface != null) {
+                feedTextViewFragmentInterface?.backPressedFromFeedTextViewFragment()
+                adapter?.backPressedFromFeedTextViewFragment()
+            }
+        }
+        backPressedCallback = object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                if (feedTextViewFragmentInterface != null) {
+                    feedTextViewFragmentInterface?.backPressedFromFeedTextViewFragment()
+                }
+            }
+        }
+        Log.d(TAG, "onCreateView: data content ${data.content}")
+        Glide.with(this)
+            .load(data.author!!.account.avatar.url)
+            .apply(RequestOptions.bitmapTransform(CircleCrop()))
+            .placeholder(R.drawable.profilepic2)
+            .diskCacheStrategy(DiskCacheStrategy.ALL)
+            .into(binding.toolbar.feedProfilePic)
+        if (data.content == "") {
+            binding.caption.visibility = View.GONE
+        } else {
+            binding.caption.visibility = View.VISIBLE
+            binding.caption.text = data.content
+        }
+        if (data.tags.isEmpty()) {
+            binding.tags.visibility = View.GONE
+        } else {
+            binding.tags.visibility = View.VISIBLE
+            val formattedTags = data.tags.joinToString(" ") { "#$it" }
+            binding.tags.text = formattedTags
+        }
+        binding.share.setOnClickListener {
+//            val bottomSheet = BottomSheetFragment()
+//            bottomSheet.show(requireActivity().supportFragmentManager, "BottomSheetFeedFragment")
+//            Toast.makeText(context, "share clicked is here", Toast.LENGTH_SHORT).show()
+            ShareClicked()
+
+        }
+        binding.comment.setOnClickListener {
+            EventBus.getDefault().post(FeedCommentClicked(position, data))
+        }
+
+        binding.toolbar.username.text = data.author!!.account.username
+        if (data.likes <= 0) {
+            binding.likesCount.text = "0"
+
+        } else {
+            binding.likesCount.text = data.likes.toString()
+        }
+//        binding.feedCommentsCount.text = "${data.comments.size}"
+//        binding.feedCommentsCount.text = data.comments.toString()
+        if (data.isLiked) {
+            binding.like.setImageResource(R.drawable.filled_favorite_like)
+        } else {
+            binding.like.setImageResource(R.drawable.like_svgrepo_com)
+        }
+        binding.like.setOnClickListener {
+            data.isLiked = !data.isLiked
+            if (data.isLiked) {
+                Log.d(TAG, "onCreateView: data likes ${data.likes}")
+                binding.likesCount.text = data.likes.toString()
+                if (data.likes <= 0) {
+
+                    binding.likesCount.text = "0"
+                } else {
+                    binding.likesCount.text = (data.likes + 1).toString()
+                }
+                binding.like.setImageResource(R.drawable.filled_favorite_like)
+                YoYo.with(Techniques.Tada)
+                    .duration(700)
+                    .repeat(1)
+                    .playOn(binding.like)
+            } else {
+                Log.d(TAG, "onCreateView: data likes ${data.likes}")
+                binding.likesCount.text = data.likes.toString()
+                if (data.likes <= 0) {
+                    binding.likesCount.text = "0"
+                } else {
+                    binding.likesCount.text = (data.likes - 1).toString()
+                }
+                binding.like.setImageResource(R.drawable.like_svgrepo_com)
+                YoYo.with(Techniques.Tada)
+                    .duration(700)
+                    .repeat(1)
+                    .playOn(binding.like)
+            }
+            feedTextViewFragmentInterface?.onLikeUnLikeFeedFromFeedTextViewFragment(position, data)
+        }
+        if (data.isBookmarked) {
+            Log.d(TAG, "onCreateView: data likes ${data.likes}")
+            binding.favCount.text = data.bookmarkCount.toString()
+            binding.fav.setImageResource(R.drawable.filled_favorite)
+        } else {
+            binding.fav.setImageResource(R.drawable.favorite_svgrepo_com__1_)
+        }
+
+        binding.moreOptions.setOnClickListener {
+            feedTextViewFragmentInterface?.onMoreOptionsClickFromFeedTextViewFragment(
+                position,
+                data
+            )
+        }
+        binding.fav.setOnClickListener {
+            data.isBookmarked = !data.isBookmarked
+            feedTextViewFragmentInterface?.onFeedFavoriteClickFromFeedTextViewFragment(
+                position,
+                data
+            )
+            if (data.isBookmarked) {
+                binding.fav.setImageResource(R.drawable.filled_favorite)
+
+                YoYo.with(Techniques.Tada)
+                    .duration(700)
+                    .repeat(1)
+                    .playOn(binding.fav)
+            } else {
+                binding.fav.setImageResource(R.drawable.favorite_svgrepo_com__1_)
+                YoYo.with(Techniques.Tada)
+                    .duration(700)
+                    .repeat(1)
+                    .playOn(binding.fav)
+            }
+        }
+
+        binding.re.setOnClickListener {
+
+            repostClicked()
+
+        }
+
+        adapter = FeedMixedFilesViewPagerAdapter(requireActivity(), data)
+        adapter!!.setFeedPostPosition(position)
+
+        binding.viewPager.adapter = adapter
+        binding.viewPager.orientation = ViewPager2.ORIENTATION_HORIZONTAL
+        binding.circleIndicator.setViewPager(binding.viewPager)
+
+        return binding.root
+    }
+
+    
