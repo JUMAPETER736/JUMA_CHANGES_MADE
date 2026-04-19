@@ -141,3 +141,32 @@
                 app:layout_constraintTop_toBottomOf="@+id/comment" />
 
         </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginStart="20dp"
+            >
+            <ImageView
+                android:id="@+id/fav"
+                android:layout_width="60dp"
+                android:layout_height="60dp"
+                android:layout_marginStart="5dp"
+                android:contentDescription="@string/content_description"
+                android:padding="12dp"
+                android:src="@drawable/favorite_svgrepo_com__1_"
+                app:layout_constraintBottom_toBottomOf="@id/like"
+                app:layout_constraintLeft_toRightOf="@id/comment"
+                app:tint="@color/blueJeans" />
+            <TextView
+                android:id="@+id/favCount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0"
+                android:layout_marginTop="20dp"
+                app:layout_constraintLeft_toLeftOf="@+id/fav"
+                app:layout_constraintRight_toRightOf="@+id/fav"
+                app:layout_constraintTop_toBottomOf="@+id/fav" />
+
+        </LinearLayout>
