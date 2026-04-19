@@ -53,7 +53,26 @@ private const val ARG_PARAM2 = "param2"
 private const val TAG = "FeedMixedFilesViewFragment"
 
 class FeedMixedFilesViewFragment : Fragment() {
-    // TODO: Rename and change types of parameters
+
+   companion object {
+        /**
+         * Use this factory method to create a new instance of
+         * this fragment using the provided parameters.
+         * @param param1 Parameter 1.
+         * @param param2 Parameter 2.
+         * @return A new instance of fragment FeedMixedFilesViewFragment.
+         */
+        // TODO: Rename and change types and number of parameters
+        @JvmStatic
+        fun newInstance(param1: String, param2: String) =
+            FeedMixedFilesViewFragment().apply {
+                arguments = Bundle().apply {
+                    putString(ARG_PARAM1, param1)
+                    putString(ARG_PARAM2, param2)
+                }
+            }
+    }
+
     private var param1: String? = null
     private var param2: String? = null
     private var feedTextViewFragment: FeedTextViewFragment? = null
@@ -65,6 +84,7 @@ class FeedMixedFilesViewFragment : Fragment() {
     private lateinit var backPressedCallback: OnBackPressedCallback
     private var feedTextViewFragmentInterface: FeedTextViewFragmentInterface? = null
     private var adapter: FeedMixedFilesViewPagerAdapter? = null
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -229,91 +249,105 @@ class FeedMixedFilesViewFragment : Fragment() {
 
         return binding.root
     }
-
-    binding.re.animate().rotation(360f).setDuration(500).start()
-}
-
-private fun replaceFragment (fragment: Fragment){
-    val supportFragmentManager = requireActivity().supportFragmentManager
-    val fragmentTransaction = supportFragmentManager.beginTransaction()
-    fragmentTransaction.add(R.id.fragment_frame, fragment)
-    fragmentTransaction.commit()
-}
-
-fun setListener(listener: FeedTextViewFragmentInterface) {
-    feedTextViewFragmentInterface = listener
-}
-private fun ShareClicked (){
-    val context = requireContext()
-
-    val bottomSheetDialog = BottomSheetDialog(requireContext())
-    val shareView = layoutInflater.inflate(R.layout.example, null)
-    val close_button = shareView.findViewById<ImageButton>(R.id.close_button)
-    val recyclerView = shareView.findViewById<RecyclerView>(R.id.apps_recycler_view)
-    val userRecyclerView = shareView.findViewById<RecyclerView>(R.id.users_recycler_view)
-    val people_search_container = shareView.findViewById<LinearLayout>(R.id.people_search_container)
-    bottomSheetDialog.setContentView(shareView)
-    bottomSheetDialog.show()
-
-    recyclerView.visibility = View.GONE
-    people_search_container.visibility = View.GONE
-
-    close_button.setOnClickListener {
-        bottomSheetDialog.dismiss()
+    private fun playRepostAnimation() {
+        binding.re.animate().rotation(360f).setDuration(500).start()
     }
 
-    // Fetch installed apps that support sharing
-    val packageManager = context.packageManager
-    val intent = Intent(Intent.ACTION_SEND).apply { type = "text/plain" }
-    val resolveInfoList = packageManager?.queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY)
-
-    // Set up RecyclerView
-    recyclerView.layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
-    recyclerView.adapter = resolveInfoList?.let { ShareFeedPostAdapter(it, context, data) }
-    userRecyclerView.layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
-    userRecyclerView.adapter = UserListAdapter(context) { user ->
-
+    private fun replaceFragment (fragment: Fragment){
+        val supportFragmentManager = requireActivity().supportFragmentManager
+        val fragmentTransaction = supportFragmentManager.beginTransaction()
+        fragmentTransaction.add(R.id.fragment_frame, fragment)
+        fragmentTransaction.commit()
     }
-}
 
-private fun repostClicked (){
-    val view: View = layoutInflater.inflate(R.layout.feed_moreoptions_bottomsheet_layout, null)
-    val quoteButton: MaterialCardView = view.findViewById(R.id.rePostFeedLayout)
-    val repostButton: MaterialCardView = view.findViewById(R.id.shareFeedLayout)
-    val download: MaterialCardView = view.findViewById(R.id.downloadFeedLayout)
-    val followUnfollowLayout : MaterialCardView = view.findViewById(R.id.followUnfollowLayout)
-    val shareFeedLayout : MaterialCardView = view.findViewById(R.id.shareFeedLayout)
-    val notInterestedLayout : MaterialCardView = view.findViewById(R.id.notInterestedLayout)
-    val hidePostLayout : MaterialCardView = view.findViewById(R.id.hidePostLayout)
-    val reportOptionLayout : MaterialCardView = view.findViewById(R.id.reportOptionLayout)
-    val copyLinkLayout: MaterialCardView = view.findViewById(R.id.copyLinkLayout)
-    val muteUser : MaterialCardView = view.findViewById(R.id.muteOptionLayout)
-    download.visibility = View.GONE
-    repostButton.visibility = View.GONE
-    repostButton.visibility = View.GONE
-    download.visibility = View.GONE
-    shareFeedLayout.visibility = View.GONE
-    notInterestedLayout.visibility = View.GONE
-    hidePostLayout.visibility = View.GONE
-    reportOptionLayout.visibility = View.GONE
-    copyLinkLayout.visibility = View.GONE
-    followUnfollowLayout.visibility = View.GONE
-    quoteButton.visibility = View.VISIBLE
-    muteUser.visibility = View.GONE
-    val dialog = BottomSheetDialog(requireContext())
-    dialog.setContentView(view)
-    dialog.show()
-
-    quoteButton.setOnClickListener {
-        Log.d("QuoteButton", "Data: $data")
-        dialog.dismiss()
-        val fragment = NewRepostedPostFragment(data)
-        val transaction = requireActivity().supportFragmentManager.beginTransaction()
-        transaction.replace(R.id.frame_layout, fragment) // Ensure fragment_container is correct
-        transaction.addToBackStack("NewRepostedPostFragment") // Name the back stack entry
-        transaction.commit()
-
+    fun setListener(listener: FeedTextViewFragmentInterface) {
+        feedTextViewFragmentInterface = listener
     }
+    private fun ShareClicked (){
+        val context = requireContext()
+
+        val bottomSheetDialog = BottomSheetDialog(requireContext())
+        val shareView = layoutInflater.inflate(R.layout.example, null)
+        val close_button = shareView.findViewById<ImageButton>(R.id.close_button)
+        val recyclerView = shareView.findViewById<RecyclerView>(R.id.apps_recycler_view)
+        val userRecyclerView = shareView.findViewById<RecyclerView>(R.id.users_recycler_view)
+        val people_search_container = shareView.findViewById<LinearLayout>(R.id.people_search_container)
+        bottomSheetDialog.setContentView(shareView)
+        bottomSheetDialog.show()
+
+        recyclerView.visibility = View.GONE
+        people_search_container.visibility = View.GONE
+
+        close_button.setOnClickListener {
+            bottomSheetDialog.dismiss()
+        }
+
+        // Fetch installed apps that support sharing
+        val packageManager = context.packageManager
+        val intent = Intent(Intent.ACTION_SEND).apply { type = "text/plain" }
+        val resolveInfoList = packageManager?.queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY)
+
+        // Set up RecyclerView
+        recyclerView.layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
+        recyclerView.adapter = resolveInfoList?.let { ShareFeedPostAdapter(it, context, data) }
+        userRecyclerView.layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
+        userRecyclerView.adapter = UserListAdapter(context) { user ->
+
+        }
+    }
+    private fun repostClicked (){
+        val view: View = layoutInflater.inflate(R.layout.feed_moreoptions_bottomsheet_layout, null)
+        val quoteButton: MaterialCardView = view.findViewById(R.id.rePostFeedLayout)
+        val repostButton: MaterialCardView = view.findViewById(R.id.shareFeedLayout)
+        val download: MaterialCardView = view.findViewById(R.id.downloadFeedLayout)
+        val followUnfollowLayout : MaterialCardView = view.findViewById(R.id.followUnfollowLayout)
+        val shareFeedLayout : MaterialCardView = view.findViewById(R.id.shareFeedLayout)
+        val notInterestedLayout : MaterialCardView = view.findViewById(R.id.notInterestedLayout)
+        val hidePostLayout : MaterialCardView = view.findViewById(R.id.hidePostLayout)
+        val reportOptionLayout : MaterialCardView = view.findViewById(R.id.reportOptionLayout)
+        val copyLinkLayout: MaterialCardView = view.findViewById(R.id.copyLinkLayout)
+        val muteUser : MaterialCardView = view.findViewById(R.id.muteOptionLayout)
+        download.visibility = View.GONE
+        repostButton.visibility = View.GONE
+        repostButton.visibility = View.GONE
+        download.visibility = View.GONE
+        shareFeedLayout.visibility = View.GONE
+        notInterestedLayout.visibility = View.GONE
+        hidePostLayout.visibility = View.GONE
+        reportOptionLayout.visibility = View.GONE
+        copyLinkLayout.visibility = View.GONE
+        followUnfollowLayout.visibility = View.GONE
+        quoteButton.visibility = View.VISIBLE
+        muteUser.visibility = View.GONE
+        val dialog = BottomSheetDialog(requireContext())
+        dialog.setContentView(view)
+        dialog.show()
+
+        quoteButton.setOnClickListener {
+            Log.d("QuoteButton", "Data: $data")
+            dialog.dismiss()
+            val fragment = NewRepostedPostFragment(data)
+            val transaction = requireActivity().supportFragmentManager.beginTransaction()
+            transaction.replace(R.id.frame_layout, fragment) // Ensure fragment_container is correct
+            transaction.addToBackStack("NewRepostedPostFragment") // Name the back stack entry
+            transaction.commit()
+
+        }
+    }
+
+    override fun onResume() {
+        Log.d(TAG, "onResume: ")
+        super.onResume()
+        backPressedCallback = object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+
+                if (feedTextViewFragmentInterface != null) {
+                    feedTextViewFragmentInterface?.backPressedFromFeedTextViewFragment()
+                }
+            }
+        }
+        requireActivity().onBackPressedDispatcher.addCallback(this, backPressedCallback)
+    }
+
+
 }
-
-
