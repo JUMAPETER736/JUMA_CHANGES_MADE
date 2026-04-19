@@ -170,3 +170,58 @@
                 app:layout_constraintTop_toBottomOf="@+id/fav" />
 
         </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginStart="20dp"
+            >
+            <ImageView
+                android:id="@+id/re"
+                android:layout_width="60dp"
+                android:layout_height="60dp"
+                android:padding="12dp"
+                android:src="@drawable/repeat_svgrepo_com"
+                app:layout_constraintBottom_toBottomOf="@id/fav"
+                app:layout_constraintLeft_toRightOf="@id/fav"
+                app:tint="@color/blueJeans" />
+            <TextView
+                android:layout_marginTop="20dp"
+                android:id="@+id/retweetCount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0"
+                app:layout_constraintLeft_toLeftOf="@+id/re"
+                app:layout_constraintRight_toRightOf="@+id/re"
+                app:layout_constraintTop_toBottomOf="@+id/re" />
+
+
+
+        </LinearLayout>
+
+        <ImageView
+            android:id="@+id/share"
+            android:layout_width="60dp"
+            android:layout_height="60dp"
+            android:layout_marginStart="20dp"
+            android:contentDescription="@string/content_description"
+            android:padding="12dp"
+            android:src="@drawable/share_svgrepo_com"
+            app:layout_constraintBottom_toBottomOf="@id/re"
+            app:layout_constraintLeft_toRightOf="@id/re"
+            app:tint="@color/blueJeans" />
+
+        <ImageView
+            android:id="@+id/moreOptions"
+            android:layout_width="60dp"
+            android:layout_height="60dp"
+            android:layout_marginStart="20dp"
+            android:contentDescription="@string/content_description"
+            android:padding="12dp"
+            android:src="@drawable/options_vertical_svgrepo_com"
+            app:layout_constraintBottom_toBottomOf="@id/share"
+            app:layout_constraintLeft_toRightOf="@id/share"
+            app:tint="@color/blueJeans" />
+    </LinearLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>
