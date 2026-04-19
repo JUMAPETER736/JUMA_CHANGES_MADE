@@ -230,4 +230,48 @@ class FeedMixedFilesViewFragment : Fragment() {
         return binding.root
     }
 
-    
+    binding.re.animate().rotation(360f).setDuration(500).start()
+}
+
+private fun replaceFragment (fragment: Fragment){
+    val supportFragmentManager = requireActivity().supportFragmentManager
+    val fragmentTransaction = supportFragmentManager.beginTransaction()
+    fragmentTransaction.add(R.id.fragment_frame, fragment)
+    fragmentTransaction.commit()
+}
+
+fun setListener(listener: FeedTextViewFragmentInterface) {
+    feedTextViewFragmentInterface = listener
+}
+private fun ShareClicked (){
+    val context = requireContext()
+
+    val bottomSheetDialog = BottomSheetDialog(requireContext())
+    val shareView = layoutInflater.inflate(R.layout.example, null)
+    val close_button = shareView.findViewById<ImageButton>(R.id.close_button)
+    val recyclerView = shareView.findViewById<RecyclerView>(R.id.apps_recycler_view)
+    val userRecyclerView = shareView.findViewById<RecyclerView>(R.id.users_recycler_view)
+    val people_search_container = shareView.findViewById<LinearLayout>(R.id.people_search_container)
+    bottomSheetDialog.setContentView(shareView)
+    bottomSheetDialog.show()
+
+    recyclerView.visibility = View.GONE
+    people_search_container.visibility = View.GONE
+
+    close_button.setOnClickListener {
+        bottomSheetDialog.dismiss()
+    }
+
+    // Fetch installed apps that support sharing
+    val packageManager = context.packageManager
+    val intent = Intent(Intent.ACTION_SEND).apply { type = "text/plain" }
+    val resolveInfoList = packageManager?.queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY)
+
+    // Set up RecyclerView
+    recyclerView.layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
+    recyclerView.adapter = resolveInfoList?.let { ShareFeedPostAdapter(it, context, data) }
+    userRecyclerView.layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
+    userRecyclerView.adapter = UserListAdapter(context) { user ->
+
+    }
+}
