@@ -1906,12 +1906,91 @@ class FavoriteFragment : Fragment(),
         bottomSheetDialog.show()
     }
 
-    // Replace incrementShareCount with this
+
+    // Share helper functions with multiple package name variants
+    private fun shareToWhatsApp(context: Context, text: String) {
+        val packages = listOf(
+            "com.whatsapp",
+            "com.whatsapp.w4b"
+        )
+        shareToApp(context, text, packages, "WhatsApp")
+    }
+
+    private fun shareViaSMS(context: Context, text: String) {
+        try {
+            val intent = Intent(Intent.ACTION_SENDTO).apply {
+                data = "smsto:".toUri()
+                putExtra("sms_body", text)
+            }
+            context.startActivity(intent)
+        } catch (e: Exception) {
+            Toast.makeText(context, "SMS app not available", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun shareToInstagram(context: Context, text: String) {
+        val packages = listOf(
+            "com.instagram.android"
+        )
+        shareToApp(context, text, packages, "Instagram")
+    }
+
+    private fun shareToMessenger(context: Context, text: String) {
+        val packages = listOf(
+            "com.facebook.orca",
+            "com.facebook.mlite"
+        )
+        shareToApp(context, text, packages, "Messenger")
+    }
+
+    private fun shareToFacebook(context: Context, text: String) {
+        val packages = listOf(
+            "com.facebook.katana",
+            "com.facebook.lite"
+        )
+        shareToApp(context, text, packages, "Facebook")
+    }
+
+    private fun shareToTelegram(context: Context, text: String) {
+        val packages = listOf(
+            "org.telegram.messenger",
+            "org.telegram.messenger.web",
+            "org.thunderdog.challegram"
+        )
+        shareToApp(context, text, packages, "Telegram")
+    }
+
+    // Generic function to try multiple package names
+    private fun shareToApp(context: Context, text: String, packages: List<String>, appName: String) {
+        try {
+            for (packageName in packages) {
+                val intent = Intent(Intent.ACTION_SEND).apply {
+                    type = "text/plain"
+                    setPackage(packageName)
+                    putExtra(Intent.EXTRA_TEXT, text)
+                }
+
+                if (intent.resolveActivity(context.packageManager) != null) {
+                    context.startActivity(intent)
+                    return
+                }
+            }
+
+            Toast.makeText(context, "$appName not installed", Toast.LENGTH_SHORT).show()
+        } catch (e: Exception) {
+            Toast.makeText(context, "$appName not available", Toast.LENGTH_SHORT).show()
+        }
+    }
+
     private fun updateShareCount(data: com.uyscuti.social.network.api.response.posts.Post) {
         lifecycleScope.launch {
             try {
-                retrofitInstance.apiService.incrementShareCount(data._id) // adjust to your actual API method
-                Log.d(TAG, "updateShareCount: share count updated for ${data._id}")
+                val response = retrofitInstance.apiService.shareUnShareFeed(data._id)
+                if (response.isSuccessful) {
+                    Log.d(TAG, "updateShareCount: share count updated for ${data._id}")
+                } else {
+                    Log.e(TAG, "updateShareCount: failed with code ${response.code()}")
+                }
             } catch (e: Exception) {
                 Log.e(TAG, "updateShareCount: failed ${e.message}")
             }
