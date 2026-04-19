@@ -88,6 +88,7 @@ import com.uyscuti.sharedmodule.adapter.OnViewRepliesClickListener
 import com.uyscuti.sharedmodule.adapter.feed.FeedAdapter
 import com.uyscuti.sharedmodule.adapter.feed.OnFeedClickListener
 import com.uyscuti.sharedmodule.adapter.notifications.AdPaginatedAdapter
+import com.uyscuti.sharedmodule.databinding.BottomDialogForShareBinding
 import com.uyscuti.social.network.api.models.Comment
 import com.uyscuti.social.core.models.data.Dialog
 import com.uyscuti.social.core.models.data.Message
@@ -158,6 +159,7 @@ import com.uyscuti.social.business.viewmodel.business.BusinessPostsViewModel
 import com.uyscuti.social.chatsuit.messages.CommentsInput
 import com.uyscuti.social.circuit.R
 import com.uyscuti.social.circuit.databinding.FragmentFavoriteBinding
+import com.uyscuti.social.circuit.databinding.ShareFeedBottomSheetBinding
 import com.uyscuti.social.circuit.ui.fragments.feed.feedRepostViewFragments.FeedRepostAudioViewFragment
 import com.uyscuti.social.circuit.ui.fragments.feed.feedRepostViewFragmentsimport.FeedRepostMultipleImageFragment
 import com.uyscuti.social.core.common.data.api.RemoteMessageRepository
@@ -1818,33 +1820,102 @@ class FavoriteFragment : Fragment(),
 
 
 
-    @SuppressLint("MissingInflatedId", "ServiceCast", "InflateParams")// Suppresses lint warning for missing inflated ID check
-    override fun feedShareClicked
-                (position: Int, data: com.uyscuti.social.network.api.response.posts.Post)
-    {
+    // 1. Add this missing interface method to FavoriteFragment
+    override fun feedShareClicked(position: Int, data: com.uyscuti.social.network.api.response.posts.Post) {
+        showShareBottomSheet(data)
+    }
+
+    @SuppressLint("MissingInflatedId")
+    private fun showShareBottomSheet(data: com.uyscuti.social.network.api.response.posts.Post) {
         val context = requireContext()
+        val bottomSheetDialog = BottomSheetDialog(context)
+        val shareBinding = ShareFeedBottomSheetBinding.inflate(layoutInflater)
+        bottomSheetDialog.setContentView(shareBinding.root)
 
-        val bottomSheetDialog = BottomSheetDialog(requireContext())
-        val shareView = layoutInflater.inflate(R.layout.example, null)
-        val close_button = shareView.findViewById<ImageButton>(R.id.close_button)
-        val recyclerView = shareView.findViewById<RecyclerView>(R.id.apps_recycler_view)
+        val shareText = "Check out this post on Flash!\n" +
+                "By: ${data.author?.account?.username ?: "Unknown"}\n" +
+                "${data.content ?: ""}"
+        val postUrl = data.files?.firstOrNull()?.url
+        val fullShareText = if (postUrl != null) "$shareText\n$postUrl" else shareText
 
-        bottomSheetDialog.setContentView(shareView)
-        bottomSheetDialog.show()
-
-        close_button.setOnClickListener {
+        // Row 0: Share buttons
+        shareBinding.btnWhatsApp.setOnClickListener {
+            shareToWhatsApp(context, fullShareText)
+            updateShareCount(data)
             bottomSheetDialog.dismiss()
         }
-        // Fetch installed apps that support sharing
-        val packageManager = context.packageManager
-        val intent = Intent(Intent.ACTION_SEND).apply { type = "text/plain" }
-        val resolveInfoList = packageManager?.queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY)
+        shareBinding.btnSMS.setOnClickListener {
+            shareViaSMS(context, fullShareText)
+            updateShareCount(data)
+            bottomSheetDialog.dismiss()
+        }
+        shareBinding.btnInstagram.setOnClickListener {
+            shareToInstagram(context, fullShareText)
+            updateShareCount(data)
+            bottomSheetDialog.dismiss()
+        }
+        shareBinding.btnMessenger.setOnClickListener {
+            shareToMessenger(context, fullShareText)
+            updateShareCount(data)
+            bottomSheetDialog.dismiss()
+        }
+        shareBinding.btnFacebook.setOnClickListener {
+            shareToFacebook(context, fullShareText)
+            updateShareCount(data)
+            bottomSheetDialog.dismiss()
+        }
+        shareBinding.btnTelegram.setOnClickListener {
+            shareToTelegram(context, fullShareText)
+            updateShareCount(data)
+            bottomSheetDialog.dismiss()
+        }
 
-        // Set up RecyclerView
-        recyclerView.layoutManager = LinearLayoutManager(context)
-        recyclerView.adapter = resolveInfoList?.let { ShareFeedPostAdapter(it, context, data) }
+        // Row 2: Action buttons
+        shareBinding.btnReport.setOnClickListener {
+            val intent = Intent(requireActivity(), ReportNotificationActivity2::class.java)
+            startActivityForResult(intent, REQUEST_REPOST_FEED_ACTIVITY)
+            bottomSheetDialog.dismiss()
+        }
+        shareBinding.btnNotInterested.setOnClickListener {
+            handleNotInterested(data)
+            bottomSheetDialog.dismiss()
+        }
+        shareBinding.btnSaveVideo.setOnClickListener {
+            val url = data.files?.firstOrNull()?.url ?: return@setOnClickListener
+            onDownloadClick(url, "FlashFeed")
+            bottomSheetDialog.dismiss()
+        }
+        shareBinding.btnDuet.setOnClickListener {
+            Toast.makeText(context, "Duet coming soon", Toast.LENGTH_SHORT).show()
+            bottomSheetDialog.dismiss()
+        }
+        shareBinding.btnReact.setOnClickListener {
+            Toast.makeText(context, "React coming soon", Toast.LENGTH_SHORT).show()
+            bottomSheetDialog.dismiss()
+        }
+        shareBinding.btnAddToFavorites.setOnClickListener {
+            feedFavoriteClick(0, data)
+            bottomSheetDialog.dismiss()
+        }
 
+        // Cancel
+        shareBinding.btnCancel.setOnClickListener {
+            bottomSheetDialog.dismiss()
+        }
 
+        bottomSheetDialog.show()
+    }
+
+    // Replace incrementShareCount with this
+    private fun updateShareCount(data: com.uyscuti.social.network.api.response.posts.Post) {
+        lifecycleScope.launch {
+            try {
+                retrofitInstance.apiService.incrementShareCount(data._id) // adjust to your actual API method
+                Log.d(TAG, "updateShareCount: share count updated for ${data._id}")
+            } catch (e: Exception) {
+                Log.e(TAG, "updateShareCount: failed ${e.message}")
+            }
+        }
     }
 
     override fun followButtonClicked(
