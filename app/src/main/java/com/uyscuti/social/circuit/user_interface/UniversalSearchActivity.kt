@@ -69,8 +69,8 @@ import com.uyscuti.sharedmodule.adapter.feed.TAG
 import com.uyscuti.sharedmodule.adapter.feed.feed.multiple_files.FeedMixedFilesViewAdapter
 import com.uyscuti.sharedmodule.adapter.feed.feed.multiple_files.FeedRepostViewFileAdapter
 import com.uyscuti.sharedmodule.adapter.feed.feed.multiple_files.OnMultipleFilesClickListener
-import com.uyscuti.sharedmodule.data.model.Dialog
-import com.uyscuti.sharedmodule.data.model.Message
+import com.uyscuti.social.core.models.data.Dialog
+import com.uyscuti.social.core.models.data.Message
 import com.uyscuti.sharedmodule.data.model.shortsmodels.OtherUsersProfile
 import com.uyscuti.sharedmodule.databinding.BottomDialogForShareBinding
 import com.uyscuti.sharedmodule.model.GoToUserProfileFragment
@@ -111,6 +111,7 @@ import com.uyscuti.social.core.common.data.room.entity.MessageEntity
 import com.uyscuti.social.business.viewmodel.business.BusinessPostsViewModel
 import com.uyscuti.social.circuit.databinding.ActivityUniversalSearchBinding
 import com.uyscuti.social.core.common.data.room.entity.FollowUnFollowEntity
+import com.uyscuti.social.core.models.data.User
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.BookmarkRequest
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.BookmarkResponse
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.CommentCountResponse
@@ -668,7 +669,7 @@ class UniversalSearchActivity : AppCompatActivity() {
     private suspend fun loadAllShorts(): List<Post> {
         return try {
             val response = apiService.getShorts("1")
-            val shorts = response.body()?.data?.posts?.posts ?: emptyList()
+            val shorts = response.body()?.data?.posts?.shorts ?: emptyList()
             shorts.map { it.toPostsPost() }.filter { post ->
                 post.fileTypes.any { it.fileType.equals("video", ignoreCase = true) }
             }
@@ -836,7 +837,19 @@ class UniversalSearchActivity : AppCompatActivity() {
                                     username = username
                                 )
                             ),
-                            businessProfile = BusinessProfile("", businessPost.userDetails.username ?: "", "", "", BackgroundPhoto(""))
+                            businessProfile = BusinessProfile(
+                                _id = businessPost._id,
+                                businessName = username,
+                                businessType = "",
+                                businessDescription = "",
+                                backgroundPhoto = BackgroundPhoto(""),
+                                contact = com.uyscuti.social.network.api.request.business.users.Contact(
+                                    email = "",
+                                    phoneNumber = "",
+                                    address = "",
+                                    website = ""
+                                )
+                            )
                         ),
                         isFavorited = null,
                         favorites = null
@@ -2204,7 +2217,7 @@ class SearchUserNameAdapter(
             val myUserId = localStorage.getUserId()
             val otherUser = users.firstOrNull { it.id != myUserId }
 
-            val usersList = ArrayList<com.uyscuti.sharedmodule.data.model.User>()
+            val usersList = ArrayList<User>()
             otherUser?.let { usersList.add(it.toUser()) }
 
             val message = lastMessage?.toMessage()
@@ -2220,9 +2233,9 @@ class SearchUserNameAdapter(
             )
         }
 
-        private fun UserEntity.toUser(): com.uyscuti.sharedmodule.data.model.User {
+        private fun UserEntity.toUser(): User {
             val username = if (name.contains("|")) name.split("|")[1].trim() else name
-            return com.uyscuti.sharedmodule.data.model.User(
+            return User(
                 id,
                 username,
                 avatar,
@@ -2233,7 +2246,7 @@ class SearchUserNameAdapter(
 
         private fun MessageEntity.toMessage(): Message {
             val username = if (user.name.contains("|")) user.name.split("|")[1].trim() else user.name
-            val msgUser = com.uyscuti.sharedmodule.data.model.User(
+            val msgUser = User(
                 user.id,
                 username,
                 user.avatar,
