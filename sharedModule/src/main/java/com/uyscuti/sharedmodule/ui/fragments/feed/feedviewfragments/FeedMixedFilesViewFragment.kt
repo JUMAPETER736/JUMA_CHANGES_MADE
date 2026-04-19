@@ -295,43 +295,50 @@ class FeedMixedFilesViewFragment : Fragment() {
 
         }
     }
-    private fun repostClicked (){
-        val view: View = layoutInflater.inflate(R.layout.feed_moreoptions_bottomsheet_layout, null)
-        val quoteButton: MaterialCardView = view.findViewById(R.id.rePostFeedLayout)
-        val repostButton: MaterialCardView = view.findViewById(R.id.shareFeedLayout)
-        val download: MaterialCardView = view.findViewById(R.id.downloadFeedLayout)
-        val followUnfollowLayout : MaterialCardView = view.findViewById(R.id.followUnfollowLayout)
-        val shareFeedLayout : MaterialCardView = view.findViewById(R.id.shareFeedLayout)
-        val notInterestedLayout : MaterialCardView = view.findViewById(R.id.notInterestedLayout)
-        val hidePostLayout : MaterialCardView = view.findViewById(R.id.hidePostLayout)
-        val reportOptionLayout : MaterialCardView = view.findViewById(R.id.reportOptionLayout)
+
+
+    @SuppressLint("MissingInflatedId")
+    private fun repostClicked() {
+        val view: View = layoutInflater.inflate(R.layout.feed_more_options_layout, null)
+
+        // Correct IDs from XML
+        val downloadAction: LinearLayout = view.findViewById(R.id.downloadAction)
+        val shareAction: LinearLayout = view.findViewById(R.id.shareAction)
+        val repostAction: LinearLayout = view.findViewById(R.id.repostAction)
+        val followAction: LinearLayout = view.findViewById(R.id.followAction)
         val copyLinkLayout: MaterialCardView = view.findViewById(R.id.copyLinkLayout)
-        val muteUser : MaterialCardView = view.findViewById(R.id.muteOptionLayout)
-        download.visibility = View.GONE
-        repostButton.visibility = View.GONE
-        repostButton.visibility = View.GONE
-        download.visibility = View.GONE
-        shareFeedLayout.visibility = View.GONE
+        val notInterestedLayout: MaterialCardView = view.findViewById(R.id.notInterestedLayout)
+        val hidePostLayout: MaterialCardView = view.findViewById(R.id.hidePostLayout)
+        val muteOptionLayout: MaterialCardView = view.findViewById(R.id.muteOptionLayout)
+        val blockUserLayout: MaterialCardView = view.findViewById(R.id.blockUserLayout)
+        val reportOptionLayout: MaterialCardView = view.findViewById(R.id.reportOptionLayout)
+
+        // Hide everything except repostAction
+        downloadAction.visibility = View.GONE
+        shareAction.visibility = View.GONE
+        followAction.visibility = View.GONE
+        copyLinkLayout.visibility = View.GONE
         notInterestedLayout.visibility = View.GONE
         hidePostLayout.visibility = View.GONE
+        muteOptionLayout.visibility = View.GONE
+        blockUserLayout.visibility = View.GONE
         reportOptionLayout.visibility = View.GONE
-        copyLinkLayout.visibility = View.GONE
-        followUnfollowLayout.visibility = View.GONE
-        quoteButton.visibility = View.VISIBLE
-        muteUser.visibility = View.GONE
+
+        // Only show repost
+        repostAction.visibility = View.VISIBLE
+
         val dialog = BottomSheetDialog(requireContext())
         dialog.setContentView(view)
         dialog.show()
 
-        quoteButton.setOnClickListener {
-            Log.d("QuoteButton", "Data: $data")
+        repostAction.setOnClickListener {
+            Log.d("RepostButton", "Data: $data")
             dialog.dismiss()
             val fragment = NewRepostedPostFragment(data)
             val transaction = requireActivity().supportFragmentManager.beginTransaction()
-            transaction.replace(R.id.frame_layout, fragment) // Ensure fragment_container is correct
-            transaction.addToBackStack("NewRepostedPostFragment") // Name the back stack entry
+            transaction.replace(R.id.frame_layout, fragment)
+            transaction.addToBackStack("NewRepostedPostFragment")
             transaction.commit()
-
         }
     }
 
