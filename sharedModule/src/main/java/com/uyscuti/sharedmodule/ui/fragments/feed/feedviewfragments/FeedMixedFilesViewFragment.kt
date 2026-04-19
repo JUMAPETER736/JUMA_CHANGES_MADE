@@ -275,3 +275,45 @@ private fun ShareClicked (){
 
     }
 }
+
+private fun repostClicked (){
+    val view: View = layoutInflater.inflate(R.layout.feed_moreoptions_bottomsheet_layout, null)
+    val quoteButton: MaterialCardView = view.findViewById(R.id.rePostFeedLayout)
+    val repostButton: MaterialCardView = view.findViewById(R.id.shareFeedLayout)
+    val download: MaterialCardView = view.findViewById(R.id.downloadFeedLayout)
+    val followUnfollowLayout : MaterialCardView = view.findViewById(R.id.followUnfollowLayout)
+    val shareFeedLayout : MaterialCardView = view.findViewById(R.id.shareFeedLayout)
+    val notInterestedLayout : MaterialCardView = view.findViewById(R.id.notInterestedLayout)
+    val hidePostLayout : MaterialCardView = view.findViewById(R.id.hidePostLayout)
+    val reportOptionLayout : MaterialCardView = view.findViewById(R.id.reportOptionLayout)
+    val copyLinkLayout: MaterialCardView = view.findViewById(R.id.copyLinkLayout)
+    val muteUser : MaterialCardView = view.findViewById(R.id.muteOptionLayout)
+    download.visibility = View.GONE
+    repostButton.visibility = View.GONE
+    repostButton.visibility = View.GONE
+    download.visibility = View.GONE
+    shareFeedLayout.visibility = View.GONE
+    notInterestedLayout.visibility = View.GONE
+    hidePostLayout.visibility = View.GONE
+    reportOptionLayout.visibility = View.GONE
+    copyLinkLayout.visibility = View.GONE
+    followUnfollowLayout.visibility = View.GONE
+    quoteButton.visibility = View.VISIBLE
+    muteUser.visibility = View.GONE
+    val dialog = BottomSheetDialog(requireContext())
+    dialog.setContentView(view)
+    dialog.show()
+
+    quoteButton.setOnClickListener {
+        Log.d("QuoteButton", "Data: $data")
+        dialog.dismiss()
+        val fragment = NewRepostedPostFragment(data)
+        val transaction = requireActivity().supportFragmentManager.beginTransaction()
+        transaction.replace(R.id.frame_layout, fragment) // Ensure fragment_container is correct
+        transaction.addToBackStack("NewRepostedPostFragment") // Name the back stack entry
+        transaction.commit()
+
+    }
+}
+
+
